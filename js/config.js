@@ -12,7 +12,7 @@
 window.CONFIG = {
   // [권장·무료] Google 시트 모드 — Apps Script 웹 앱 배포 주소(…/exec)를 넣으면 켜집니다.
   // 이 값이 있으면 아래 Supabase 설정은 무시됩니다.
-  APPS_SCRIPT_URL: "",
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyEu06EQM4XwPtM3KccKgeqK0hoJbZvxdkxODmFDZVQMNhIa080DDkHPPNq3TvJFSir/exec",
   SUPABASE_URL: "",       // 예) https://xxxx.supabase.co
   SUPABASE_ANON_KEY: "",  // 예) eyJhbGciOi...
   WISH_COOLDOWN_SEC: 30,  // 염원 도배 방지: 올린 뒤 다음 글까지 대기(초)
