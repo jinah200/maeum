@@ -5,7 +5,8 @@
  * ============================================================ */
 (function () {
   const cfg = window.CONFIG;
-  const serverMode = !!(cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY);
+  const sheetMode = !!cfg.APPS_SCRIPT_URL; // Google 시트 모드 (무료, 권장)
+  const serverMode = !sheetMode && !!(cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY);
 
   // ---- 세션 ID (익명, 신고·중복 식별용. 개인정보 아님) ----
   const sessionId =
@@ -107,7 +108,9 @@
 
     try {
       let result;
-      if (serverMode) {
+      if (sheetMode) {
+        result = await submitToSheet(text);  // Apps Script: 서버 검열 + 시트 저장
+      } else if (serverMode) {
         result = await submitToServer(text); // 2차: 서버 Gemini 검열 + 저장
       } else {
         await delay(900); // 연출용 짧은 대기
@@ -115,10 +118,15 @@
         saveLocal(text);
       }
 
-      if (result.ok) {
+      if (result.ok && !result.pending) {
         localStorage.setItem("ms_last_wish", Date.now());
         floatLantern(text);
         closeModal();
+      } else if (result.pending) {
+        // 검열기가 판단을 보류 → 선생님이 확인한 뒤 공개
+        localStorage.setItem("ms_last_wish", Date.now());
+        showMsg(result.reason || "올렸어요. 선생님 확인 후 등불이 켜질 거예요.", "ok");
+        setTimeout(closeModal, 2200);
       } else {
         showMsg(result.reason || "조금 더 따뜻한 말로 적어 주세요.", "err");
       }
@@ -195,6 +203,38 @@
     );
   }
 
+  /* ========== 5-B) Google 시트 모드 (Apps Script) ========== */
+  async function sheetPost(payload) {
+    // text/plain 으로 보내면 브라우저의 사전요청(CORS preflight) 없이 Apps Script 로 전달됩니다.
+    const res = await fetch(cfg.APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload),
+    });
+    return res.json();
+  }
+
+  function submitToSheet(text) {
+    return sheetPost({ type: "wish", content: text, sessionId });
+  }
+
+  async function startSheet() {
+    try {
+      if (!localStorage.getItem(todayKey)) {
+        localStorage.setItem(todayKey, "1"); // 하루에 이 브라우저당 한 번만 기록
+        await sheetPost({ type: "visit", sessionId });
+      }
+      const res = await fetch(cfg.APPS_SCRIPT_URL);
+      const data = await res.json();
+      (data.wishes || []).forEach((t, i) => setTimeout(() => floatLantern(t), i * 1300));
+      renderVisitor(data.visitsToday || 1);
+    } catch (e) {
+      console.error("시트 연결 실패 → 로컬 모드로 전환", e);
+      loadLocalWishes();
+      visitorBadge.textContent = "오늘도 숲이 열려 있어요";
+    }
+  }
+
   /* ========== 6) 방문자 수 ========== */
   const todayKey = "ms_visit_" + new Date().toISOString().slice(0, 10);
 
@@ -223,6 +263,11 @@
 
   /* ========== 시작 ========== */
   (async function start() {
+    if (sheetMode) {
+      document.querySelector(".admin-link").hidden = true; // 관리는 Google 시트에서
+      await startSheet();
+      return;
+    }
     if (serverMode) {
       try {
         await initServer();

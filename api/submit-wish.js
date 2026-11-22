@@ -57,7 +57,7 @@ export default async function handler(req, res) {
 /* Gemini 로 부적절성 판정 → { allowed: boolean } */
 async function moderateWithGemini(text) {
   const key = process.env.GEMINI_API_KEY;
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  const model = process.env.GEMINI_MODEL || "gemini-flash-lite-latest";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
 
   const prompt =
@@ -73,7 +73,7 @@ async function moderateWithGemini(text) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0, maxOutputTokens: 20 },
+      generationConfig: { temperature: 0, maxOutputTokens: 256 },
     }),
   });
 
