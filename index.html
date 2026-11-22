@@ -5,71 +5,89 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="description" content="잠시 들어와 쉬어가는 고요한 숲속 쉼터" />
   <title>온라인 마음쉼터</title>
-  <link rel="stylesheet" href="css/style.css?v=3" />
+  <link rel="stylesheet" href="css/style.css?v=4" />
   <style>[hidden]{display:none !important;}</style>
 </head>
 <body>
-  <!-- 숲 배경 -->
-  <div class="sky"></div>
-  <div class="forest">
-    <div class="hill hill-back"></div>
-    <div class="hill hill-front"></div>
-    <div class="trees" id="trees"></div>
-    <!-- 올라온 염원이 연등으로 떠오르는 레이어 -->
+  <!-- ===== 숲 배경 ===== -->
+  <div class="scene" id="scene">
+    <div class="sky"></div>
+    <div class="sun"></div>
+    <div class="clouds" id="clouds"></div>
+    <div class="hills">
+      <div class="hill hill-3"></div>
+      <div class="hill hill-2"></div>
+      <div class="hill hill-1"></div>
+    </div>
+    <div class="treeline" id="treeline"></div>
+    <div class="ground"></div>
+    <div class="fireflies" id="fireflies"></div>
+    <!-- 양이 거니는 바닥 -->
+    <div class="meadow" id="meadow"></div>
+    <!-- 염원이 등불로 떠오르는 레이어 -->
     <div class="lantern-layer" id="lanternLayer"></div>
+    <div class="vignette"></div>
   </div>
 
-  <!-- 상단: 방문자 수 -->
+  <!-- ===== 상단 바 ===== -->
   <header class="topbar">
+    <button class="icon-btn" id="soundBtn" title="소리 켜기" aria-label="소리 켜기">
+      <span id="soundIcon">🔈</span>
+    </button>
     <div class="visitor-badge" id="visitorBadge">오늘 · · ·명이 다녀갔어요</div>
+    <button class="icon-btn" id="mapBtn" title="숲 지도" aria-label="숲 지도">🗺️</button>
   </header>
 
-  <!-- 가운데: 캐릭터 -->
+  <!-- ===== 가운데: 새싹 친구 ===== -->
   <main class="stage">
     <div class="character" id="character">
-      <!-- 작은 숲의 친구 (종교색 없는 귀여운 새싹 캐릭터) -->
-      <svg viewBox="0 0 120 140" width="150" height="175" aria-hidden="true">
-        <ellipse class="shadow" cx="60" cy="132" rx="34" ry="7" />
-        <!-- 몸 -->
-        <ellipse class="body" cx="60" cy="88" rx="38" ry="40" />
-        <!-- 볼 -->
-        <circle class="cheek" cx="40" cy="92" r="6" />
-        <circle class="cheek" cx="80" cy="92" r="6" />
-        <!-- 눈 -->
+      <svg viewBox="0 0 120 150" width="150" height="188" aria-hidden="true">
+        <ellipse class="shadow" cx="60" cy="140" rx="34" ry="7" />
+        <ellipse class="body" cx="60" cy="92" rx="39" ry="41" />
+        <ellipse class="body-hi" cx="50" cy="80" rx="16" ry="12" />
+        <circle class="cheek" cx="39" cy="97" r="6.5" />
+        <circle class="cheek" cx="81" cy="97" r="6.5" />
         <g class="eyes">
-          <circle class="eye" cx="48" cy="82" r="4.5" />
-          <circle class="eye" cx="72" cy="82" r="4.5" />
+          <circle class="eye" cx="48" cy="86" r="5" />
+          <circle class="eye" cx="72" cy="86" r="5" />
+          <circle class="eye-hi" cx="49.6" cy="84.2" r="1.6" />
+          <circle class="eye-hi" cx="73.6" cy="84.2" r="1.6" />
         </g>
-        <!-- 입 -->
-        <path class="mouth" d="M53 98 Q60 104 67 98" fill="none" />
-        <!-- 새싹 -->
-        <path class="stem" d="M60 50 L60 30" fill="none" />
-        <path class="leaf" d="M60 34 Q74 26 74 40 Q64 44 60 34 Z" />
-        <path class="leaf" d="M60 40 Q46 32 46 46 Q56 50 60 40 Z" />
+        <path class="mouth" d="M53 102 Q60 108 67 102" fill="none" />
+        <path class="stem" d="M60 53 L60 32" fill="none" />
+        <path class="leaf" d="M60 36 Q76 27 75 43 Q64 47 60 36 Z" />
+        <path class="leaf" d="M60 42 Q44 33 45 49 Q56 53 60 42 Z" />
+        <circle class="dew" cx="73" cy="40" r="2.5" />
       </svg>
       <div class="nameplate" id="nameplate">나 : 느린 걸음</div>
     </div>
     <p class="breath-guide" id="breathGuide">버튼을 누르고 숲의 숨을 함께 쉬어요</p>
   </main>
 
-  <!-- 하단: 버튼들 -->
+  <!-- ===== 하단 버튼 ===== -->
   <nav class="controls">
     <button class="btn btn-breathe" id="breatheBtn">
+      <span class="btn-ico">🌿</span>
       <span class="btn-label">쉬어가기</span>
       <span class="btn-sub" id="breatheCount">0번째 숨</span>
     </button>
+    <button class="btn btn-beads" id="beadsBtn">
+      <span class="btn-ico">🫧</span>
+      <span class="btn-label">마음 구슬</span>
+      <span class="btn-sub" id="beadsCount">0알</span>
+    </button>
     <button class="btn btn-wish" id="wishBtn">
+      <span class="btn-ico">🏮</span>
       <span class="btn-label">염원 올리기</span>
     </button>
   </nav>
 
-  <!-- 염원 작성 모달 -->
+  <!-- ===== 염원 작성 모달 ===== -->
   <div class="modal-backdrop" id="wishModal" hidden>
     <div class="modal">
       <h2>마음에 담은 한 줄</h2>
       <p class="modal-desc">작은 등불로 숲에 띄워 둘게요. 따뜻한 말만 담아 주세요.</p>
-      <textarea id="wishInput" maxlength="100" rows="3"
-        placeholder="예) 오늘도 무사히 지나가기를"></textarea>
+      <textarea id="wishInput" maxlength="100" rows="3" placeholder="예) 오늘도 무사히 지나가기를"></textarea>
       <div class="modal-foot">
         <span class="counter" id="charCount">0 / 100</span>
         <div class="modal-actions">
@@ -81,7 +99,36 @@
     </div>
   </div>
 
-  <!-- 검열 중 연출 -->
+  <!-- ===== 마음 구슬 패널 ===== -->
+  <div class="modal-backdrop" id="beadsModal" hidden>
+    <div class="modal modal-beads">
+      <h2>마음 구슬</h2>
+      <p class="modal-desc">한 알씩 천천히 넘기며 숨을 고르는 시간이에요.</p>
+      <div class="bead-stage" id="beadStage" role="button" tabindex="0" aria-label="구슬 넘기기">
+        <div class="bead-cord"></div>
+        <div class="beads" id="beadStrand"></div>
+      </div>
+      <p class="bead-hint" id="beadHint">구슬을 톡 눌러 한 알씩 넘겨 보세요</p>
+      <div class="modal-foot">
+        <span class="counter" id="beadTotal">함께 넘긴 구슬 0알</span>
+        <button class="btn-ghost" id="beadsClose">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 숲 지도 오버레이 ===== -->
+  <div class="modal-backdrop map-backdrop" id="mapModal" hidden>
+    <div class="map-card">
+      <div class="map-head">
+        <h2>마음쉼터 숲 지도</h2>
+        <button class="btn-ghost" id="mapClose">닫기</button>
+      </div>
+      <div class="map-frame" id="mapFrame"></div>
+      <p class="map-legend">쉼터 안의 자리들이에요. 천천히 둘러보세요.</p>
+    </div>
+  </div>
+
+  <!-- ===== 검열 중 연출 ===== -->
   <div class="loading-backdrop" id="loading" hidden>
     <div class="loading-lantern"></div>
     <p>염원을 올리는 중…</p>
@@ -89,8 +136,8 @@
 
   <a class="admin-link" href="admin.html">교사용</a>
 
-  <script src="js/config.js?v=2"></script>
-  <script src="js/badwords.js?v=2"></script>
-  <script src="js/app.js?v=3"></script>
+  <script src="js/config.js?v=4"></script>
+  <script src="js/badwords.js?v=4"></script>
+  <script src="js/app.js?v=4"></script>
 </body>
 </html>
