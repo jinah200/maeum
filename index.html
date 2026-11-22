@@ -2,27 +2,29 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="description" content="잠시 들어와 쉬어가는 고요한 숲속 쉼터" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="description" content="잠시 들어와 쉬어가는 숲속 마음쉼터" />
+  <meta name="theme-color" content="#cfe6c4" />
   <title>온라인 마음쉼터</title>
-  <link rel="stylesheet" href="css/style.css?v=5" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" />
+  <link rel="stylesheet" href="css/style.css?v=6" />
   <style>[hidden]{display:none !important;}</style>
 </head>
-<body>
+<body class="t-day">
   <!-- ===== 숲 장면 ===== -->
   <div class="scene" id="scene">
     <div class="sky"></div>
-    <div class="sun"></div>
+    <div class="night-stars" id="nightStars"></div>
+    <div class="sun" id="sun"></div>
     <div class="clouds" id="clouds"></div>
-    <div class="para hills" id="hills">
-      <div class="hill hill-3"></div>
-      <div class="hill hill-2"></div>
-    </div>
+    <div class="para hills" id="hills"><div class="hill hill-3"></div><div class="hill hill-2"></div></div>
     <div class="para treeline" id="treeline"></div>
     <div class="ground"></div>
-    <!-- 걸어 다니는 숲길 (카메라가 따라감) -->
     <div class="world" id="world">
       <div class="decor" id="decor"></div>
+      <div class="garden-bed" id="gardenBed"></div>
       <div class="starfield" id="starfield"></div>
       <div class="landmarks" id="landmarks"></div>
       <div class="people" id="people"></div>
@@ -34,12 +36,14 @@
 
   <!-- ===== 상단 바 ===== -->
   <header class="topbar">
-    <div class="tb-group">
-      <button class="icon-btn" id="profileBtn" title="내 모습 바꾸기" aria-label="내 모습 바꾸기">🙂</button>
-      <button class="icon-btn" id="soundBtn" title="소리 켜기" aria-label="소리 켜기"><span id="soundIcon">🔈</span></button>
-    </div>
+    <button class="me-chip" id="profileBtn" title="내 모습 바꾸기" aria-label="내 모습 바꾸기">
+      <span class="me-face" id="meFace"></span><span class="me-name" id="meName">나</span>
+    </button>
     <div class="visitor-badge" id="visitorBadge">숲을 여는 중…</div>
     <div class="tb-group">
+      <button class="coin-chip" id="coinBtn" title="마음 동전" aria-label="마음 동전"><span class="coin-ico"></span><b id="coinCount">0</b></button>
+      <button class="icon-btn" id="timeBtn" title="숲의 시간 바꾸기" aria-label="숲의 시간 바꾸기">☀️</button>
+      <button class="icon-btn" id="soundBtn" title="소리 켜기" aria-label="소리 켜기"><span id="soundIcon">🔈</span></button>
       <button class="icon-btn" id="strollBtn" title="산책하기" aria-label="산책하기">🚶</button>
       <button class="icon-btn" id="mapBtn" title="숲 지도" aria-label="숲 지도">🗺️</button>
     </div>
@@ -47,105 +51,103 @@
 
   <div class="spacer"></div>
 
+  <!-- ===== 가까이 있는 친구와 인사 ===== -->
+  <div class="interact" id="interact" hidden>
+    <span class="ia-name" id="iaName"></span>
+    <button class="ia-btn hi5" data-emo="5" type="button">🙌 하이파이브</button>
+    <button class="ia-btn" data-emo="1" type="button" aria-label="손 흔들기">👋</button>
+    <button class="ia-btn" data-emo="2" type="button" aria-label="마음 보내기">💚</button>
+    <button class="ia-btn" data-emo="3" type="button" aria-label="웃기">😊</button>
+    <button class="ia-btn" data-emo="4" type="button" aria-label="고마워">🙏</button>
+  </div>
+
   <!-- ===== 하단: 쉼터 바로가기 ===== -->
-  <nav class="controls" id="controls">
-    <button class="btn btn-tree" data-go="tree"><span class="btn-ico">🌳</span><span class="btn-label">쉬어가기</span><span class="btn-sub" id="breatheCount">0번째 숨</span></button>
-    <button class="btn btn-beads" data-go="spring"><span class="btn-ico">🫧</span><span class="btn-label">마음 구슬</span><span class="btn-sub" id="beadsCount">0알</span></button>
-    <button class="btn btn-wish" data-go="lantern"><span class="btn-ico">🏮</span><span class="btn-label">염원</span><span class="btn-sub" id="wishCount">함께 보기</span></button>
-    <button class="btn btn-star" data-go="hill"><span class="btn-ico">⭐</span><span class="btn-label">별빛 언덕</span><span class="btn-sub" id="starCount">별 0개</span></button>
+  <nav class="dock" id="controls" aria-label="쉼터 바로가기">
+    <div class="dock-track" id="dockTrack"></div>
   </nav>
 
   <div class="toast" id="toast" hidden></div>
 
-  <!-- ===== 처음 들어올 때: 내 모습 ===== -->
+  <!-- ===== 내 모습 ===== -->
   <div class="modal-backdrop" id="introModal" hidden>
-    <div class="modal modal-intro">
-      <h2>숲에 들어가기 전에</h2>
-      <p class="modal-desc">이름 대신 숲에서 쓸 별명과 모습을 골라요. 다른 사람에게는 이 별명만 보여요.</p>
-      <div class="intro-preview" id="introPreview"></div>
-      <div class="nick-row">
-        <span class="nick" id="introNick">느린 걸음</span>
-        <button class="btn-ghost small" id="nickReroll">🔄 다른 별명</button>
+    <div class="modal modal-intro" data-theme="leaf">
+      <div class="m-head"><span class="m-ico">🌿</span><h2>숲에서 쓸 내 모습</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
+      <p class="modal-desc">이름 대신 별명과 모습을 골라요. 다른 사람에게는 별명만 보여요.</p>
+      <div class="intro-stage"><div class="intro-preview" id="introPreview"></div></div>
+      <div class="nick-row"><span class="nick" id="introNick">느린 걸음</span><button class="chip-btn" id="nickReroll">🔄 다른 별명</button></div>
+      <div class="look-tabs" id="lookTabs">
+        <button class="lt on" data-k="s">피부</button><button class="lt" data-k="hs">머리 모양</button><button class="lt" data-k="h">머리 색</button><button class="lt" data-k="ot">옷 모양</button><button class="lt" data-k="o">옷 색</button>
       </div>
-      <div class="swatch-row"><span class="sw-label">머리</span><div class="swatches" id="hairSwatches"></div></div>
-      <div class="swatch-row"><span class="sw-label">옷</span><div class="swatches" id="outfitSwatches"></div></div>
+      <div class="look-opts" id="lookOpts"></div>
       <button class="btn-primary wide" id="introEnter">숲으로 들어가기</button>
     </div>
   </div>
 
-  <!-- ===== 쉼터 광장: 안내 ===== -->
+  <!-- ===== 쉼터 광장 ===== -->
   <div class="modal-backdrop" id="guideModal" hidden>
-    <div class="modal">
-      <h2>🪧 쉼터 광장</h2>
+    <div class="modal" data-theme="sand">
+      <div class="m-head"><span class="m-ico">🪧</span><h2>쉼터 광장</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
       <p class="modal-desc">마음쉼터에 온 걸 환영해요. 천천히 둘러보세요.</p>
       <ul class="guide-list">
-        <li><b>걷기</b> — 방향키(또는 W·A·S·D)를 누르거나, 가고 싶은 곳을 눌러요.</li>
-        <li><b>들어가기</b> — 쉼터 앞에서 Enter, 또는 쉼터를 눌러요.</li>
-        <li><b>바로가기</b> — 아래 버튼을 누르면 그 쉼터까지 스스로 걸어가요.</li>
-        <li><b>산책</b> — 🚶 버튼을 켜면 발길 닿는 대로 쉼터를 둘러봐요.</li>
-        <li><b>마음이 별이 되는 길</b> — 공감 5개를 받거나, 내가 '가벼워졌어요'를 누르거나, 7일이 지나면 염원은 별이 되어 별빛 언덕에 올라가요.</li>
+        <li><b>걷기</b> 방향키(W·A·S·D)를 누르거나 가고 싶은 곳을 눌러요.</li>
+        <li><b>들어가기</b> 쉼터 앞에서 Enter, 또는 쉼터를 눌러요.</li>
+        <li><b>친구와 인사</b> 다른 사람 가까이 가면 하이파이브와 인사 버튼이 나와요.</li>
+        <li><b>마음 동전</b> 염원·공감·숨 고르기·계단 오르기로 모아서 가게와 꽃밭에서 써요.</li>
+        <li><b>별이 되는 길</b> 공감 5개, '가벼워졌어요', 또는 7일이 지나면 염원은 별이 돼요.</li>
+        <li><b>함께 지키기</b> 마음이 불편한 글은 🚩를 눌러 주세요. 세 명이 누르면 잠시 숨겨져요.</li>
       </ul>
-      <div class="modal-foot"><span></span><button class="btn-ghost" data-close>닫기</button></div>
     </div>
   </div>
 
   <!-- ===== 숨 쉬는 나무 ===== -->
   <div class="modal-backdrop" id="breathModal" hidden>
-    <div class="modal modal-center">
-      <h2>🌳 숨 쉬는 나무</h2>
+    <div class="modal modal-center" data-theme="leaf">
+      <div class="m-head"><span class="m-ico">🌳</span><h2>숨 쉬는 나무</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
       <p class="modal-desc">원이 커질 때 들이쉬고, 작아질 때 천천히 내쉬어요.</p>
-      <div class="breath-stage"><div class="breath-circle" id="breathCircle"></div><div class="breath-word" id="breathWord">준비</div></div>
-      <div class="modal-foot"><span class="counter" id="breathTotal">0번째 숨</span><button class="btn-ghost" data-close>닫기</button></div>
+      <div class="breath-stage"><div class="breath-ring"></div><div class="breath-circle" id="breathCircle"></div><div class="breath-word" id="breathWord">준비</div></div>
+      <div class="modal-foot"><span class="counter" id="breathTotal">0번째 숨</span><span class="counter">세 번 쉴 때마다 🪙1</span></div>
     </div>
   </div>
 
   <!-- ===== 마음 구슬 샘 ===== -->
   <div class="modal-backdrop" id="beadsModal" hidden>
-    <div class="modal modal-center">
-      <h2>🫧 마음 구슬 샘</h2>
-      <p class="modal-desc">한 알씩 천천히 넘기며 숨을 고르는 시간이에요.</p>
-      <div class="bead-stage" id="beadStage" role="button" tabindex="0" aria-label="구슬 넘기기">
-        <div class="bead-cord"></div>
-        <div class="beads" id="beadStrand"></div>
-      </div>
+    <div class="modal modal-center" data-theme="sky">
+      <div class="m-head"><span class="m-ico">🫧</span><h2>마음 구슬 샘</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
+      <p class="modal-desc">한 알씩 천천히 넘기며 숨을 골라요.</p>
+      <div class="bead-stage" id="beadStage" role="button" tabindex="0" aria-label="구슬 넘기기"><div class="bead-cord"></div><div class="beads" id="beadStrand"></div></div>
       <p class="bead-hint" id="beadHint">구슬을 톡 눌러 한 알씩 넘겨 보세요</p>
-      <div class="modal-foot"><span class="counter" id="beadTotal">함께 넘긴 구슬 0알</span><button class="btn-ghost" data-close>닫기</button></div>
+      <div class="modal-foot"><span class="counter" id="beadTotal">0알</span><span class="counter">한 바퀴마다 🪙1</span></div>
     </div>
   </div>
 
-  <!-- ===== 염원 등불터: 함께 보기 ===== -->
+  <!-- ===== 염원 등불터 ===== -->
   <div class="modal-backdrop" id="boardModal" hidden>
-    <div class="modal modal-board">
-      <div class="board-head">
-        <h2>🏮 염원 등불터</h2>
-        <button class="btn-primary" id="openWrite">마음 올리기</button>
-      </div>
-      <div class="tabs" role="tablist">
-        <button class="tab on" data-tab="all" role="tab">함께 보기</button>
-        <button class="tab" data-tab="mine" role="tab">내 마음</button>
+    <div class="modal modal-board" data-theme="amber">
+      <div class="m-head"><span class="m-ico">🏮</span><h2>염원 등불터</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
+      <div class="board-top">
+        <div class="tabs" role="tablist"><button class="tab on" data-tab="all" role="tab">함께 보기</button><button class="tab" data-tab="mine" role="tab">내 마음</button></div>
+        <button class="btn-primary" id="openWrite">＋ 마음 올리기</button>
       </div>
       <div class="board-list" id="boardList"></div>
-      <p class="board-note">공감이 5개 모이면 그 마음은 별이 되어 별빛 언덕으로 올라가요.</p>
-      <div class="modal-foot"><span class="counter" id="boardCount"></span><button class="btn-ghost" data-close>닫기</button></div>
+      <p class="board-note">공감 5개가 모이면 별이 되어 별빛 언덕으로 올라가요. 불편한 글은 🚩로 알려 주세요.</p>
+      <div class="modal-foot"><span class="counter" id="boardCount"></span><span class="counter">올리면 🪙5 · 공감하면 🪙1</span></div>
     </div>
   </div>
 
   <!-- ===== 마음 올리기 ===== -->
   <div class="modal-backdrop" id="wishModal" hidden>
-    <div class="modal">
-      <h2>마음에 담은 한 줄</h2>
+    <div class="modal" data-theme="amber">
+      <div class="m-head"><span class="m-ico">✍️</span><h2>마음에 담은 한 줄</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
       <div class="kind-pills" role="radiogroup">
         <button class="pill on" data-kind="바람" role="radio" aria-checked="true">🏮 바라는 마음</button>
         <button class="pill" data-kind="내려놓기" role="radio" aria-checked="false">🍂 내려놓을 마음</button>
       </div>
-      <p class="modal-desc" id="kindDesc">이루어지길 바라는 마음을 등불로 띄워요. 따뜻한 말만 담아 주세요.</p>
+      <p class="modal-desc" id="kindDesc">이루어지길 바라는 마음을 등불로 띄워요.</p>
       <textarea id="wishInput" maxlength="100" rows="3" placeholder="예) 오늘도 무사히 지나가기를"></textarea>
+      <p class="write-rule">친구 이름·연락처는 빼고, 내 마음만 담아요. 올리면 바로 모두에게 보여요.</p>
       <div class="modal-foot">
         <span class="counter" id="charCount">0 / 100</span>
-        <div class="modal-actions">
-          <button class="btn-ghost" id="wishCancel">닫기</button>
-          <button class="btn-primary" id="wishSubmit">띄우기</button>
-        </div>
+        <div class="modal-actions"><button class="btn-ghost" id="wishCancel">닫기</button><button class="btn-primary" id="wishSubmit">띄우기</button></div>
       </div>
       <p class="modal-msg" id="wishMsg"></p>
     </div>
@@ -153,43 +155,145 @@
 
   <!-- ===== 별빛 언덕 ===== -->
   <div class="modal-backdrop" id="starsModal" hidden>
-    <div class="modal modal-board">
-      <h2>⭐ 별빛 언덕</h2>
+    <div class="modal modal-board" data-theme="night">
+      <div class="m-head"><span class="m-ico">⭐</span><h2>별빛 언덕</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
       <p class="stars-big"><b id="starsBig">0</b>개의 마음이 별이 되었어요</p>
       <div class="ways">
-        <div class="way"><span>🤝</span><b>함께</b><small>공감 5개를 받으면</small></div>
-        <div class="way"><span>🌱</span><b>스스로</b><small>'가벼워졌어요'를 누르면</small></div>
+        <div class="way"><span>🤝</span><b>함께</b><small>공감 5개</small></div>
+        <div class="way"><span>🌱</span><b>스스로</b><small>'가벼워졌어요'</small></div>
         <div class="way"><span>🕰️</span><b>시간</b><small>7일이 지나면</small></div>
       </div>
       <div class="board-list" id="starsList"></div>
-      <div class="modal-foot"><span></span><button class="btn-ghost" data-close>닫기</button></div>
+    </div>
+  </div>
+
+  <!-- ===== 숲속 가게 ===== -->
+  <div class="modal-backdrop" id="shopModal" hidden>
+    <div class="modal modal-wide" data-theme="mint">
+      <div class="m-head"><span class="m-ico">🏪</span><h2>숲속 가게</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
+      <div class="shop-top">
+        <div class="shop-preview" id="shopPreview"></div>
+        <div class="shop-talk"><b>토끼 점장</b><span id="shopTalk">어서 와요! 마음 동전으로 꾸며 봐요.</span><span class="wallet-line">내 동전 <b class="coin-num" id="shopCoins">0</b></span></div>
+      </div>
+      <div class="tabs"><button class="tab on" data-shop="acc">꾸미기</button><button class="tab" data-shop="pet">동물 친구</button></div>
+      <div class="shop-grid" id="shopGrid"></div>
+    </div>
+  </div>
+
+  <!-- ===== 함께 꽃밭 ===== -->
+  <div class="modal-backdrop" id="gardenModal" hidden>
+    <div class="modal modal-wide" data-theme="rose">
+      <div class="m-head"><span class="m-ico">🌷</span><h2>함께 꽃밭</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
+      <p class="modal-desc">꽃을 고르고 꽃밭을 눌러 심어요. 한 송이에 🪙3. 모두가 함께 가꾸는 꽃밭이에요.</p>
+      <div class="seed-row" id="seedRow"></div>
+      <div class="garden-plot" id="gardenPlot" role="button" aria-label="꽃 심을 곳"></div>
+      <div class="modal-foot"><span class="counter" id="gardenCount">0송이</span><span class="counter">내 동전 <b class="coin-num" id="gardenCoins">0</b></span></div>
+    </div>
+  </div>
+
+  <!-- ===== 마음 날씨 연못 ===== -->
+  <div class="modal-backdrop" id="pondModal" hidden>
+    <div class="modal" data-theme="sky">
+      <div class="m-head"><span class="m-ico">🪷</span><h2>마음 날씨 연못</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
+      <p class="modal-desc">지금 내 마음은 어떤 날씨인가요? 돌 하나를 골라 연못에 띄워요.</p>
+      <div class="mood-grid" id="moodGrid"></div>
+      <div class="mood-answer" id="moodAnswer" hidden></div>
+      <div class="mood-today" id="moodToday"></div>
+    </div>
+  </div>
+
+  <!-- ===== 빗소리 정자 ===== -->
+  <div class="modal-backdrop" id="rainModal" hidden>
+    <div class="modal modal-center modal-rain" data-theme="rain">
+      <div class="m-head"><span class="m-ico">☔</span><h2>빗소리 정자</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
+      <p class="modal-desc">소리를 고르고 가만히 들어요. 눈을 감아도 좋아요.</p>
+      <div class="rain-window" id="rainWindow"><div class="rain-lines"></div><div class="rain-time" id="rainTime">1:00</div></div>
+      <div class="seg" id="rainSound"><button class="on" data-s="rain">🌧️ 빗소리</button><button data-s="stream">🏞️ 시냇물</button><button data-s="fire">🔥 모닥불</button></div>
+      <div class="seg" id="rainLen"><button class="on" data-m="1">1분</button><button data-m="3">3분</button><button data-m="5">5분</button></div>
+      <button class="btn-primary wide" id="rainStart">쉬기 시작</button>
+      <p class="counter center">끝까지 쉬면 🪙2</p>
+    </div>
+  </div>
+
+  <!-- ===== 마음 동전 ===== -->
+  <div class="modal-backdrop" id="walletModal" hidden>
+    <div class="modal" data-theme="gold">
+      <div class="m-head"><span class="m-ico">🪙</span><h2>마음 동전</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
+      <p class="wallet-big"><span class="coin-ico big"></span><b id="walletCoins">0</b></p>
+      <div class="earn-list" id="earnList"></div>
+      <p class="counter center">하루에 모을 수 있는 동전은 정해져 있어요. 내일 또 만나요.</p>
+    </div>
+  </div>
+
+  <!-- ===== 명언 수첩 ===== -->
+  <div class="modal-backdrop" id="bookModal" hidden>
+    <div class="modal modal-board" data-theme="sand">
+      <div class="m-head"><span class="m-ico">📜</span><h2>명언 수첩</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
+      <p class="modal-desc" id="bookDesc">계단에서 모은 말이에요.</p>
+      <div class="board-list" id="bookList"></div>
     </div>
   </div>
 
   <!-- ===== 숲 지도 ===== -->
   <div class="modal-backdrop" id="mapModal" hidden>
     <div class="map-card">
-      <div class="map-head"><h2>마음쉼터 숲 지도</h2><button class="btn-ghost" data-close>닫기</button></div>
+      <div class="m-head"><span class="m-ico">🗺️</span><h2>마음쉼터 숲 지도</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
       <div class="map-frame" id="mapFrame"></div>
-      <p class="map-legend">가고 싶은 쉼터를 누르면 그곳까지 걸어가요. <span class="dot me"></span>나 <span class="dot other"></span>함께 있는 사람</p>
+      <p class="map-legend">쉼터를 누르면 그곳까지 걸어가요. <span class="dot me"></span>나 <span class="dot other"></span>함께 있는 사람</p>
     </div>
   </div>
 
-  <!-- ===== 흘려보내기 의식 ===== -->
+  <!-- ===== 명언 계단 (게임 화면) ===== -->
+  <div class="stair-game" id="stairGame" hidden>
+    <div class="sg-sky" id="sgSky"></div>
+    <div class="sg-world" id="sgWorld"><div class="sg-steps" id="sgSteps"></div><div class="sg-me" id="sgMe"></div></div>
+    <div class="sg-hud">
+      <button class="sg-btn" id="sgExit">↩ 내려가기</button>
+      <div class="sg-count"><b id="sgStep">0</b><small>/ 108 계단</small></div>
+      <button class="sg-btn" id="sgBook">📜 <span id="sgBookN">0</span></button>
+    </div>
+    <div class="sg-progress"><i id="sgBar"></i></div>
+    <div class="sg-tip" id="sgTip">다음 계단이 있는 쪽을 눌러 올라가요</div>
+    <div class="sg-pad">
+      <button class="sg-dir" id="sgLeft" aria-label="왼쪽으로 오르기">◀<small>왼쪽</small></button>
+      <button class="sg-dir" id="sgRight" aria-label="오른쪽으로 오르기">▶<small>오른쪽</small></button>
+    </div>
+    <div class="sg-quote" id="sgQuote" hidden>
+      <div class="sgq-card">
+        <div class="sgq-step" id="sgqStep">10번째 계단</div>
+        <p class="sgq-text" id="sgqText"></p>
+        <p class="sgq-by" id="sgqBy"></p>
+        <p class="sgq-coin">🪙 +1 · 명언 수첩에 담았어요</p>
+        <button class="btn-primary" id="sgqNext">계속 오르기</button>
+      </div>
+    </div>
+    <div class="sg-done" id="sgDone" hidden>
+      <div class="sgq-card">
+        <div class="sgq-step">🎉 108계단</div>
+        <p class="sgq-text">끝까지 올랐어요!</p>
+        <p class="sgq-by">한 걸음씩 모여서 여기까지 왔어요. 오늘 만난 말 가운데 하나를 마음에 담아 가요.</p>
+        <p class="sgq-coin" id="sgDoneCoin"></p>
+        <div class="modal-actions center"><button class="btn-ghost" id="sgAgain">다시 오르기</button><button class="btn-primary" id="sgHome">숲으로</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 흘려보내기 ===== -->
   <div class="ritual" id="ritual" hidden>
     <div class="leaf" id="ritualLeaf"><span id="ritualText"></span></div>
     <p class="ritual-msg" id="ritualMsg"></p>
     <p class="ritual-skip">화면을 누르면 닫혀요</p>
   </div>
 
-  <!-- ===== 검열 중 연출 ===== -->
   <div class="loading-backdrop" id="loading" hidden>
     <div class="loading-lantern"></div>
     <p>마음을 올리는 중…</p>
   </div>
 
-  <script src="js/config.js?v=5"></script>
-  <script src="js/badwords.js?v=5"></script>
-  <script src="js/app.js?v=5"></script>
+  <script src="js/config.js?v=6"></script>
+  <script src="js/badwords.js?v=6"></script>
+  <script src="js/art.js?v=6"></script>
+  <script src="js/quotes.js?v=6"></script>
+  <script src="js/app.js?v=6"></script>
 </body>
 </html>
