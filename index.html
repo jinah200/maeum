@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="description" content="잠시 들어와 쉬어가는 고요한 숲속 쉼터" />
+  <title>온라인 마음쉼터</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- 숲 배경 -->
+  <div class="sky"></div>
+  <div class="forest">
+    <div class="hill hill-back"></div>
+    <div class="hill hill-front"></div>
+    <div class="trees" id="trees"></div>
+    <!-- 올라온 염원이 연등으로 떠오르는 레이어 -->
+    <div class="lantern-layer" id="lanternLayer"></div>
+  </div>
+
+  <!-- 상단: 방문자 수 -->
+  <header class="topbar">
+    <div class="visitor-badge" id="visitorBadge">오늘 · · ·명이 다녀갔어요</div>
+  </header>
+
+  <!-- 가운데: 캐릭터 -->
+  <main class="stage">
+    <div class="character" id="character">
+      <!-- 작은 숲의 친구 (종교색 없는 귀여운 새싹 캐릭터) -->
+      <svg viewBox="0 0 120 140" width="150" height="175" aria-hidden="true">
+        <ellipse class="shadow" cx="60" cy="132" rx="34" ry="7" />
+        <!-- 몸 -->
+        <ellipse class="body" cx="60" cy="88" rx="38" ry="40" />
+        <!-- 볼 -->
+        <circle class="cheek" cx="40" cy="92" r="6" />
+        <circle class="cheek" cx="80" cy="92" r="6" />
+        <!-- 눈 -->
+        <g class="eyes">
+          <circle class="eye" cx="48" cy="82" r="4.5" />
+          <circle class="eye" cx="72" cy="82" r="4.5" />
+        </g>
+        <!-- 입 -->
+        <path class="mouth" d="M53 98 Q60 104 67 98" fill="none" />
+        <!-- 새싹 -->
+        <path class="stem" d="M60 50 L60 30" fill="none" />
+        <path class="leaf" d="M60 34 Q74 26 74 40 Q64 44 60 34 Z" />
+        <path class="leaf" d="M60 40 Q46 32 46 46 Q56 50 60 40 Z" />
+      </svg>
+      <div class="nameplate" id="nameplate">나 : 느린 걸음</div>
+    </div>
+    <p class="breath-guide" id="breathGuide">버튼을 누르고 숲의 숨을 함께 쉬어요</p>
+  </main>
+
+  <!-- 하단: 버튼들 -->
+  <nav class="controls">
+    <button class="btn btn-breathe" id="breatheBtn">
+      <span class="btn-label">쉬어가기</span>
+      <span class="btn-sub" id="breatheCount">0번째 숨</span>
+    </button>
+    <button class="btn btn-wish" id="wishBtn">
+      <span class="btn-label">염원 올리기</span>
+    </button>
+  </nav>
+
+  <!-- 염원 작성 모달 -->
+  <div class="modal-backdrop" id="wishModal" hidden>
+    <div class="modal">
+      <h2>마음에 담은 한 줄</h2>
+      <p class="modal-desc">작은 등불로 숲에 띄워 둘게요. 따뜻한 말만 담아 주세요.</p>
+      <textarea id="wishInput" maxlength="100" rows="3"
+        placeholder="예) 오늘도 무사히 지나가기를"></textarea>
+      <div class="modal-foot">
+        <span class="counter" id="charCount">0 / 100</span>
+        <div class="modal-actions">
+          <button class="btn-ghost" id="wishCancel">닫기</button>
+          <button class="btn-primary" id="wishSubmit">띄우기</button>
+        </div>
+      </div>
+      <p class="modal-msg" id="wishMsg"></p>
+    </div>
+  </div>
+
+  <!-- 검열 중 연출 -->
+  <div class="loading-backdrop" id="loading" hidden>
+    <div class="loading-lantern"></div>
+    <p>염원을 올리는 중…</p>
+  </div>
+
+  <a class="admin-link" href="admin.html">교사용</a>
+
+  <script src="js/config.js"></script>
+  <script src="js/badwords.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

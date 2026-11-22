@@ -1,0 +1,10 @@
+{
+  "name": "maeum-shelter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "온라인 마음쉼터 — 학생·교사가 잠시 들어와 쉬어가는 고요한 공간",
+  "type": "module",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  }
+}

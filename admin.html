@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>마음쉼터 · 교사 관리</title>
+  <style>
+    :root { --ink:#4a4237; --soft:#8a8072; --green:#7fa37f; --card:#fffaf2; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+      background:#f3ead9; color:var(--ink); padding:20px; }
+    h1 { font-size:1.2rem; margin:0 0 4px; }
+    .sub { color:var(--soft); font-size:0.85rem; margin-bottom:16px; }
+    .login, .panel { max-width:720px; margin:0 auto; }
+    .login { max-width:360px; background:var(--card); padding:22px; border-radius:16px;
+      box-shadow:0 8px 24px rgba(0,0,0,.08); }
+    input[type=password] { width:100%; padding:11px; border:1.5px solid #e4d8c4;
+      border-radius:10px; font-size:1rem; margin:10px 0; }
+    button { font-family:inherit; cursor:pointer; border:none; border-radius:10px;
+      padding:9px 14px; font-size:0.85rem; font-weight:600; }
+    .primary { background:var(--green); color:#fff; }
+    .tabs { display:flex; gap:8px; margin-bottom:12px; }
+    .tabs button { background:#eee6d8; color:var(--soft); }
+    .tabs button.on { background:var(--green); color:#fff; }
+    .item { background:var(--card); border-radius:12px; padding:12px 14px; margin-bottom:8px;
+      box-shadow:0 2px 8px rgba(0,0,0,.05); }
+    .item .content { font-size:0.98rem; margin-bottom:6px; white-space:pre-wrap; }
+    .meta { font-size:0.72rem; color:var(--soft); display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .tag { padding:2px 8px; border-radius:999px; font-size:0.68rem; }
+    .tag.public { background:#dcebd2; color:#3f5e43; }
+    .tag.pending { background:#f5e2c7; color:#8a6d33; }
+    .tag.hidden { background:#eadede; color:#8a5a5a; }
+    .tag.reported { background:#f3c9b8; color:#9a4a2a; }
+    .row-actions { display:flex; gap:6px; margin-top:8px; }
+    .row-actions button { background:#eee6d8; color:var(--ink); font-size:0.75rem; padding:6px 10px; }
+    .row-actions .danger { background:#f0d2c6; color:#8a3a1a; }
+    .empty { color:var(--soft); text-align:center; padding:30px; }
+    .err { color:#c0693f; font-size:0.85rem; }
+    .note { font-size:0.78rem; color:var(--soft); margin-top:10px; }
+  </style>
+</head>
+<body>
+  <!-- 로그인 -->
+  <div class="login panel" id="loginBox">
+    <h1>교사 관리실</h1>
+    <div class="sub">관리 비밀번호를 입력하세요.</div>
+    <input type="password" id="pw" placeholder="비밀번호" />
+    <button class="primary" id="loginBtn" style="width:100%">들어가기</button>
+    <p class="err" id="loginErr"></p>
+    <p class="note">※ 서버 모드(Supabase + Vercel 배포)에서만 작동합니다.
+      비밀번호는 Vercel 환경변수 <code>ADMIN_PASSWORD</code> 로 정합니다.</p>
+  </div>
+
+  <!-- 관리 패널 -->
+  <div class="panel" id="panel" hidden>
+    <h1>올라온 염원</h1>
+    <div class="sub">부적절한 글을 숨기거나 지울 수 있어요.</div>
+    <div class="tabs">
+      <button data-tab="list" class="on">전체</button>
+      <button data-tab="reported">신고된 글</button>
+    </div>
+    <div id="list"></div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let password = "";
+    let tab = "list";
+
+    $("loginBtn").addEventListener("click", login);
+    $("pw").addEventListener("keydown", (e) => { if (e.key === "Enter") login(); });
+
+    document.querySelectorAll(".tabs button").forEach((b) =>
+      b.addEventListener("click", () => {
+        document.querySelectorAll(".tabs button").forEach((x) => x.classList.remove("on"));
+        b.classList.add("on");
+        tab = b.dataset.tab;
+        load();
+      })
+    );
+
+    async function api(action, id) {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, action, id }),
+      });
+      return res.json();
+    }
+
+    async function login() {
+      password = $("pw").value;
+      const r = await api(tab === "reported" ? "reported" : "list");
+      if (!r.ok) { $("loginErr").textContent = r.reason || "로그인 실패"; return; }
+      $("loginBox").hidden = true;
+      $("panel").hidden = false;
+      render(r.items);
+    }
+
+    async function load() {
+      const r = await api(tab === "reported" ? "reported" : "list");
+      if (r.ok) render(r.items);
+    }
+
+    function render(items) {
+      const box = $("list");
+      if (!items || !items.length) { box.innerHTML = '<div class="empty">표시할 글이 없어요.</div>'; return; }
+      box.innerHTML = items.map((w) => `
+        <div class="item">
+          <div class="content">${escapeHtml(w.content)}</div>
+          <div class="meta">
+            <span class="tag ${w.status}">${statusLabel(w.status)}</span>
+            ${w.reported ? '<span class="tag reported">신고됨</span>' : ""}
+            <span>${new Date(w.created_at).toLocaleString("ko-KR")}</span>
+          </div>
+          <div class="row-actions">
+            ${w.status !== "public" ? `<button onclick="act('show','${w.id}')">공개</button>` : ""}
+            ${w.status !== "hidden" ? `<button onclick="act('hide','${w.id}')">숨기기</button>` : ""}
+            <button class="danger" onclick="act('delete','${w.id}')">삭제</button>
+          </div>
+        </div>`).join("");
+    }
+
+    window.act = async function (action, id) {
+      if (action === "delete" && !confirm("정말 삭제할까요?")) return;
+      const r = await api(action, id);
+      if (r.ok) load();
+      else alert(r.reason || "처리 실패");
+    };
+
+    function statusLabel(s) { return { public:"공개", pending:"검토중", hidden:"숨김" }[s] || s; }
+    function escapeHtml(s) {
+      return s.replace(/[&<>"']/g, (c) =>
+        ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+    }
+  </script>
+</body>
+</html>
