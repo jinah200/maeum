@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" />
-  <link rel="stylesheet" href="css/style.css?v=7" />
+  <link rel="stylesheet" href="css/style.css?v=8" />
   <style>[hidden]{display:none !important;}</style>
 </head>
 <body class="t-day">
@@ -31,6 +31,7 @@
       <div class="landmarks" id="landmarks"></div>
       <div class="people" id="people"></div>
     </div>
+    <div class="season-wash" id="seasonWash"></div>
     <div class="fireflies" id="fireflies"></div>
     <div class="lantern-layer" id="lanternLayer"></div>
     <div class="snow" id="snow"></div>
@@ -45,7 +46,7 @@
     <div class="visitor-badge" id="visitorBadge">숲을 여는 중…</div>
     <div class="tb-group">
       <button class="coin-chip" id="coinBtn" title="마음 동전" aria-label="마음 동전"><span class="coin-ico"></span><b id="coinCount">0</b></button>
-      <button class="icon-btn" id="timeBtn" title="숲의 시간 바꾸기" aria-label="숲의 시간 바꾸기">☀️</button>
+      <button class="icon-btn" id="seasonBtn" title="계절·시간 바꾸기" aria-label="계절·시간 바꾸기">❄️</button>
       <button class="icon-btn" id="musicBtn" title="배경음악" aria-label="배경음악">🎵</button>
       <button class="icon-btn" id="soundBtn" title="숲 소리 켜기" aria-label="숲 소리 켜기"><span id="soundIcon">🔈</span></button>
       <button class="icon-btn" id="strollBtn" title="산책하기" aria-label="산책하기">🚶</button>
@@ -150,6 +151,7 @@
         <button class="pill" data-kind="내려놓기" role="radio" aria-checked="false">🍂 내려놓을 마음</button>
       </div>
       <p class="modal-desc" id="kindDesc">이루어지길 바라는 마음을 등불로 띄워요.</p>
+      <div class="kind-words">🌿 <b>고운 말, 바른 말</b>로 적어요. 내가 한 말과 행동은 다시 나에게 돌아와요.</div>
       <textarea id="wishInput" maxlength="100" rows="3" placeholder="예) 오늘도 무사히 지나가기를"></textarea>
       <p class="write-rule">친구 이름·연락처는 빼고, 내 마음만 담아요. 올리면 바로 모두에게 보여요.</p>
       <div class="modal-foot">
@@ -273,6 +275,7 @@
   <div class="modal-backdrop" id="linkFormModal" hidden>
     <div class="modal" data-theme="rose">
       <div class="m-head"><span class="m-ico">🔗</span><h2>링크 올리기</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
+      <div class="kind-words">🌿 <b>고운 말, 바른 말</b>로 나눠요. 내가 한 말과 행동은 다시 나에게 돌아와요.</div>
       <label class="form-label">주소 (http로 시작)</label>
       <input id="linkUrl" class="form-input" type="url" inputmode="url" placeholder="https://..." />
       <label class="form-label">목적</label>
@@ -300,6 +303,49 @@
       <div class="m-head"><span class="m-ico">🎵</span><h2>배경음악</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
       <p class="modal-desc">듣고 싶은 음악을 골라요. 크리스마스 캐럴과 잔잔한 클래식이 있어요.</p>
       <div class="music-list" id="musicList"></div>
+    </div>
+  </div>
+
+  <!-- ===== 계절 · 시간 ===== -->
+  <div class="modal-backdrop" id="seasonModal" hidden>
+    <div class="modal" data-theme="sky">
+      <div class="m-head"><span class="m-ico">🍃</span><h2>숲의 계절과 시간</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
+      <p class="modal-desc">숲을 어떤 계절로 볼까요?</p>
+      <div class="season-grid" id="seasonGrid"></div>
+      <p class="modal-desc" style="margin-top:14px">하루 중 시간도 골라요.</p>
+      <div class="season-grid time" id="timeGrid"></div>
+      <button class="chip-btn" id="timeAutoBtn" style="margin-top:12px">🕐 지금 시각에 맞추기</button>
+    </div>
+  </div>
+
+  <!-- ===== 생각 나눔터 ===== -->
+  <div class="modal-backdrop" id="thoughtsModal" hidden>
+    <div class="modal modal-board modal-links" data-theme="mint">
+      <div class="m-head"><span class="m-ico">💬</span><h2>생각 나눔터</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
+      <p class="modal-desc">마음속 생각을 자유롭게 나눠요. 함께 보고 싶은 링크도 올릴 수 있어요.</p>
+      <div class="links-top" style="justify-content:flex-end">
+        <button class="btn-primary" id="openThoughtWrite">＋ 생각 올리기</button>
+      </div>
+      <div class="link-list" id="thoughtList"></div>
+      <div class="modal-foot"><span class="counter" id="thoughtsCount"></span><span class="counter">올리면 🪙5 · 불편한 글은 🚩</span></div>
+    </div>
+  </div>
+
+  <!-- ===== 생각 올리기 ===== -->
+  <div class="modal-backdrop" id="thoughtFormModal" hidden>
+    <div class="modal" data-theme="mint">
+      <div class="m-head"><span class="m-ico">✏️</span><h2>생각 올리기</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
+      <div class="kind-words">🌿 <b>고운 말, 바른 말</b>로 나눠요. 내가 한 말과 행동은 다시 나에게 돌아와요.</div>
+      <label class="form-label">나누고 싶은 생각</label>
+      <textarea id="thoughtInput" maxlength="160" rows="3" placeholder="예) 친구가 힘들어 보일 때 먼저 말을 걸어 주면 좋겠어요"></textarea>
+      <label class="form-label">함께 볼 링크 <small>(없으면 비워 둬요)</small></label>
+      <input id="thoughtUrl" class="form-input" type="url" inputmode="url" placeholder="https://... (선택)" />
+      <p class="write-rule">친구를 놀리거나 이름·연락처가 담긴 글은 올리지 않아요. 올린 생각은 별명과 함께 모두에게 보여요.</p>
+      <div class="modal-foot">
+        <span class="counter" id="thoughtCharCount">0 / 160</span>
+        <div class="modal-actions"><button class="btn-ghost" id="thoughtCancel">닫기</button><button class="btn-primary" id="thoughtSubmit">나누기</button></div>
+      </div>
+      <p class="modal-msg" id="thoughtMsg"></p>
     </div>
   </div>
 
@@ -350,10 +396,10 @@
     <p>마음을 올리는 중…</p>
   </div>
 
-  <script src="js/config.js?v=7"></script>
-  <script src="js/badwords.js?v=7"></script>
-  <script src="js/art.js?v=7"></script>
-  <script src="js/quotes.js?v=7"></script>
-  <script src="js/app.js?v=7"></script>
+  <script src="js/config.js?v=8"></script>
+  <script src="js/badwords.js?v=8"></script>
+  <script src="js/art.js?v=8"></script>
+  <script src="js/quotes.js?v=8"></script>
+  <script src="js/app.js?v=8"></script>
 </body>
 </html>

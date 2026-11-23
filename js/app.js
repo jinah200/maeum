@@ -26,23 +26,24 @@
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
 
   /* ===================== 상수 ===================== */
-  const W = 5760, SPEED = 250, DSPEED = 0.85, NEAR = 130, STAR_AT = 5;
+  const W = 6040, SPEED = 250, DSPEED = 0.85, NEAR = 130, STAR_AT = 5;
   const KIND_HOPE = '바람', KIND_LETGO = '내려놓기';
   const ADJ = ['느린', '따뜻한', '조용한', '포근한', '맑은', '다정한', '싱그러운', '잔잔한', '반짝이는', '수줍은', '너그러운', '차분한', '말랑한', '산뜻한', '고요한', '부드러운'];
   const NOUN = ['걸음', '바람', '새벽', '구름', '오솔길', '햇살', '이슬', '나뭇잎', '달빛', '시냇물', '솔방울', '민들레', '별빛', '도토리', '꽃잎', '숲길'];
   const EMO = ['', '👋', '💚', '😊', '🙏', '🙌'];
   const ZONES = [
     { id: 'plaza', x: 360, name: '쉼터 광장', short: '광장', icon: '🪧', tint: '#f4e7cf' },
-    { id: 'shop', x: 840, name: '숲속 가게', short: '가게', icon: '🏪', tint: '#d6efe4' },
-    { id: 'links', x: 1340, name: '링크 나눔터', short: '나눔터', icon: '🎁', tint: '#fbdcd9', big: true },
-    { id: 'tree', x: 1880, name: '숨 쉬는 나무', short: '숨 고르기', icon: '🌳', tint: '#ddeed0' },
-    { id: 'spring', x: 2360, name: '마음 구슬 샘', short: '마음 구슬', icon: '🫧', tint: '#dbecf5' },
-    { id: 'lantern', x: 2840, name: '염원 등불터', short: '염원', icon: '🏮', tint: '#fbe6c4' },
-    { id: 'garden', x: 3380, name: '함께 꽃밭', short: '꽃밭', icon: '🌷', tint: '#fadde4' },
-    { id: 'pond', x: 3920, name: '마음 날씨 연못', short: '마음 날씨', icon: '🪷', tint: '#d6edf2' },
-    { id: 'rain', x: 4400, name: '빗소리 정자', short: '빗소리', icon: '☔', tint: '#dfe7ec' },
-    { id: 'stair', x: 4880, name: '명언 계단', short: '명언 계단', icon: '🪜', tint: '#f1e4cc' },
-    { id: 'hill', x: 5380, name: '별빛 언덕', short: '별빛 언덕', icon: '⭐', tint: '#e6def5' },
+    { id: 'shop', x: 820, name: '숲속 가게', short: '가게', icon: '🏪', tint: '#d6efe4' },
+    { id: 'links', x: 1300, name: '링크 나눔터', short: '링크', icon: '🎁', tint: '#fbdcd9', big: true },
+    { id: 'thoughts', x: 1760, name: '생각 나눔터', short: '생각', icon: '💬', tint: '#d7f0e4', big: true },
+    { id: 'tree', x: 2240, name: '숨 쉬는 나무', short: '숨 고르기', icon: '🌳', tint: '#ddeed0' },
+    { id: 'spring', x: 2700, name: '마음 구슬 샘', short: '마음 구슬', icon: '🫧', tint: '#dbecf5' },
+    { id: 'lantern', x: 3180, name: '염원 등불터', short: '염원', icon: '🏮', tint: '#fbe6c4' },
+    { id: 'garden', x: 3700, name: '함께 꽃밭', short: '꽃밭', icon: '🌷', tint: '#fadde4' },
+    { id: 'pond', x: 4200, name: '마음 날씨 연못', short: '마음 날씨', icon: '🪷', tint: '#d6edf2' },
+    { id: 'rain', x: 4680, name: '빗소리 정자', short: '빗소리', icon: '☔', tint: '#dfe7ec' },
+    { id: 'stair', x: 5160, name: '명언 계단', short: '명언 계단', icon: '🪜', tint: '#f1e4cc' },
+    { id: 'hill', x: 5660, name: '별빛 언덕', short: '별빛 언덕', icon: '⭐', tint: '#e6def5' },
   ];
   const zoneById = (id) => ZONES.find((z) => z.id === id);
   const PURPOSES = ['수업용', '일상 상식', '음악', '기타'];
@@ -235,18 +236,6 @@
     for (let i = 0; i < 5; i++) {
       const e = el('div', 'xsnow', A.SNOWMAN);
       decorEl.appendChild(e); decor.push({ el: e, x: rand(100, W - 100), d: rand(0.1, 0.8) });
-    }
-    // 눈 내리기
-    const snow = $('snow');
-    for (let i = 0; i < 46; i++) {
-      const f = el('div', 'flake', Math.random() < 0.5 ? '❄' : '•');
-      f.style.left = rand(0, 100) + '%';
-      f.style.fontSize = rand(8, 18).toFixed(0) + 'px';
-      f.style.setProperty('--sdur', rand(7, 16).toFixed(1) + 's');
-      f.style.setProperty('--sdrift', rand(-40, 40).toFixed(0) + 'px');
-      f.style.animationDelay = (-rand(0, 16)).toFixed(1) + 's';
-      f.style.opacity = rand(0.4, 0.95).toFixed(2);
-      snow.appendChild(f);
     }
     ZONES.forEach((z) => {
       const art = A.LM[z.id];
@@ -599,19 +588,19 @@
   }
 
   /* ===================== 상태 ===================== */
-  const state = { wishes: [], stars: { count: 0, recent: [] }, flowers: [], mood: [0, 0, 0, 0, 0, 0], links: [] };
+  const state = { wishes: [], stars: { count: 0, recent: [] }, flowers: [], mood: [0, 0, 0, 0, 0, 0], links: [], thoughts: [] };
   const seen = new Set();
   // 방금 내가 올렸는데 아직 서버 목록에 안 뜬 염원 (사라짐 방지)
   const myRecent = new Map();
+  const seenByServer = new Set(); // 서버가 한 번이라도 돌려준 염원 id
   function rememberMine(w) { if (w && w.id) myRecent.set(w.id, { w: w, t: Date.now() }); }
   function mergeMyRecent() {
     const now = Date.now();
+    const rep = reported();
     myRecent.forEach((v, id) => {
-      if (now - v.t > 90000) { myRecent.delete(id); return; }
-      const rep = reported();
-      if (rep[id]) { myRecent.delete(id); return; }
-      // 이미 별이 됐거나 목록에 있으면 그대로, 없으면 다시 끼워 넣기
-      if (state.stars.recent.some((s) => s.text === v.w.text)) { myRecent.delete(id); return; }
+      // 서버가 이미 아는 글이면(목록에 있었든, 숨김/별이 됐든) 서버 말을 따름
+      if (seenByServer.has(id) || rep[id] || now - v.t > 90000) { myRecent.delete(id); return; }
+      // 아직 서버 목록에 안 나타난 '막 올린' 글만 잠깐 끼워 넣어요
       if (!state.wishes.some((x) => x.id === id)) state.wishes.unshift(v.w);
     });
   }
@@ -627,7 +616,11 @@
     return { id: String(l.id || ''), url: String(l.url), purpose: clamp(l.purpose | 0, 0, 3),
       level: Number.isInteger(l.level) && l.level >= 0 ? l.level : -1,
       subject: Number.isInteger(l.subject) && l.subject >= 0 ? l.subject : -1,
-      topic: String(l.topic || ''), at: Number(l.at) || 0 };
+      topic: String(l.topic || ''), nick: String(l.nick || ''), at: Number(l.at) || 0 };
+  }
+  function normThought(tt) {
+    if (!tt || !tt.text) return null;
+    return { id: String(tt.id || ''), text: String(tt.text), url: String(tt.url || ''), nick: String(tt.nick || ''), at: Number(tt.at) || 0 };
   }
   function loadLocal() {
     let L = store.get('ms_local', null);
@@ -641,9 +634,10 @@
     state.flowers = (L.flowers || []).map(normFlower);
     state.mood = L.mood && L.mood.day === today() ? L.mood.c : [0, 0, 0, 0, 0, 0];
     state.links = (L.links || []).map(normLink).filter(Boolean);
+    state.thoughts = (L.thoughts || []).map(normThought).filter(Boolean);
   }
   function saveLocal() {
-    store.set('ms_local', { wishes: state.wishes.slice(0, 60), stars: state.stars, flowers: state.flowers.slice(-220), mood: { day: today(), c: state.mood }, links: state.links.slice(0, 60) });
+    store.set('ms_local', { wishes: state.wishes.slice(0, 60), stars: state.stars, flowers: state.flowers.slice(-220), mood: { day: today(), c: state.mood }, links: state.links.slice(0, 60), thoughts: state.thoughts.slice(0, 60) });
   }
   const reported = () => store.get('ms_reported', {}) || {};
   async function refreshState(first) {
@@ -659,13 +653,14 @@
       const rep = reported();
       const ws = (d.wishes || []).map(normWish).filter((w) => w.text && !rep[w.id]);
       const fresh = first ? [] : ws.filter((w) => w.id && !seen.has(w.id));
-      ws.forEach((w) => { if (w.id) seen.add(w.id); });
+      ws.forEach((w) => { if (w.id) { seen.add(w.id); seenByServer.add(w.id); } });
       state.wishes = ws;
       const st = d.stars || {};
       state.stars = { count: Number(st.count) || 0, recent: (st.recent || []).map((s) => ({ text: String(s.text || ''), kind: normKind(s.kind) })) };
       if (Array.isArray(d.flowers)) state.flowers = d.flowers.map(normFlower);
       if (Array.isArray(d.mood)) state.mood = d.mood.slice(0, 6).map((n) => Number(n) || 0);
       if (Array.isArray(d.links)) state.links = d.links.map(normLink).filter((x) => x && !rep[x.id]);
+      if (Array.isArray(d.thoughts)) state.thoughts = d.thoughts.map(normThought).filter((x) => x && !rep[x.id]);
       visitsToday = Number(d.visitsToday) || visitsToday;
       mergeMyRecent();
       if (first) ws.slice(0, 8).reverse().forEach((w, i) => setTimeout(() => floatLantern(w.text, w.kind), 600 + i * 1300));
@@ -683,6 +678,7 @@
     if (!$('gardenModal').hidden) renderGarden();
     if (!$('pondModal').hidden) renderMoodToday();
     if (!$('linksModal').hidden) renderLinks();
+    if (!$('thoughtsModal').hidden) renderThoughts();
   }
   function renderBadge() {
     const parts = [];
@@ -694,6 +690,7 @@
     const set = (id, t) => { const e = $('sub-' + id); if (e) e.textContent = t; };
     set('plaza', '안내'); set('shop', '🪙 ' + wallet.coins);
     set('links', state.links.length ? state.links.length + '개 링크' : '링크 나눔');
+    set('thoughts', state.thoughts.length ? state.thoughts.length + '개 생각' : '생각 나눔');
     set('tree', breaths + '번 숨'); set('spring', beadTotal + '알');
     set('lantern', state.wishes.length ? state.wishes.length + '개 마음' : '함께 보기');
     set('garden', state.flowers.length + '송이'); set('pond', moodPicked() !== null ? MOODS[moodPicked()].ico + ' 오늘' : '오늘 날씨');
@@ -758,7 +755,7 @@
   let santaTimer = null;
   function flySanta() {
     const layer = $('santaLayer');
-    if (!layer) return;
+    if (!layer || season !== 'winter') return;
     const e = el('div', 'santa', A.SANTA);
     const dir = Math.random() < 0.5 ? 1 : -1;
     e.classList.add(dir > 0 ? 'to-right' : 'to-left');
@@ -803,8 +800,8 @@
   }
 
   /* ===================== 모달 ===================== */
-  const MODALS = ['introModal', 'guideModal', 'breathModal', 'beadsModal', 'boardModal', 'wishModal', 'starsModal', 'shopModal', 'gardenModal', 'pondModal', 'rainModal', 'walletModal', 'bookModal', 'mapModal', 'linksModal', 'linkFormModal', 'musicModal'];
-  const ZONE_OF_MODAL = { guideModal: 'plaza', breathModal: 'tree', beadsModal: 'spring', boardModal: 'lantern', starsModal: 'hill', shopModal: 'shop', gardenModal: 'garden', pondModal: 'pond', rainModal: 'rain', linksModal: 'links' };
+  const MODALS = ['introModal', 'guideModal', 'breathModal', 'beadsModal', 'boardModal', 'wishModal', 'starsModal', 'shopModal', 'gardenModal', 'pondModal', 'rainModal', 'walletModal', 'bookModal', 'mapModal', 'linksModal', 'linkFormModal', 'musicModal', 'seasonModal', 'thoughtsModal', 'thoughtFormModal'];
+  const ZONE_OF_MODAL = { guideModal: 'plaza', breathModal: 'tree', beadsModal: 'spring', boardModal: 'lantern', starsModal: 'hill', shopModal: 'shop', gardenModal: 'garden', pondModal: 'pond', rainModal: 'rain', linksModal: 'links', thoughtsModal: 'thoughts' };
   const modalOpen = () => MODALS.some((id) => !$(id).hidden) || !$('ritual').hidden || !$('loading').hidden || !$('stairGame').hidden;
   const isTyping = () => { const a = document.activeElement; return !!a && (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT'); };
   function openModal(id) { $(id).hidden = false; }
@@ -851,6 +848,7 @@
     else if (id === 'rain') openModal('rainModal');
     else if (id === 'stair') openStair();
     else if (id === 'links') openLinks();
+    else if (id === 'thoughts') openThoughts();
   }
   function goTo(id, enter) {
     const z = zoneById(id); if (!z) return;
@@ -933,15 +931,7 @@
     timeIdx = i;
     TIMES.forEach((t) => document.body.classList.remove(t[0]));
     document.body.classList.add(TIMES[i][0]);
-    $('timeBtn').textContent = TIMES[i][1];
-    $('timeBtn').title = '숲의 시간: ' + TIMES[i][2];
   }
-  $('timeBtn').addEventListener('click', (e) => {
-    e.currentTarget.blur();
-    timeAuto = false;
-    applyTime((timeIdx + 1) % TIMES.length);
-    toast('숲의 시간: ' + TIMES[timeIdx][2], 1600);
-  });
 
   /* ===================== 매 프레임 ===================== */
   let nearZone = null, nearPerson = null, lastT = performance.now();
@@ -1284,7 +1274,8 @@
       $('boardCount').textContent = state.wishes.length ? '떠 있는 마음 ' + state.wishes.length + '개' : '';
     } else {
       if (!mine.length) list.appendChild(emptyEl('아직 올린 마음이 없어요.<br>[＋ 마음 올리기]를 눌러 보세요.'));
-      mine.forEach((m) => list.appendChild(mineCard(m, state.wishes.find((w) => w.id && w.id === m.id))));
+      // 숨김·검토중·별은 상태 카드로 (아직 새로고침 전이라 목록에 남아 있어도 상태를 먼저 따름)
+      mine.forEach((m) => list.appendChild(mineCard(m, (!m.status || m.status === 'public') ? state.wishes.find((w) => w.id && w.id === m.id) : null)));
       $('boardCount').textContent = mine.length ? '내가 올린 마음 ' + mine.length + '개' : '';
     }
   }
@@ -1635,7 +1626,7 @@
       head.innerHTML = `<span class="lc-tag">${purposeTag(l)}</span>`;
       const topic = el('a', 'lc-topic'); topic.href = l.url; topic.target = '_blank'; topic.rel = 'noopener noreferrer';
       topic.textContent = l.topic || hostOf(l.url);
-      const host = el('div', 'lc-host'); host.textContent = '🔗 ' + hostOf(l.url);
+      const host = el('div', 'lc-host'); host.textContent = '🔗 ' + hostOf(l.url) + (l.nick ? '  ·  🙂 ' + l.nick : '');
       const foot = el('div', 'lc-foot');
       const go = el('a', 'lc-go'); go.href = l.url; go.target = '_blank'; go.rel = 'noopener noreferrer'; go.textContent = '열어 보기 ↗';
       foot.appendChild(go);
@@ -1696,7 +1687,8 @@
     const chk = window.Filter ? window.Filter.check(topic) : { ok: true };
     if (!chk.ok) return setMsg(/따뜻한/.test(chk.reason) ? '주제에 쓸 수 없는 말이 있어요.' : chk.reason, 'err');
     $('linkSubmit').disabled = true;
-    const payload = { url, purpose: linkForm.purpose, topic, level: linkForm.level, subject: linkForm.subject };
+    const pf = profile || { a: 0, b: 0 };
+    const payload = { url, purpose: linkForm.purpose, topic, level: linkForm.level, subject: linkForm.subject, na: pf.a, nb: pf.b };
     try {
       let r;
       if (sheetMode) {
@@ -1706,7 +1698,7 @@
         r = { ok: true, id: 'L' + Date.now() };
       }
       if (!r || !r.ok) return setMsg(r && r.reason || '올리지 못했어요.', 'err');
-      const link = normLink({ id: r.id || ('L' + Date.now()), url, purpose: linkForm.purpose, topic,
+      const link = normLink({ id: r.id || ('L' + Date.now()), url, purpose: linkForm.purpose, topic, nick: nameOf(pf),
         level: linkForm.purpose === 0 ? linkForm.level : -1, subject: linkForm.purpose === 0 ? linkForm.subject : -1, at: Date.now() });
       if (!r.pending) state.links.unshift(link);
       const mine = store.get('ms_mylinks', []) || []; mine.unshift(link.id); store.set('ms_mylinks', mine.slice(0, 50));
@@ -1720,6 +1712,136 @@
   $('openLinkWrite').addEventListener('click', openLinkForm);
   $('linkCancel').addEventListener('click', () => closeModal('linkFormModal'));
   $('linkSubmit').addEventListener('click', submitLink);
+
+  /* ===================== 생각 나눔터 ===================== */
+  function openThoughts() { renderThoughts(); openModal('thoughtsModal'); if (sheetMode) refreshState(false); }
+  function renderThoughts() {
+    const list = $('thoughtList'); list.textContent = '';
+    const myT = store.get('ms_mythoughts', []) || [];
+    const repd = reported();
+    if (!state.thoughts.length) list.appendChild(emptyEl('아직 나눈 생각이 없어요.<br>[＋ 생각 올리기]로 마음속 생각을 나눠 주세요.'));
+    state.thoughts.forEach((tt) => {
+      const c = el('div', 'tcard');
+      const txt = el('div', 'tc-text'); txt.textContent = tt.text;
+      c.appendChild(txt);
+      if (tt.url) {
+        const go = el('a', 'tc-link'); go.href = tt.url; go.target = '_blank'; go.rel = 'noopener noreferrer';
+        go.textContent = '🔗 ' + hostOf(tt.url) + ' 열기 ↗';
+        c.appendChild(go);
+      }
+      const foot = el('div', 'tc-foot');
+      const who = el('span', 'tc-who'); who.textContent = '🙂 ' + (tt.nick || '숲 친구');
+      foot.appendChild(who);
+      if (tt.id && sheetMode && myT.indexOf(tt.id) < 0 && !repd[tt.id]) {
+        const flag = el('button', 'lc-flag', '🚩'); flag.type = 'button'; flag.title = '부적절한 글 알리기';
+        flag.addEventListener('click', () => reportThought(tt, c)); foot.appendChild(flag);
+      }
+      c.appendChild(foot);
+      list.appendChild(c);
+    });
+    $('thoughtsCount').textContent = state.thoughts.length ? '함께 나눈 생각 ' + state.thoughts.length + '개' : '';
+  }
+  async function reportThought(tt) {
+    const rep = reported(); rep[tt.id] = Date.now(); store.set('ms_reported', rep);
+    state.thoughts = state.thoughts.filter((x) => x.id !== tt.id);
+    renderThoughts(); renderDockSubs();
+    toast('알려 줘서 고마워요. 세 명이 알리면 그 글은 가려져요.', 3200);
+    try { await sheetPost({ type: 'thoughtreport', id: tt.id, sessionId: sid }); } catch (e) { /* */ }
+  }
+  function openThoughtForm() {
+    $('thoughtInput').value = ''; $('thoughtUrl').value = '';
+    $('thoughtCharCount').textContent = '0 / 160';
+    $('thoughtMsg').textContent = ''; $('thoughtMsg').className = 'modal-msg';
+    openModal('thoughtFormModal');
+    setTimeout(() => $('thoughtInput').focus(), 60);
+  }
+  $('thoughtInput').addEventListener('input', () => { $('thoughtCharCount').textContent = $('thoughtInput').value.length + ' / 160'; });
+  async function submitThought() {
+    const text = $('thoughtInput').value.trim();
+    const url = $('thoughtUrl').value.trim();
+    const setMsg = (t, k) => { $('thoughtMsg').textContent = t; $('thoughtMsg').className = 'modal-msg ' + (k || ''); };
+    if (!text) return setMsg('나누고 싶은 생각을 적어 주세요.', 'err');
+    if (text.length > 160) return setMsg('160자 이내로 적어 주세요.', 'err');
+    const chk = window.Filter ? window.Filter.check(text.slice(0, 100)) : { ok: true };
+    if (!chk.ok && /따뜻한/.test(chk.reason)) return setMsg('고운 말로 다시 적어 주세요. 내 말은 나에게 돌아와요.', 'err');
+    if (url && !/^https?:\/\/[^\s]+\.[^\s]+$/i.test(url)) return setMsg('링크는 http로 시작하는 올바른 주소만 넣어 주세요.', 'err');
+    const pf = profile || { a: 0, b: 0 };
+    $('thoughtSubmit').disabled = true;
+    try {
+      let r;
+      if (sheetMode) {
+        try { r = await sheetPost({ type: 'thought', sessionId: sid, content: text, url, na: pf.a, nb: pf.b }); }
+        catch (e) { r = { ok: false, reason: '연결이 원활하지 않아요. 잠시 뒤 다시 시도해 주세요.' }; }
+      } else r = { ok: true, id: 'T' + Date.now() };
+      if (!r || !r.ok) return setMsg(r && r.reason || '올리지 못했어요.', 'err');
+      const th = normThought({ id: r.id || ('T' + Date.now()), text, url, nick: nameOf(pf), at: Date.now() });
+      if (!r.pending) state.thoughts.unshift(th);
+      const mine = store.get('ms_mythoughts', []) || []; mine.unshift(th.id); store.set('ms_mythoughts', mine.slice(0, 50));
+      if (!sheetMode) saveLocal();
+      closeModal('thoughtFormModal');
+      renderThoughts(); renderDockSubs();
+      earn('wish');
+      toast(r.pending ? '올렸어요. 선생님이 확인하면 보여요.' : '💬 생각을 나눔터에 올렸어요. 고마워요!');
+    } finally { $('thoughtSubmit').disabled = false; }
+  }
+  $('openThoughtWrite').addEventListener('click', openThoughtForm);
+  $('thoughtCancel').addEventListener('click', () => closeModal('thoughtFormModal'));
+  $('thoughtSubmit').addEventListener('click', submitThought);
+
+  /* ===================== 계절 ===================== */
+  const SEASONS = [
+    { id: 'winter', name: '겨울', ico: '❄️', flake: ['❄', '❅', '•'] },
+    { id: 'spring', name: '봄', ico: '🌸', flake: ['🌸', '❀', '·'] },
+    { id: 'summer', name: '여름', ico: '🌿', flake: ['✦', '·'] },
+    { id: 'autumn', name: '가을', ico: '🍂', flake: ['🍂', '🍁', '·'] },
+  ];
+  let season = store.get('ms_season', 'winter') || 'winter';
+  function buildWeather() {
+    const snow = $('snow'); snow.textContent = '';
+    const s = SEASONS.find((x) => x.id === season) || SEASONS[0];
+    if (season === 'summer') return; // 여름은 깨끗한 하늘
+    const n = season === 'winter' ? 46 : 30;
+    for (let i = 0; i < n; i++) {
+      const g = s.flake[randInt(s.flake.length)];
+      const f = el('div', 'flake' + (g.length > 1 ? ' big-glyph' : ''), g);
+      f.style.left = rand(0, 100) + '%';
+      f.style.fontSize = (g.length > 1 ? rand(11, 20) : rand(8, 16)).toFixed(0) + 'px';
+      f.style.setProperty('--sdur', rand(season === 'winter' ? 7 : 9, season === 'winter' ? 16 : 20).toFixed(1) + 's');
+      f.style.setProperty('--sdrift', rand(-40, 40).toFixed(0) + 'px');
+      f.style.animationDelay = (-rand(0, 18)).toFixed(1) + 's';
+      f.style.opacity = rand(0.45, 0.95).toFixed(2);
+      snow.appendChild(f);
+    }
+  }
+  function applySeason(id) {
+    season = id; store.set('ms_season', id);
+    SEASONS.forEach((s) => document.body.classList.remove('se-' + s.id));
+    document.body.classList.add('se-' + id);
+    document.body.classList.toggle('xmas', id === 'winter');
+    buildWeather();
+    $('seasonBtn').textContent = (SEASONS.find((s) => s.id === id) || SEASONS[0]).ico;
+  }
+  function openSeason() {
+    const grid = $('seasonGrid'); grid.textContent = '';
+    SEASONS.forEach((s) => {
+      const b = el('button', 'season-opt' + (s.id === season ? ' on' : ''), `<span class="so-ico">${s.ico}</span><span class="so-name">${s.name}</span>`);
+      b.type = 'button';
+      b.addEventListener('click', () => { applySeason(s.id); openSeason(); });
+      grid.appendChild(b);
+    });
+    const tg = $('timeGrid'); tg.textContent = '';
+    TIMES.forEach((t, i) => {
+      const b = el('button', 'season-opt' + (i === timeIdx && !timeAuto ? ' on' : '') + (timeAuto ? '' : ''), `<span class="so-ico">${t[1]}</span><span class="so-name">${t[2]}</span>`);
+      b.type = 'button';
+      b.addEventListener('click', () => { timeAuto = false; applyTime(i); openSeason(); });
+      tg.appendChild(b);
+    });
+    const auto = $('timeAutoBtn');
+    auto.classList.toggle('on', timeAuto);
+    openModal('seasonModal');
+  }
+  $('seasonBtn').addEventListener('click', (e) => { e.currentTarget.blur(); openSeason(); });
+  $('timeAutoBtn').addEventListener('click', () => { timeAuto = true; applyTime(autoTime()); openSeason(); });
 
   /* ===================== 마음 날씨 연못 ===================== */
   const MOODS = [
@@ -1978,7 +2100,7 @@
   }
 
   /* ===================== 숲 지도 ===================== */
-  const MAP_PTS = { plaza: [50, 302], shop: [60, 240], links: [120, 198], tree: [104, 128], spring: [184, 100], lantern: [258, 120], garden: [300, 182], pond: [230, 244], rain: [330, 266], stair: [376, 182], hill: [404, 92] };
+  const MAP_PTS = { plaza: [48, 304], shop: [56, 244], links: [110, 206], thoughts: [150, 150], tree: [104, 118], spring: [182, 96], lantern: [256, 116], garden: [300, 176], pond: [232, 238], rain: [332, 262], stair: [378, 180], hill: [406, 92] };
   function mapXY(x) {
     if (x <= ZONES[0].x) return MAP_PTS[ZONES[0].id];
     for (let i = 0; i < ZONES.length - 1; i++) {
@@ -2098,8 +2220,8 @@
   /* ===================== 시작 ===================== */
   function start() {
     rollDay();
-    document.body.classList.add('xmas');
     applyTime(autoTime());
+    applySeason(season);
     setInterval(() => { if (timeAuto) { const t = autoTime(); if (t !== timeIdx) applyTime(t); } }, 300000);
     measure();
     buildScene();
@@ -2140,7 +2262,7 @@
     setInterval(() => { if (!document.hidden) refreshState(false); }, 20000);
 
     // 시험용 창(개발자가 확인할 때만 사용)
-    window.__ms = { me, others, state, wallet, critters, sg, goTo, enterZone, keys, earn, climb, sendEmote, applyTime, openLinks, openMusic, chooseMusic, flySanta, submitLink, linkForm, refreshState, renderBoard, get musicChoice() { return musicChoice; }, get cam() { return cam; }, get myKey() { return myKey; }, get nearPerson() { return nearPerson; } };
+    window.__ms = { me, others, state, wallet, critters, sg, goTo, enterZone, keys, earn, climb, sendEmote, applyTime, applySeason, openLinks, openThoughts, openMusic, openSeason, chooseMusic, flySanta, submitLink, submitThought, linkForm, refreshState, renderBoard, get season() { return season; }, get musicChoice() { return musicChoice; }, get cam() { return cam; }, get myKey() { return myKey; }, get nearPerson() { return nearPerson; } };
   }
   start();
 })();

@@ -329,6 +329,17 @@
       <g fill="#fff6e9"><circle cx="24" cy="52" r="5"/><circle cx="196" cy="52" r="5"/></g>
       <rect x="66" y="156" width="88" height="22" rx="8" fill="#cf3c3c"/>
       <text x="110" y="172" text-anchor="middle" font-size="14" font-family="Jua, sans-serif" fill="#fff">나눔터</text>` },
+    thoughts: { w: 210, vb: [210, 196], svg: `
+      <ellipse cx="105" cy="188" rx="90" ry="8" fill="rgba(60,90,60,.18)"/>
+      <rect x="40" y="92" width="11" height="96" rx="4" fill="#9a6e4a"/><rect x="159" y="92" width="11" height="96" rx="4" fill="#9a6e4a"/>
+      <g class="lglow"><ellipse cx="105" cy="46" rx="92" ry="28" fill="#dff1e6" opacity=".5"/></g>
+      <rect x="26" y="54" width="158" height="96" rx="16" fill="#f3fbf5" stroke="#6fb59a" stroke-width="4"/>
+      <path d="M58 150 L74 150 L62 170 Z" fill="#f3fbf5" stroke="#6fb59a" stroke-width="4"/>
+      <g><rect x="42" y="72" width="80" height="10" rx="5" fill="#bfe3d4"/><rect x="42" y="90" width="126" height="9" rx="4" fill="#d5ecE2"/><rect x="42" y="106" width="104" height="9" rx="4" fill="#d5ece2"/><rect x="42" y="122" width="70" height="9" rx="4" fill="#bfe3d4"/></g>
+      <g transform="translate(150 70)"><path d="M0 0 Q22 0 22 15 Q22 30 10 30 L8 38 L2 30 Q0 28 0 22 Z" fill="#7cc4a8"/><circle cx="7" cy="15" r="2" fill="#fff"/><circle cx="14" cy="15" r="2" fill="#fff"/></g>
+      <rect x="66" y="40" width="78" height="22" rx="8" fill="#5aa585"/>
+      <text x="105" y="56" text-anchor="middle" font-size="13" font-family="Jua, sans-serif" fill="#fff">생각 나눔터</text>
+      <g fill="#f3fbf5"><circle cx="26" cy="54" r="5"/><circle cx="184" cy="54" r="5"/></g>` },
     tree: { w: 250, vb: [240, 260], svg: `
       <ellipse cx="120" cy="252" rx="96" ry="9" fill="rgba(60,90,60,.2)"/>
       <path d="M104 252 Q112 192 100 148 L140 148 Q128 192 138 252 Z" fill="#8c6548"/>

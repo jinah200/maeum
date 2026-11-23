@@ -1,6 +1,6 @@
 /**
  * ============================================================
- *  온라인 마음쉼터 — Google Apps Script 백엔드 v4 (크리스마스)
+ *  온라인 마음쉼터 — Google Apps Script 백엔드 v5 (겨울·생각 나눔터)
  *  (구글 시트가 '염원 저장소'이자 '교사 관리 화면'이 됩니다)
  *
  *  v3에서 달라진 점
@@ -11,7 +11,8 @@
  *     되살리려면 상태를 '공개'로, 신고 칸을 0으로 바꾸세요.
  *   - [꽃밭] 시트: 동전으로 심은 꽃 (모두에게 보여요)
  *   - [마음날씨] 시트: 하루 한 번 고르는 오늘의 마음 날씨
- *   - [링크] 시트: 함께 나누고 싶은 링크 (목적·학교급·과목·주제와 함께)
+ *   - [링크] 시트: 함께 나누고 싶은 링크 (목적·학교급·과목·주제·작성자 별명)
+ *   - [생각] 시트: 자유롭게 나누는 생각 (링크도 함께, 작성자 별명)
  *   - 함께 접속한 사람: 모습·장식·동물 친구·인사·하이파이브를 주고받습니다
  *     (모두 정해진 목록의 '번호'로만 오가서 글자가 끼어들 수 없습니다)
  *
@@ -25,7 +26,8 @@
  *   [방문] 방문시각 | 세션ID
  *   [꽃밭] 심은시각 | 누가 | 꽃 | x | y
  *   [마음날씨] 시각 | 누가 | 날씨
- *   [링크] 시각 | 주소 | 목적 | 학교급 | 과목 | 주제 | 상태 | 세션ID | ID | 신고 | 신고자
+ *   [링크] 시각 | 주소 | 목적 | 학교급 | 과목 | 주제 | 상태 | 세션ID | ID | 신고 | 신고자 | 별명
+ *   [생각] 시각 | 내용 | 링크 | 상태 | 세션ID | 별명 | ID | 신고 | 신고자
  *   상태: 공개 / 검토중 / 숨김 / 차단  — 화면에는 '공개'만 보입니다.
  *   선생님이 글을 내리고 싶으면 상태를 '숨김'으로 바꾸면 됩니다.
  *
@@ -41,12 +43,20 @@ const VISIT_SHEET = '방문';
 const FLOWER_SHEET = '꽃밭';
 const MOOD_SHEET = '마음날씨';
 const LINK_SHEET = '링크';
+const THINK_SHEET = '생각';
 const WISH_HEADERS = ['작성시각', '내용', '상태', '세션ID', '메모', 'ID', '종류', '공감', '해소', '신고', '신고자'];
 const VISIT_HEADERS = ['방문시각', '세션ID'];
 const FLOWER_HEADERS = ['심은시각', '누가', '꽃', 'x', 'y'];
 const MOOD_HEADERS = ['시각', '누가', '날씨'];
-const LINK_HEADERS = ['시각', '주소', '목적', '학교급', '과목', '주제', '상태', '세션ID', 'ID', '신고', '신고자'];
-const LCOL = { AT: 1, URL: 2, PURP: 3, LEVEL: 4, SUBJ: 5, TOPIC: 6, STATUS: 7, SID: 8, ID: 9, REP: 10, REPBY: 11 };
+const LINK_HEADERS = ['시각', '주소', '목적', '학교급', '과목', '주제', '상태', '세션ID', 'ID', '신고', '신고자', '별명'];
+const LCOL = { AT: 1, URL: 2, PURP: 3, LEVEL: 4, SUBJ: 5, TOPIC: 6, STATUS: 7, SID: 8, ID: 9, REP: 10, REPBY: 11, NICK: 12 };
+const THINK_HEADERS = ['시각', '내용', '링크', '상태', '세션ID', '별명', 'ID', '신고', '신고자'];
+const TCOL = { AT: 1, TEXT: 2, URL: 3, STATUS: 4, SID: 5, NICK: 6, ID: 7, REP: 8, REPBY: 9 };
+const THINK_MAX = 160;         // 생각 최대 글자
+const THINK_PER_DAY = 15;
+// 별명 낱말(화면 app.js 의 ADJ·NOUN 과 같은 순서예요)
+const ADJ_WORDS = ['느린', '따뜻한', '조용한', '포근한', '맑은', '다정한', '싱그러운', '잔잔한', '반짝이는', '수줍은', '너그러운', '차분한', '말랑한', '산뜻한', '고요한', '부드러운'];
+const NOUN_WORDS = ['걸음', '바람', '새벽', '구름', '오솔길', '햇살', '이슬', '나뭇잎', '달빛', '시냇물', '솔방울', '민들레', '별빛', '도토리', '꽃잎', '숲길'];
 // 화면(app.js)의 목록과 같은 순서예요
 const PURPOSES = ['수업용', '일상 상식', '음악', '기타'];
 const LEVELS = ['유', '초', '중', '고'];
@@ -71,8 +81,8 @@ const FLOWER_SHOW = 160;       // 화면에 보내는 꽃 수
 const FLOWER_PER_DAY = 30;     // 한 사람이 하루에 심을 수 있는 꽃
 const PRESENCE_TTL_MS = 25000; // 이 시간 동안 소식이 없으면 접속 종료로 봄
 const PRESENCE_MAX = 80;
-const WORLD_W = 5760;
-const ZONES = ['', 'plaza', 'shop', 'links', 'tree', 'spring', 'lantern', 'garden', 'pond', 'rain', 'stair', 'hill'];
+const WORLD_W = 6040;
+const ZONES = ['', 'plaza', 'shop', 'links', 'thoughts', 'tree', 'spring', 'lantern', 'garden', 'pond', 'rain', 'stair', 'hill'];
 // 화면(app.js)의 목록 길이와 같아야 합니다
 const N = { ADJ: 16, NOUN: 16, SKIN: 5, HAIR: 8, STYLE: 6, OUTFIT: 8, TYPE: 4, ACC: 14, PET: 7, EMO: 6, FLOWER: 6, MOOD: 6 };
 const TZ = 'Asia/Seoul';
@@ -109,6 +119,12 @@ function setup() {
   lsh.getRange('G2:G5000').setDataValidation(SpreadsheetApp.newDataValidation()
     .requireValueInList([STATUS.PUBLIC, STATUS.HIDDEN, STATUS.BLOCKED], true).setAllowInvalid(false).build());
   lsh.setColumnWidth(2, 320); lsh.setColumnWidth(6, 220);
+  const tsh = sheet_(THINK_SHEET, THINK_HEADERS);
+  tsh.getRange(1, 1, 1, THINK_HEADERS.length).setValues([THINK_HEADERS]).setFontWeight('bold');
+  tsh.setFrozenRows(1);
+  tsh.getRange('D2:D5000').setDataValidation(SpreadsheetApp.newDataValidation()
+    .requireValueInList([STATUS.PUBLIC, STATUS.HIDDEN, STATUS.BLOCKED], true).setAllowInvalid(false).build());
+  tsh.setColumnWidth(2, 360);
 
   // 예전 행에 ID · 종류 · 공감 · 신고 채우기
   const last = sh.getLastRow();
@@ -138,6 +154,7 @@ function doGet() {
       wishes: st.wishes, stars: st.stars,
       flowers: flowers_(), mood: moodToday_(),
       links: links_(),
+      thoughts: thoughts_(),
       visitsToday: visitsToday_()
     });
     cache.put('pub', body, 10); // 접속이 몰려도 시트를 덜 읽도록 10초 캐시
@@ -160,6 +177,8 @@ function doPost(e) {
       case 'mood': return out_(mood_(body));
       case 'link': return out_(addLink_(body));
       case 'linkreport': return out_(reportLink_(body));
+      case 'thought': return out_(addThought_(body));
+      case 'thoughtreport': return out_(reportThought_(body));
       case 'presence': return out_(presence_(body));
       default: return out_({ ok: false, reason: '알 수 없는 요청이에요.' });
     }
@@ -429,7 +448,7 @@ function addLink_(body) {
   var id = newId_();
   var status = REQUIRE_APPROVAL ? STATUS.PENDING : STATUS.PUBLIC;
   append_(sheet_(LINK_SHEET, LINK_HEADERS),
-    [nowStr_(), url, PURPOSES[purp], level, subj, topic, status, sid, id, '0', '']);
+    [nowStr_(), url, PURPOSES[purp], level, subj, topic, status, sid, id, '0', '', nick_(body)]);
   cache.remove('pub');
   return status === STATUS.PUBLIC
     ? { ok: true, id: id }
@@ -452,6 +471,7 @@ function links_() {
       level: LEVELS.indexOf(String(r[LCOL.LEVEL - 1])),
       subject: SUBJECTS.indexOf(String(r[LCOL.SUBJ - 1])),
       topic: String(r[LCOL.TOPIC - 1]),
+      nick: String(r[LCOL.NICK - 1] || ''),
       at: parseAt_(r[LCOL.AT - 1])
     });
   });
@@ -485,6 +505,92 @@ function reportLink_(body) {
     var hidden = false;
     if (n >= HIDE_AT && String(v[LCOL.STATUS - 1]) === STATUS.PUBLIC) {
       sh.getRange(row, LCOL.STATUS).setValue(STATUS.HIDDEN);
+      hidden = true;
+    }
+    CacheService.getScriptCache().remove('pub');
+    return { ok: true, hidden: hidden };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/* ---------- 생각 나눔터 ---------- */
+function addThought_(body) {
+  var sid = sid_(body);
+  if (!sid) return { ok: false, reason: '잘못된 요청이에요.' };
+  var text = String(body.content || '').trim();
+  if (!text) return { ok: false, reason: '나누고 싶은 생각을 적어 주세요.' };
+  if (text.length > THINK_MAX) return { ok: false, reason: THINK_MAX + '자 이내로 적어 주세요.' };
+  var tc = basicCheck_(text);
+  if (!tc.ok) return { ok: false, reason: tc.reason };
+  var url = String(body.url || '').trim();
+  if (url && (!/^https?:\/\/[^\s]+\.[^\s]+$/i.test(url) || url.length > 300 || /\s/.test(url))) {
+    return { ok: false, reason: '링크는 http 로 시작하는 올바른 주소만 넣어 주세요.' };
+  }
+  var cache = CacheService.getScriptCache();
+  var who = hash_(sid);
+  if (cache.get('tc_' + who)) return { ok: false, reason: '잠시 뒤에 다시 올려 주세요.' };
+  var dayKey = 'td_' + who + '_' + Utilities.formatDate(new Date(), TZ, 'yyyyMMdd');
+  var cnt = Number(cache.get(dayKey) || 0);
+  if (cnt >= THINK_PER_DAY) return { ok: false, reason: '오늘은 생각을 충분히 나눴어요. 내일 또 나눠요.' };
+  if (globalLimited_('gt', 40)) return { ok: false, reason: '지금 사람이 많아요. 잠시 뒤에 올려 주세요.' };
+  cache.put('tc_' + who, '1', LINK_COOLDOWN_SEC);
+  cache.put(dayKey, String(cnt + 1), 90000);
+  var id = newId_();
+  var status = REQUIRE_APPROVAL ? STATUS.PENDING : STATUS.PUBLIC;
+  append_(sheet_(THINK_SHEET, THINK_HEADERS),
+    [nowStr_(), text, url, status, sid, nick_(body), id, '0', '']);
+  cache.remove('pub');
+  return status === STATUS.PUBLIC ? { ok: true, id: id } : { ok: true, pending: true, id: id, reason: '올렸어요. 선생님이 확인하면 보여요.' };
+}
+
+function thoughts_() {
+  var sh = sheet_(THINK_SHEET, THINK_HEADERS);
+  var last = sh.getLastRow();
+  if (last < 2) return [];
+  var start = Math.max(2, last - LINK_SHOW - 20);
+  var rows = sh.getRange(start, 1, last - start + 1, THINK_HEADERS.length).getValues();
+  var out = [];
+  rows.forEach(function (r) {
+    if (String(r[TCOL.STATUS - 1]) !== STATUS.PUBLIC || !r[TCOL.TEXT - 1]) return;
+    out.push({
+      id: String(r[TCOL.ID - 1] || ''),
+      text: String(r[TCOL.TEXT - 1]),
+      url: String(r[TCOL.URL - 1] || ''),
+      nick: String(r[TCOL.NICK - 1] || ''),
+      at: parseAt_(r[TCOL.AT - 1])
+    });
+  });
+  return out.slice(-LINK_SHOW).reverse();
+}
+
+function reportThought_(body) {
+  var id = String(body.id || '').slice(0, 20);
+  var sid = sid_(body);
+  if (!id || !sid) return { ok: false, reason: '잘못된 요청이에요.' };
+  if (globalLimited_('gtr', 60)) return { ok: false, reason: '잠시 뒤에 다시 눌러 주세요.' };
+  var who = hash_(sid);
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { ok: false, reason: '잠시 뒤에 다시 눌러 주세요.' };
+  try {
+    var sh = sheet_(THINK_SHEET, THINK_HEADERS);
+    var last = sh.getLastRow();
+    if (last < 2) return { ok: false, reason: '찾을 수 없어요.' };
+    var start = Math.max(2, last - 400);
+    var ids = sh.getRange(start, TCOL.ID, last - start + 1, 1).getValues();
+    var row = 0;
+    for (var i = ids.length - 1; i >= 0; i--) if (String(ids[i][0]) === id) { row = start + i; break; }
+    if (!row) return { ok: false, reason: '찾을 수 없어요.' };
+    var v = sh.getRange(row, 1, 1, THINK_HEADERS.length).getValues()[0];
+    if (String(v[TCOL.SID - 1]) === sid) return { ok: false, reason: '내가 올린 생각은 신고할 수 없어요.' };
+    var by = String(v[TCOL.REPBY - 1] || '').split(',').filter(String);
+    if (by.indexOf(who) >= 0) return { ok: true, already: true };
+    by.push(who);
+    var n = (Number(v[TCOL.REP - 1]) || 0) + 1;
+    sh.getRange(row, TCOL.REP, 1, 2).setNumberFormat('@').setValues([[String(n), by.slice(-20).join(',')]]);
+    var hidden = false;
+    if (n >= HIDE_AT && String(v[TCOL.STATUS - 1]) === STATUS.PUBLIC) {
+      sh.getRange(row, TCOL.STATUS).setValue(STATUS.HIDDEN);
       hidden = true;
     }
     CacheService.getScriptCache().remove('pub');
@@ -705,6 +811,11 @@ function dayStr_(v) {
 function nowStr_() { return Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd HH:mm:ss'); }
 function newId_() { return Utilities.getUuid().replace(/-/g, '').slice(0, 10); }
 function clampInt_(v, a, b) { const n = Math.round(Number(v) || 0); return Math.max(a, Math.min(b, n)); }
+function nick_(body) {
+  var a = clampInt_(body.na, 0, ADJ_WORDS.length - 1);
+  var b = clampInt_(body.nb, 0, NOUN_WORDS.length - 1);
+  return ADJ_WORDS[a] + ' ' + NOUN_WORDS[b];
+}
 function clampNum_(v, a, b) { const n = Number(v) || 0; return Math.max(a, Math.min(b, n)); }
 function hash_(s) {
   const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, s, Utilities.Charset.UTF_8);

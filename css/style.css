@@ -585,7 +585,7 @@ body.t-night .sky-star .ss-text, body.t-dusk .sky-star .ss-text { color: #fff; b
 @keyframes bigpulse { 0%,100% { transform: scale(var(--s,1)); } 50% { transform: scale(calc(var(--s,1) * 1.03)); } }
 
 /* 들어가기 버튼 */
-.enter-btn { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(118px + env(safe-area-inset-bottom)); z-index: 7;
+.enter-btn { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(118px + env(safe-area-inset-bottom)); z-index: 7; white-space: nowrap; max-width: 92vw;
   border: none; cursor: pointer; border-radius: 999px; padding: 12px 22px; font-size: 1rem; color: #fff; display: flex; align-items: center; gap: 8px;
   background: linear-gradient(180deg, #e06a62, #c6453d); box-shadow: 0 10px 24px rgba(180,70,60,.42); animation: ebpop .28s ease, ebbob 1.8s ease-in-out infinite .3s; }
 .enter-btn b { font-family: Jua, sans-serif; font-weight: 400; }
@@ -656,3 +656,65 @@ body.xmas .topbar .me-chip, body.xmas .coin-chip { box-shadow: 0 0 0 1.5px rgba(
   .modal-links { max-width: none; }
   .enter-btn { bottom: calc(112px + env(safe-area-inset-bottom)); }
 }
+
+/* ===================================================================
+   v8 — 사계절 · 겨울 설경 · 생각 나눔터 · 고운 말 · 버튼 정리
+   =================================================================== */
+
+/* 모바일: 간판 위 초록 버튼은 숨기고, 큰 빨강 '들어가기' 버튼만 */
+@media (pointer: coarse) {
+  .lm-prompt { display: none !important; }
+}
+.enter-btn b { white-space: nowrap; }
+
+/* 고운 말 안내 */
+.kind-words { background: linear-gradient(180deg, #eef7ea, #e4f2dd); border: 1.5px solid #cfe6c0; border-radius: 14px;
+  padding: 10px 13px; font-size: .84rem; line-height: 1.5; color: #4f6a40; margin-bottom: 12px; }
+.kind-words b { color: #3d7a34; }
+
+/* 계절 바꾸기 */
+.season-wash { position: absolute; inset: 0; pointer-events: none; z-index: 2; transition: background .9s, opacity .9s; }
+body.se-winter .season-wash { background: linear-gradient(180deg, rgba(222,236,246,.5), rgba(201,223,236,.32)); mix-blend-mode: screen; }
+body.se-spring .season-wash { background: linear-gradient(180deg, rgba(255,214,228,.26), rgba(255,236,224,.18)); mix-blend-mode: screen; }
+body.se-autumn .season-wash { background: linear-gradient(180deg, rgba(228,150,70,.26), rgba(196,120,48,.22)); mix-blend-mode: multiply; }
+body.se-summer .season-wash { background: none; }
+
+/* 겨울: 설경(땅·언덕 하얗게) */
+body.se-winter .ground { filter: brightness(1.12) saturate(.42) hue-rotate(-6deg); }
+body.se-winter .hill { filter: brightness(1.16) saturate(.4); }
+body.se-winter .treeline .tree::before { filter: brightness(1.05) saturate(.55); }
+body.se-winter .ground::before { content: ""; position: absolute; left: 0; right: 0; top: -6px; height: 20px; border-radius: 60% 60% 0 0/22px 22px 0 0; background: rgba(255,255,255,.55); filter: blur(2px); }
+/* 가을: 단풍 */
+body.se-autumn .ground { filter: hue-rotate(-24deg) saturate(1.25) brightness(1.02); }
+body.se-autumn .hill { filter: hue-rotate(-22deg) saturate(1.2); }
+body.se-autumn .treeline .tree::before { filter: hue-rotate(-30deg) saturate(1.6) brightness(1.05); }
+/* 봄: 연둣빛 */
+body.se-spring .ground { filter: brightness(1.06) saturate(1.05) hue-rotate(6deg); }
+body.se-spring .treeline .tree::before { filter: brightness(1.08) saturate(.95); }
+/* 여름: 짙은 초록 */
+body.se-summer .ground { filter: saturate(1.15) brightness(.98); }
+body.se-summer .hill { filter: saturate(1.15); }
+
+/* 크리스마스 장식은 겨울에만 */
+body:not(.se-winter) .xtree, body:not(.se-winter) .xgift, body:not(.se-winter) .xsnow { display: none; }
+body:not(.se-winter) .santa-layer { display: none; }
+body:not(.se-winter) .lm-label::before { display: none; }
+/* 큰 눈송이(꽃잎·낙엽 이모지) */
+.flake.big-glyph { text-shadow: none; }
+
+/* 계절 모달 */
+.season-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.season-grid.time { grid-template-columns: repeat(4, 1fr); }
+.season-opt { border: none; cursor: pointer; border-radius: 16px; background: #fff; padding: 12px 4px 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+.season-opt .so-ico { font-size: 1.5rem; } .season-opt .so-name { font-size: .78rem; font-weight: 700; }
+.season-opt.on { box-shadow: 0 0 0 2.5px #8cc9dc, 0 2px 8px rgba(0,0,0,.05); background: #eef8fb; }
+#timeAutoBtn.on { background: #dff0e2; color: #3d7a34; box-shadow: 0 0 0 2px #a9cf98 inset; }
+
+/* 생각 카드 */
+.tcard { background: #fff; border-radius: 16px; padding: 13px 14px; box-shadow: 0 3px 10px rgba(110,90,60,.08); border-left: 5px solid #7cc4a8; }
+.tc-text { font-size: .96rem; line-height: 1.55; word-break: break-word; }
+.tc-link { display: inline-block; margin-top: 8px; font-size: .8rem; font-weight: 700; color: #3d8a73; text-decoration: none; background: #e4f4ec; padding: 5px 11px; border-radius: 999px; }
+.tc-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 9px; }
+.tc-who { font-size: .78rem; color: var(--ink-soft); font-weight: 700; }
+#thoughtInput { width: 100%; border: 1.5px solid var(--line); border-radius: 16px; padding: 12px; font-family: inherit; font-size: 1rem; resize: none; color: var(--ink); background: #fff; line-height: 1.5; }
+#thoughtInput:focus { outline: none; border-color: #8fcdb6; box-shadow: 0 0 0 4px rgba(143,205,182,.22); }
