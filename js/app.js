@@ -517,6 +517,9 @@
       ode: { name: '환희의 송가', bpm: 120, bass: ['C3', 'G3'], mel: [['E4', 1], ['E4', 1], ['F4', 1], ['G4', 1], ['G4', 1], ['F4', 1], ['E4', 1], ['D4', 1], ['C4', 1], ['C4', 1], ['D4', 1], ['E4', 1], ['E4', 1.5], ['D4', .5], ['D4', 2], ['E4', 1], ['E4', 1], ['F4', 1], ['G4', 1], ['G4', 1], ['F4', 1], ['E4', 1], ['D4', 1], ['C4', 1], ['C4', 1], ['D4', 1], ['E4', 1], ['D4', 1.5], ['C4', .5], ['C4', 2]] },
       canon: { name: '캐논(파헬벨)', bpm: 100, bass: ['D3', 'A3', 'B3', 'F3', 'G3', 'D3', 'G3', 'A3'], mel: [['F4', 2], ['E4', 2], ['D4', 2], ['C4', 2], ['B3', 2], ['A3', 2], ['B3', 2], ['C4', 2], ['D4', 2], ['C4', 2], ['B3', 2], ['A3', 2], ['G3', 2], ['F3', 2], ['G3', 2], ['E4', 2]] },
       gymnopedie: { name: '짐노페디(사티)', bpm: 76, bass: ['G3', 'D3', 'G3', 'D3'], mel: [['F5', 3], ['E5', 1], ['-', 2], ['D5', 2], ['A4', 2], ['B4', 2], ['-', 2], ['F5', 3], ['E5', 1], ['-', 2], ['D5', 2], ['A4', 2], ['B4', 4]] },
+      joy: { name: '기쁘다 구주 오셨네', bpm: 118, bass: ['C3', 'G3', 'F3', 'C3'], mel: [['C5', 1.5], ['B4', .5], ['A4', 1], ['G4', 1.5], ['F4', .5], ['E4', 2], ['E4', 1], ['E4', 1], ['F4', 1], ['F4', 1], ['G4', 2], ['G4', .75], ['F4', .25], ['E4', 1], ['E4', .75], ['D4', .25], ['C4', 2]] },
+      wish: { name: '우리 모두 메리 크리스마스', bpm: 128, bass: ['G3', 'C3', 'F3', 'G3'], mel: [['G4', 1], ['C5', 1], ['C5', .5], ['D5', .5], ['C5', .5], ['B4', .5], ['A4', 1], ['A4', 1], ['D5', 1], ['D5', .5], ['E5', .5], ['D5', .5], ['C5', .5], ['B4', 1], ['G4', 1], ['E5', 1], ['E5', .5], ['F5', .5], ['E5', .5], ['D5', .5], ['C5', 1], ['A4', 1], ['G4', .5], ['G4', .5], ['A4', 1], ['D5', 1], ['B4', 1], ['C5', 2]] },
+      deck: { name: '징글벨 락·데크 더 홀', bpm: 120, bass: ['C3', 'G3', 'C3', 'G3'], mel: [['G5', 1], ['F5', .5], ['E5', .5], ['D5', 1], ['C5', 1], ['D5', .5], ['E5', .5], ['F5', .5], ['D5', .5], ['E5', .5], ['D5', .5], ['C5', .5], ['B4', .5], ['C5', 2], ['D5', 1], ['E5', .5], ['F5', .5], ['E5', .5], ['D5', .5], ['C5', 1], ['B4', 1], ['C5', 2]] },
     };
     let ctx, master, on = '', timers = [], barTimer = null;
     function ensure() {
@@ -593,6 +596,18 @@
   // 방금 내가 올렸는데 아직 서버 목록에 안 뜬 염원 (사라짐 방지)
   const myRecent = new Map();
   const seenByServer = new Set(); // 서버가 한 번이라도 돌려준 염원 id
+  // 링크·생각도 올린 직후 사라지지 않도록 잠깐 붙잡아 둬요
+  const recentPost = { links: new Map(), thoughts: new Map() };
+  const seenPost = { links: new Set(), thoughts: new Set() };
+  function rememberPost(kind, item) { if (item && item.id) recentPost[kind].set(item.id, { it: item, t: Date.now() }); }
+  function mergeRecentPost(kind) {
+    const now = Date.now(), rep = reported(), arr = state[kind], seen2 = seenPost[kind];
+    arr.forEach((x) => { if (x.id) seen2.add(x.id); });
+    recentPost[kind].forEach((v, id) => {
+      if (seen2.has(id) || rep[id] || now - v.t > 90000) { recentPost[kind].delete(id); return; }
+      if (!arr.some((x) => x.id === id)) arr.unshift(v.it);
+    });
+  }
   function rememberMine(w) { if (w && w.id) myRecent.set(w.id, { w: w, t: Date.now() }); }
   function mergeMyRecent() {
     const now = Date.now();
@@ -663,6 +678,7 @@
       if (Array.isArray(d.thoughts)) state.thoughts = d.thoughts.map(normThought).filter((x) => x && !rep[x.id]);
       visitsToday = Number(d.visitsToday) || visitsToday;
       mergeMyRecent();
+      mergeRecentPost('links'); mergeRecentPost('thoughts');
       if (first) ws.slice(0, 8).reverse().forEach((w, i) => setTimeout(() => floatLantern(w.text, w.kind), 600 + i * 1300));
       else fresh.slice(0, 3).forEach((w, i) => setTimeout(() => floatLantern(w.text, w.kind), i * 900));
       afterState();
@@ -1564,8 +1580,9 @@
     const list = $('musicList'); list.textContent = '';
     const opts = [['off', '🔕', '끄기', '조용히'], ['forest', '🌲', '숲 소리', '새소리와 바람']];
     Object.keys(Music.TRACKS).forEach((k) => {
-      const icons = { jingle: '🔔', silent: '🌙', ode: '🎼', canon: '🎻', gymnopedie: '🎹' };
-      opts.push([k, icons[k] || '🎵', Music.TRACKS[k].name, k === 'jingle' || k === 'silent' ? '크리스마스 캐럴' : '클래식']);
+      const icons = { jingle: '🔔', silent: '🌙', joy: '🎄', wish: '⛄', deck: '🎁', ode: '🎼', canon: '🎻', gymnopedie: '🎹' };
+      const carolSet = { jingle: 1, silent: 1, joy: 1, wish: 1, deck: 1 };
+      opts.push([k, icons[k] || '🎵', Music.TRACKS[k].name, carolSet[k] ? '크리스마스 캐럴' : '클래식']);
     });
     const cur = musicChoice;
     opts.forEach(([key, ico, name, sub]) => {
@@ -1630,10 +1647,16 @@
       const foot = el('div', 'lc-foot');
       const go = el('a', 'lc-go'); go.href = l.url; go.target = '_blank'; go.rel = 'noopener noreferrer'; go.textContent = '열어 보기 ↗';
       foot.appendChild(go);
-      if (l.id && sheetMode && myLinks.indexOf(l.id) < 0 && !repd[l.id]) {
+      const mineThis = l.id && myLinks.indexOf(l.id) >= 0;
+      const tools = el('div', 'lc-tools');
+      if (mineThis) {
+        const edit = el('button', 'lc-edit', '✏️ 수정'); edit.type = 'button';
+        edit.addEventListener('click', () => openLinkForm(l)); tools.appendChild(edit);
+      } else if (l.id && sheetMode && !repd[l.id]) {
         const flag = el('button', 'lc-flag', '🚩'); flag.type = 'button'; flag.title = '부적절한 링크 알리기';
-        flag.addEventListener('click', () => reportLink(l, c)); foot.appendChild(flag);
+        flag.addEventListener('click', () => reportLink(l, c)); tools.appendChild(flag);
       }
+      foot.appendChild(tools);
       c.append(head, topic, host, foot);
       list.appendChild(c);
     });
@@ -1646,10 +1669,16 @@
     toast('알려 줘서 고마워요. 세 명이 알리면 그 링크는 가려져요.', 3200);
     try { await sheetPost({ type: 'linkreport', id: l.id, sessionId: sid }); } catch (e) { /* 다음에 */ }
   }
-  function openLinkForm() {
-    linkForm = { purpose: 0, level: 1, subject: 0 };
-    $('linkUrl').value = ''; $('linkTopic').value = '';
+  let linkEditId = null;
+  function openLinkForm(l) {
+    linkEditId = l && l.id ? l.id : null;
+    linkForm = l ? { purpose: l.purpose, level: l.level >= 0 ? l.level : 1, subject: l.subject >= 0 ? l.subject : 0 } : { purpose: 0, level: 1, subject: 0 };
+    $('linkUrl').value = l ? l.url : '';
+    $('linkTopic').value = l ? l.topic : '';
+    $('linkNick').value = l ? (l.nick || '') : (profile ? nameOf(profile) : '');
     $('linkMsg').textContent = ''; $('linkMsg').className = 'modal-msg';
+    $('linkFormModal').querySelector('h2').textContent = linkEditId ? '링크 수정' : '링크 올리기';
+    $('linkSubmit').textContent = linkEditId ? '수정하기' : '나누기';
     renderLinkForm();
     openModal('linkFormModal');
   }
@@ -1680,36 +1709,45 @@
   async function submitLink() {
     const url = $('linkUrl').value.trim();
     const topic = $('linkTopic').value.trim();
+    const nick = $('linkNick').value.trim();
     const setMsg = (t, k) => { $('linkMsg').textContent = t; $('linkMsg').className = 'modal-msg ' + (k || ''); };
     if (!/^https?:\/\/[^\s]+\.[^\s]+$/i.test(url)) return setMsg('http 로 시작하는 올바른 주소를 넣어 주세요.', 'err');
     if (!topic) return setMsg('어떤 링크인지 주제를 적어 주세요.', 'err');
     if (topic.length > 40) return setMsg('주제는 40자 이내로 적어 주세요.', 'err');
     const chk = window.Filter ? window.Filter.check(topic) : { ok: true };
     if (!chk.ok) return setMsg(/따뜻한/.test(chk.reason) ? '주제에 쓸 수 없는 말이 있어요.' : chk.reason, 'err');
+    if (nick.length > 12) return setMsg('이름은 12자 이내로 적어 주세요.', 'err');
+    if (nick) { const nc = window.Filter ? window.Filter.check(nick) : { ok: true }; if (!nc.ok) return setMsg('이름에 쓸 수 없는 말이 있어요.', 'err'); }
     $('linkSubmit').disabled = true;
     const pf = profile || { a: 0, b: 0 };
-    const payload = { url, purpose: linkForm.purpose, topic, level: linkForm.level, subject: linkForm.subject, na: pf.a, nb: pf.b };
+    const editing = linkEditId;
+    const payload = { url, purpose: linkForm.purpose, topic, level: linkForm.level, subject: linkForm.subject, na: pf.a, nb: pf.b, nick };
     try {
       let r;
       if (sheetMode) {
-        try { r = await sheetPost(Object.assign({ type: 'link', sessionId: sid }, payload)); }
+        try { r = await sheetPost(Object.assign({ type: editing ? 'linkedit' : 'link', sessionId: sid, id: editing || undefined }, payload)); }
         catch (e) { r = { ok: false, reason: '연결이 원활하지 않아요. 잠시 뒤 다시 시도해 주세요.' }; }
       } else {
-        r = { ok: true, id: 'L' + Date.now() };
+        r = { ok: true, id: editing || ('L' + Date.now()) };
       }
       if (!r || !r.ok) return setMsg(r && r.reason || '올리지 못했어요.', 'err');
-      const link = normLink({ id: r.id || ('L' + Date.now()), url, purpose: linkForm.purpose, topic, nick: nameOf(pf),
+      const link = normLink({ id: r.id || editing || ('L' + Date.now()), url, purpose: linkForm.purpose, topic, nick: nick || nameOf(pf),
         level: linkForm.purpose === 0 ? linkForm.level : -1, subject: linkForm.purpose === 0 ? linkForm.subject : -1, at: Date.now() });
-      if (!r.pending) state.links.unshift(link);
-      const mine = store.get('ms_mylinks', []) || []; mine.unshift(link.id); store.set('ms_mylinks', mine.slice(0, 50));
+      if (editing) {
+        state.links = state.links.map((x) => (x.id === editing ? Object.assign(link, { at: x.at }) : x));
+        rememberPost('links', link);
+      } else if (!r.pending) {
+        state.links.unshift(link); rememberPost('links', link);
+        const mine = store.get('ms_mylinks', []) || []; mine.unshift(link.id); store.set('ms_mylinks', mine.slice(0, 50));
+      }
       if (!sheetMode) saveLocal();
       closeModal('linkFormModal');
       renderLinks(); renderDockSubs();
-      earn('wish'); // 링크 나눔도 염원과 같은 동전 항목으로 북돋워요
-      toast(r.pending ? '올렸어요. 선생님이 확인하면 보여요.' : '🎁 링크를 나눔터에 올렸어요. 고마워요!');
+      if (!editing) earn('wish');
+      toast(editing ? '✏️ 링크를 고쳤어요.' : (r.pending ? '올렸어요. 선생님이 확인하면 보여요.' : '🎁 링크를 나눔터에 올렸어요. 고마워요!'));
     } finally { $('linkSubmit').disabled = false; }
   }
-  $('openLinkWrite').addEventListener('click', openLinkForm);
+  $('openLinkWrite').addEventListener('click', () => openLinkForm());
   $('linkCancel').addEventListener('click', () => closeModal('linkFormModal'));
   $('linkSubmit').addEventListener('click', submitLink);
 
@@ -1732,10 +1770,15 @@
       const foot = el('div', 'tc-foot');
       const who = el('span', 'tc-who'); who.textContent = '🙂 ' + (tt.nick || '숲 친구');
       foot.appendChild(who);
-      if (tt.id && sheetMode && myT.indexOf(tt.id) < 0 && !repd[tt.id]) {
+      const tools = el('div', 'lc-tools');
+      if (tt.id && myT.indexOf(tt.id) >= 0) {
+        const edit = el('button', 'lc-edit', '✏️ 수정'); edit.type = 'button';
+        edit.addEventListener('click', () => openThoughtForm(tt)); tools.appendChild(edit);
+      } else if (tt.id && sheetMode && !repd[tt.id]) {
         const flag = el('button', 'lc-flag', '🚩'); flag.type = 'button'; flag.title = '부적절한 글 알리기';
-        flag.addEventListener('click', () => reportThought(tt, c)); foot.appendChild(flag);
+        flag.addEventListener('click', () => reportThought(tt, c)); tools.appendChild(flag);
       }
+      foot.appendChild(tools);
       c.appendChild(foot);
       list.appendChild(c);
     });
@@ -1748,10 +1791,16 @@
     toast('알려 줘서 고마워요. 세 명이 알리면 그 글은 가려져요.', 3200);
     try { await sheetPost({ type: 'thoughtreport', id: tt.id, sessionId: sid }); } catch (e) { /* */ }
   }
-  function openThoughtForm() {
-    $('thoughtInput').value = ''; $('thoughtUrl').value = '';
-    $('thoughtCharCount').textContent = '0 / 160';
+  let thoughtEditId = null;
+  function openThoughtForm(tt) {
+    thoughtEditId = tt && tt.id ? tt.id : null;
+    $('thoughtInput').value = tt ? tt.text : '';
+    $('thoughtUrl').value = tt ? (tt.url || '') : '';
+    $('thoughtNick').value = tt ? (tt.nick || '') : (profile ? nameOf(profile) : '');
+    $('thoughtCharCount').textContent = ($('thoughtInput').value.length) + ' / 160';
     $('thoughtMsg').textContent = ''; $('thoughtMsg').className = 'modal-msg';
+    $('thoughtFormModal').querySelector('h2').textContent = thoughtEditId ? '생각 수정' : '생각 올리기';
+    $('thoughtSubmit').textContent = thoughtEditId ? '수정하기' : '나누기';
     openModal('thoughtFormModal');
     setTimeout(() => $('thoughtInput').focus(), 60);
   }
@@ -1759,32 +1808,41 @@
   async function submitThought() {
     const text = $('thoughtInput').value.trim();
     const url = $('thoughtUrl').value.trim();
+    const nick = $('thoughtNick').value.trim();
     const setMsg = (t, k) => { $('thoughtMsg').textContent = t; $('thoughtMsg').className = 'modal-msg ' + (k || ''); };
     if (!text) return setMsg('나누고 싶은 생각을 적어 주세요.', 'err');
     if (text.length > 160) return setMsg('160자 이내로 적어 주세요.', 'err');
     const chk = window.Filter ? window.Filter.check(text.slice(0, 100)) : { ok: true };
     if (!chk.ok && /따뜻한/.test(chk.reason)) return setMsg('고운 말로 다시 적어 주세요. 내 말은 나에게 돌아와요.', 'err');
     if (url && !/^https?:\/\/[^\s]+\.[^\s]+$/i.test(url)) return setMsg('링크는 http로 시작하는 올바른 주소만 넣어 주세요.', 'err');
+    if (nick.length > 12) return setMsg('이름은 12자 이내로 적어 주세요.', 'err');
+    if (nick) { const nc = window.Filter ? window.Filter.check(nick) : { ok: true }; if (!nc.ok) return setMsg('이름에 쓸 수 없는 말이 있어요.', 'err'); }
     const pf = profile || { a: 0, b: 0 };
+    const editing = thoughtEditId;
     $('thoughtSubmit').disabled = true;
     try {
       let r;
       if (sheetMode) {
-        try { r = await sheetPost({ type: 'thought', sessionId: sid, content: text, url, na: pf.a, nb: pf.b }); }
+        try { r = await sheetPost({ type: editing ? 'thoughtedit' : 'thought', sessionId: sid, id: editing || undefined, content: text, url, na: pf.a, nb: pf.b, nick }); }
         catch (e) { r = { ok: false, reason: '연결이 원활하지 않아요. 잠시 뒤 다시 시도해 주세요.' }; }
-      } else r = { ok: true, id: 'T' + Date.now() };
+      } else r = { ok: true, id: editing || ('T' + Date.now()) };
       if (!r || !r.ok) return setMsg(r && r.reason || '올리지 못했어요.', 'err');
-      const th = normThought({ id: r.id || ('T' + Date.now()), text, url, nick: nameOf(pf), at: Date.now() });
-      if (!r.pending) state.thoughts.unshift(th);
-      const mine = store.get('ms_mythoughts', []) || []; mine.unshift(th.id); store.set('ms_mythoughts', mine.slice(0, 50));
+      const th = normThought({ id: r.id || editing || ('T' + Date.now()), text, url, nick: nick || nameOf(pf), at: Date.now() });
+      if (editing) {
+        state.thoughts = state.thoughts.map((x) => (x.id === editing ? Object.assign(th, { at: x.at }) : x));
+        rememberPost('thoughts', th);
+      } else if (!r.pending) {
+        state.thoughts.unshift(th); rememberPost('thoughts', th);
+        const mine = store.get('ms_mythoughts', []) || []; mine.unshift(th.id); store.set('ms_mythoughts', mine.slice(0, 50));
+      }
       if (!sheetMode) saveLocal();
       closeModal('thoughtFormModal');
       renderThoughts(); renderDockSubs();
-      earn('wish');
-      toast(r.pending ? '올렸어요. 선생님이 확인하면 보여요.' : '💬 생각을 나눔터에 올렸어요. 고마워요!');
+      if (!editing) earn('wish');
+      toast(editing ? '✏️ 생각을 고쳤어요.' : (r.pending ? '올렸어요. 선생님이 확인하면 보여요.' : '💬 생각을 나눔터에 올렸어요. 고마워요!'));
     } finally { $('thoughtSubmit').disabled = false; }
   }
-  $('openThoughtWrite').addEventListener('click', openThoughtForm);
+  $('openThoughtWrite').addEventListener('click', () => openThoughtForm());
   $('thoughtCancel').addEventListener('click', () => closeModal('thoughtFormModal'));
   $('thoughtSubmit').addEventListener('click', submitThought);
 
@@ -1814,12 +1872,15 @@
     }
   }
   function applySeason(id) {
+    const wasWinter = season === 'winter';
     season = id; store.set('ms_season', id);
     SEASONS.forEach((s) => document.body.classList.remove('se-' + s.id));
     document.body.classList.add('se-' + id);
     document.body.classList.toggle('xmas', id === 'winter');
     buildWeather();
     $('seasonBtn').textContent = (SEASONS.find((s) => s.id === id) || SEASONS[0]).ico;
+    if (id === 'winter') { timeAuto = false; applyTime(3); } // 겨울은 언제나 밤
+    else if (wasWinter) { timeAuto = true; applyTime(autoTime()); }
   }
   function openSeason() {
     const grid = $('seasonGrid'); grid.textContent = '';
@@ -1829,15 +1890,19 @@
       b.addEventListener('click', () => { applySeason(s.id); openSeason(); });
       grid.appendChild(b);
     });
-    const tg = $('timeGrid'); tg.textContent = '';
-    TIMES.forEach((t, i) => {
-      const b = el('button', 'season-opt' + (i === timeIdx && !timeAuto ? ' on' : '') + (timeAuto ? '' : ''), `<span class="so-ico">${t[1]}</span><span class="so-name">${t[2]}</span>`);
-      b.type = 'button';
-      b.addEventListener('click', () => { timeAuto = false; applyTime(i); openSeason(); });
-      tg.appendChild(b);
-    });
-    const auto = $('timeAutoBtn');
-    auto.classList.toggle('on', timeAuto);
+    const winter = season === 'winter';
+    $('timeSection').style.display = winter ? 'none' : '';
+    $('winterNote').hidden = !winter;
+    if (!winter) {
+      const tg = $('timeGrid'); tg.textContent = '';
+      TIMES.forEach((t, i) => {
+        const b = el('button', 'season-opt' + (i === timeIdx && !timeAuto ? ' on' : ''), `<span class="so-ico">${t[1]}</span><span class="so-name">${t[2]}</span>`);
+        b.type = 'button';
+        b.addEventListener('click', () => { timeAuto = false; applyTime(i); openSeason(); });
+        tg.appendChild(b);
+      });
+      $('timeAutoBtn').classList.toggle('on', timeAuto);
+    }
     openModal('seasonModal');
   }
   $('seasonBtn').addEventListener('click', (e) => { e.currentTarget.blur(); openSeason(); });

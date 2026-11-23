@@ -1,6 +1,6 @@
 /**
  * ============================================================
- *  온라인 마음쉼터 — Google Apps Script 백엔드 v5 (겨울·생각 나눔터)
+ *  온라인 마음쉼터 — Google Apps Script 백엔드 v6 (닉네임·수정)
  *  (구글 시트가 '염원 저장소'이자 '교사 관리 화면'이 됩니다)
  *
  *  v3에서 달라진 점
@@ -179,6 +179,8 @@ function doPost(e) {
       case 'linkreport': return out_(reportLink_(body));
       case 'thought': return out_(addThought_(body));
       case 'thoughtreport': return out_(reportThought_(body));
+      case 'linkedit': return out_(editLink_(body));
+      case 'thoughtedit': return out_(editThought_(body));
       case 'presence': return out_(presence_(body));
       default: return out_({ ok: false, reason: '알 수 없는 요청이에요.' });
     }
@@ -445,10 +447,12 @@ function addLink_(body) {
   cache.put('lc_' + who, '1', LINK_COOLDOWN_SEC);
   cache.put(dayKey, String(cnt + 1), 90000);
 
+  var nk = resolveNick_(body);
+  if (!nk.ok) return { ok: false, reason: nk.reason };
   var id = newId_();
   var status = REQUIRE_APPROVAL ? STATUS.PENDING : STATUS.PUBLIC;
   append_(sheet_(LINK_SHEET, LINK_HEADERS),
-    [nowStr_(), url, PURPOSES[purp], level, subj, topic, status, sid, id, '0', '', nick_(body)]);
+    [nowStr_(), url, PURPOSES[purp], level, subj, topic, status, sid, id, '0', '', nk.nick]);
   cache.remove('pub');
   return status === STATUS.PUBLIC
     ? { ok: true, id: id }
@@ -536,10 +540,12 @@ function addThought_(body) {
   if (globalLimited_('gt', 40)) return { ok: false, reason: '지금 사람이 많아요. 잠시 뒤에 올려 주세요.' };
   cache.put('tc_' + who, '1', LINK_COOLDOWN_SEC);
   cache.put(dayKey, String(cnt + 1), 90000);
+  var nk = resolveNick_(body);
+  if (!nk.ok) return { ok: false, reason: nk.reason };
   var id = newId_();
   var status = REQUIRE_APPROVAL ? STATUS.PENDING : STATUS.PUBLIC;
   append_(sheet_(THINK_SHEET, THINK_HEADERS),
-    [nowStr_(), text, url, status, sid, nick_(body), id, '0', '']);
+    [nowStr_(), text, url, status, sid, nk.nick, id, '0', '']);
   cache.remove('pub');
   return status === STATUS.PUBLIC ? { ok: true, id: id } : { ok: true, pending: true, id: id, reason: '올렸어요. 선생님이 확인하면 보여요.' };
 }
@@ -598,6 +604,78 @@ function reportThought_(body) {
   } finally {
     lock.releaseLock();
   }
+}
+
+/* ---------- 링크 · 생각 수정 (올린 본인만) ---------- */
+function editLink_(body) {
+  var id = String(body.id || '').slice(0, 20);
+  var sid = sid_(body);
+  if (!id || !sid) return { ok: false, reason: '잘못된 요청이에요.' };
+  var url = String(body.url || '').trim();
+  if (!okUrl_(url)) return { ok: false, reason: 'http 로 시작하는 올바른 주소를 넣어 주세요.' };
+  var topic = String(body.topic || '').trim();
+  if (!topic) return { ok: false, reason: '주제를 적어 주세요.' };
+  if (topic.length > 40) return { ok: false, reason: '주제는 40자 이내로 적어 주세요.' };
+  var tc = basicCheck_(topic);
+  if (!tc.ok) return { ok: false, reason: tc.reason };
+  var nk = resolveNick_(body);
+  if (!nk.ok) return { ok: false, reason: nk.reason };
+  var purp = clampInt_(body.purpose, 0, PURPOSES.length - 1);
+  var level = '', subj = '';
+  if (purp === 0) { level = LEVELS[clampInt_(body.level, 0, LEVELS.length - 1)]; subj = SUBJECTS[clampInt_(body.subject, 0, SUBJECTS.length - 1)]; }
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { ok: false, reason: '잠시 뒤에 다시 시도해 주세요.' };
+  try {
+    var sh = sheet_(LINK_SHEET, LINK_HEADERS);
+    var last = sh.getLastRow();
+    if (last < 2) return { ok: false, reason: '찾을 수 없어요.' };
+    var start = Math.max(2, last - 400);
+    var ids = sh.getRange(start, LCOL.ID, last - start + 1, 1).getValues();
+    var row = 0;
+    for (var i = ids.length - 1; i >= 0; i--) if (String(ids[i][0]) === id) { row = start + i; break; }
+    if (!row) return { ok: false, reason: '찾을 수 없어요.' };
+    var v = sh.getRange(row, 1, 1, LINK_HEADERS.length).getValues()[0];
+    if (String(v[LCOL.SID - 1]) !== sid) return { ok: false, reason: '내가 올린 링크만 고칠 수 있어요.' };
+    if (String(v[LCOL.STATUS - 1]) === STATUS.BLOCKED) return { ok: false, reason: '고칠 수 없는 링크예요.' };
+    sh.getRange(row, LCOL.URL, 1, 5).setNumberFormat('@').setValues([[url, PURPOSES[purp], level, subj, topic]]);
+    sh.getRange(row, LCOL.NICK).setNumberFormat('@').setValue(nk.nick);
+    CacheService.getScriptCache().remove('pub');
+    return { ok: true, id: id };
+  } finally { lock.releaseLock(); }
+}
+
+function editThought_(body) {
+  var id = String(body.id || '').slice(0, 20);
+  var sid = sid_(body);
+  if (!id || !sid) return { ok: false, reason: '잘못된 요청이에요.' };
+  var text = String(body.content || '').trim();
+  if (!text) return { ok: false, reason: '생각을 적어 주세요.' };
+  if (text.length > THINK_MAX) return { ok: false, reason: THINK_MAX + '자 이내로 적어 주세요.' };
+  var tc = basicCheck_(text);
+  if (!tc.ok) return { ok: false, reason: tc.reason };
+  var url = String(body.url || '').trim();
+  if (url && !okUrl_(url)) return { ok: false, reason: '링크는 http 로 시작하는 올바른 주소만 넣어 주세요.' };
+  var nk = resolveNick_(body);
+  if (!nk.ok) return { ok: false, reason: nk.reason };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { ok: false, reason: '잠시 뒤에 다시 시도해 주세요.' };
+  try {
+    var sh = sheet_(THINK_SHEET, THINK_HEADERS);
+    var last = sh.getLastRow();
+    if (last < 2) return { ok: false, reason: '찾을 수 없어요.' };
+    var start = Math.max(2, last - 400);
+    var ids = sh.getRange(start, TCOL.ID, last - start + 1, 1).getValues();
+    var row = 0;
+    for (var i = ids.length - 1; i >= 0; i--) if (String(ids[i][0]) === id) { row = start + i; break; }
+    if (!row) return { ok: false, reason: '찾을 수 없어요.' };
+    var v = sh.getRange(row, 1, 1, THINK_HEADERS.length).getValues()[0];
+    if (String(v[TCOL.SID - 1]) !== sid) return { ok: false, reason: '내가 올린 생각만 고칠 수 있어요.' };
+    if (String(v[TCOL.STATUS - 1]) === STATUS.BLOCKED) return { ok: false, reason: '고칠 수 없는 글이에요.' };
+    sh.getRange(row, TCOL.TEXT, 1, 2).setNumberFormat('@').setValues([[text, url]]);
+    sh.getRange(row, TCOL.NICK).setNumberFormat('@').setValue(nk.nick);
+    CacheService.getScriptCache().remove('pub');
+    return { ok: true, id: id };
+  } finally { lock.releaseLock(); }
 }
 
 /* ---------- 함께 접속한 사람 ---------- */
@@ -816,6 +894,21 @@ function nick_(body) {
   var b = clampInt_(body.nb, 0, NOUN_WORDS.length - 1);
   return ADJ_WORDS[a] + ' ' + NOUN_WORDS[b];
 }
+/** 작성자 이름: 직접 쓴 이름(걸러서) 우선, 없으면 숲 별명 */
+function resolveNick_(body) {
+  var raw = String(body.nick || '').trim();
+  if (!raw) return { ok: true, nick: nick_(body) };
+  if (raw.length > 12) return { ok: false, reason: '이름은 12자 이내로 적어 주세요.' };
+  if (PHONE_RE.test(raw) || /\d{8,}/.test(raw) || MAIL_RE.test(raw) || LINK_RE.test(raw)) return { ok: false, reason: '이름에 연락처·링크는 담을 수 없어요.' };
+  var vs = variants_(raw);
+  for (var i = 0; i < BAD_WORDS.length; i++) {
+    var w = norm_(BAD_WORDS[i]), w2 = BAD_WORDS[i].toLowerCase();
+    for (var j = 0; j < vs.length; j++) if (vs[j].indexOf(w) >= 0 || vs[j].indexOf(w2) >= 0) return { ok: false, reason: '이름에 쓸 수 없는 말이 있어요.' };
+  }
+  return { ok: true, nick: raw };
+}
+/** 링크 주소 검사 */
+function okUrl_(url) { return /^https?:\/\/[^\s]+\.[^\s]+$/i.test(url) && url.length <= 300 && !/\s/.test(url); }
 function clampNum_(v, a, b) { const n = Number(v) || 0; return Math.max(a, Math.min(b, n)); }
 function hash_(s) {
   const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, s, Utilities.Charset.UTF_8);

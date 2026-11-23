@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" />
-  <link rel="stylesheet" href="css/style.css?v=8" />
+  <link rel="stylesheet" href="css/style.css?v=9" />
   <style>[hidden]{display:none !important;}</style>
 </head>
 <body class="t-day">
@@ -288,7 +288,9 @@
       </div>
       <label class="form-label">주제 <small>(어떤 내용인지 한 줄)</small></label>
       <input id="linkTopic" class="form-input" type="text" maxlength="40" placeholder="예) 광합성 쉽게 정리한 영상" />
-      <p class="write-rule">친구를 놀리거나 이름·연락처가 담긴 링크는 올리지 않아요. 올린 링크는 모두에게 보여요.</p>
+      <label class="form-label">나눈 사람 <small>(별명, 바꿔도 돼요)</small></label>
+      <input id="linkNick" class="form-input" type="text" maxlength="12" placeholder="예) 산뜻한 달빛" />
+      <p class="write-rule">친구를 놀리거나 이름·연락처가 담긴 링크는 올리지 않아요. 올린 링크는 별명과 함께 모두에게 보여요.</p>
       <div class="modal-foot">
         <span class="counter">올리면 🪙5</span>
         <div class="modal-actions"><button class="btn-ghost" id="linkCancel">닫기</button><button class="btn-primary" id="linkSubmit">나누기</button></div>
@@ -312,9 +314,12 @@
       <div class="m-head"><span class="m-ico">🍃</span><h2>숲의 계절과 시간</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
       <p class="modal-desc">숲을 어떤 계절로 볼까요?</p>
       <div class="season-grid" id="seasonGrid"></div>
-      <p class="modal-desc" style="margin-top:14px">하루 중 시간도 골라요.</p>
-      <div class="season-grid time" id="timeGrid"></div>
-      <button class="chip-btn" id="timeAutoBtn" style="margin-top:12px">🕐 지금 시각에 맞추기</button>
+      <p class="winter-note" id="winterNote" hidden>⛄ 겨울 숲은 언제나 눈 내리는 밤이에요. 트리에 불이 반짝여요.</p>
+      <div id="timeSection">
+        <p class="modal-desc" style="margin-top:14px">하루 중 시간도 골라요.</p>
+        <div class="season-grid time" id="timeGrid"></div>
+        <button class="chip-btn" id="timeAutoBtn" style="margin-top:12px">🕐 지금 시각에 맞추기</button>
+      </div>
     </div>
   </div>
 
@@ -338,8 +343,10 @@
       <div class="kind-words">🌿 <b>고운 말, 바른 말</b>로 나눠요. 내가 한 말과 행동은 다시 나에게 돌아와요.</div>
       <label class="form-label">나누고 싶은 생각</label>
       <textarea id="thoughtInput" maxlength="160" rows="3" placeholder="예) 친구가 힘들어 보일 때 먼저 말을 걸어 주면 좋겠어요"></textarea>
-      <label class="form-label">함께 볼 링크 <small>(없으면 비워 둬요)</small></label>
-      <input id="thoughtUrl" class="form-input" type="url" inputmode="url" placeholder="https://... (선택)" />
+      <label class="form-label">함께 볼 링크 <small>(선택 — 없으면 비워 둬요)</small></label>
+      <input id="thoughtUrl" class="form-input" type="url" inputmode="url" placeholder="https://... (안 넣어도 돼요)" />
+      <label class="form-label">나눈 사람 <small>(별명, 바꿔도 돼요)</small></label>
+      <input id="thoughtNick" class="form-input" type="text" maxlength="12" placeholder="예) 포근한 바람" />
       <p class="write-rule">친구를 놀리거나 이름·연락처가 담긴 글은 올리지 않아요. 올린 생각은 별명과 함께 모두에게 보여요.</p>
       <div class="modal-foot">
         <span class="counter" id="thoughtCharCount">0 / 160</span>
@@ -396,10 +403,10 @@
     <p>마음을 올리는 중…</p>
   </div>
 
-  <script src="js/config.js?v=8"></script>
-  <script src="js/badwords.js?v=8"></script>
-  <script src="js/art.js?v=8"></script>
-  <script src="js/quotes.js?v=8"></script>
-  <script src="js/app.js?v=8"></script>
+  <script src="js/config.js?v=9"></script>
+  <script src="js/badwords.js?v=9"></script>
+  <script src="js/art.js?v=9"></script>
+  <script src="js/quotes.js?v=9"></script>
+  <script src="js/app.js?v=9"></script>
 </body>
 </html>

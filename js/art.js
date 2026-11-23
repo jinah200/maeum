@@ -148,13 +148,18 @@
         <rect x="36" y="54" width="8" height="7" rx="3" fill="${shade(sk, 0.93)}"/>
         <g class="head-g">
           ${c === 6 || c === 7 || c === 13 ? accBack(c) : ''}
-          <ellipse cx="16.5" cy="41" rx="3.6" ry="4.6" fill="${shade(sk, 0.95)}"/><ellipse cx="63.5" cy="41" rx="3.6" ry="4.6" fill="${shade(sk, 0.95)}"/>
-          <circle cx="40" cy="37" r="23.5" fill="${sk}"/>
-          <ellipse cx="31" cy="42" rx="3.3" ry="4.2" fill="#3b302a"/><ellipse cx="49" cy="42" rx="3.3" ry="4.2" fill="#3b302a"/>
-          <circle cx="32.2" cy="40.4" r="1.4" fill="#fff"/><circle cx="50.2" cy="40.4" r="1.4" fill="#fff"/>
-          <circle cx="30.2" cy="44" r=".6" fill="#fff" opacity=".8"/><circle cx="48.2" cy="44" r=".6" fill="#fff" opacity=".8"/>
-          <ellipse cx="25.5" cy="49" rx="4" ry="2.6" fill="#ff9e9e" opacity=".42"/><ellipse cx="54.5" cy="49" rx="4" ry="2.6" fill="#ff9e9e" opacity=".42"/>
-          <path class="mouth" d="M37 49.5 Q40 52.6 43 49.5" fill="none" stroke="#7a4b3a" stroke-width="1.6" stroke-linecap="round"/>
+          <ellipse cx="16.8" cy="41" rx="3.4" ry="4.4" fill="${sk}" stroke="${shade(sk, 0.84)}" stroke-width=".7"/><ellipse cx="63.2" cy="41" rx="3.4" ry="4.4" fill="${sk}" stroke="${shade(sk, 0.84)}" stroke-width=".7"/>
+          <circle cx="40" cy="37" r="23.5" fill="${sk}" stroke="${shade(sk, 0.82)}" stroke-width=".9"/>
+          <ellipse cx="31" cy="27" rx="13" ry="8.5" fill="#fff" opacity=".16"/>
+          <path d="M18 44 Q40 60 62 44 Q58 55 40 56.5 Q22 55 18 44 Z" fill="${shade(sk, 0.95)}" opacity=".45"/>
+          <ellipse cx="31" cy="42.5" rx="4" ry="5.2" fill="#4a3730"/><ellipse cx="49" cy="42.5" rx="4" ry="5.2" fill="#4a3730"/>
+          <path d="M26.6 39 Q31 36.2 35.4 39" fill="none" stroke="#2f241e" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M44.6 39 Q49 36.2 53.4 39" fill="none" stroke="#2f241e" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="32.3" cy="40.6" r="1.7" fill="#fff"/><circle cx="50.3" cy="40.6" r="1.7" fill="#fff"/>
+          <circle cx="29.8" cy="44.4" r=".8" fill="#fff" opacity=".85"/><circle cx="47.8" cy="44.4" r=".8" fill="#fff" opacity=".85"/>
+          <path d="M38.8 46.4 Q40 48.2 41.2 46.4" fill="none" stroke="${shade(sk, 0.78)}" stroke-width="1.1" stroke-linecap="round"/>
+          <ellipse cx="25" cy="49.5" rx="4.2" ry="2.7" fill="#ff9aa6" opacity=".5"/><ellipse cx="55" cy="49.5" rx="4.2" ry="2.7" fill="#ff9aa6" opacity=".5"/>
+          <path class="mouth" d="M36.5 50.2 Q40 53.8 43.5 50.2" fill="none" stroke="#c76b62" stroke-width="1.7" stroke-linecap="round"/>
           ${hairFront(st, hc)}
           ${accFront(c)}
         </g>
