@@ -749,3 +749,40 @@ body.se-winter .xsnow { filter: drop-shadow(0 0 5px rgba(180,210,255,.5)); }
 .lc-edit { border: none; cursor: pointer; font-size: .76rem; font-weight: 700; color: #6a5e8a; background: #efe9f7; padding: 5px 11px; border-radius: 999px; }
 .lc-edit:active { transform: scale(.95); }
 .winter-note { margin-top: 10px; font-size: .82rem; color: #3a5a8a; background: #e6eefa; border-radius: 12px; padding: 10px 12px; line-height: 1.5; }
+
+/* ===================================================================
+   v10 — 풍성한 염원터(소원 종·분류) · 상점 다중착용 · 계단 추락 · 음악/물소리
+   =================================================================== */
+
+/* 염원 등불터 제단 */
+.modal-lantern .altar { position: relative; display: flex; align-items: center; gap: 14px; justify-content: center;
+  background: radial-gradient(ellipse at 50% 120%, #fbe6bf, #fff6e6); border-radius: 20px; padding: 14px 12px; margin-bottom: 12px; overflow: hidden; }
+.bell-btn { position: relative; z-index: 2; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  background: linear-gradient(180deg, #ffd98a, #f0b44e); color: #6b4a1c; border-radius: 18px; padding: 10px 14px; box-shadow: 0 6px 14px rgba(200,150,60,.35); font-weight: 700; font-size: .78rem; line-height: 1.2; }
+.bell-btn:active { transform: scale(.94); }
+.bell-btn .bell-ico { font-size: 1.5rem; }
+.bell-btn:active .bell-ico, .bell-btn.ring .bell-ico { animation: bellshake .5s ease; }
+@keyframes bellshake { 0%,100%{transform:rotate(0)} 20%{transform:rotate(16deg)} 40%{transform:rotate(-13deg)} 60%{transform:rotate(9deg)} 80%{transform:rotate(-5deg)} }
+.incense { position: relative; font-size: 1.6rem; }
+.incense .smoke { position: absolute; left: 50%; bottom: 100%; width: 6px; height: 6px; border-radius: 50%; background: rgba(200,200,200,.5); opacity: 0; animation: smoke 4s ease-in infinite; }
+.incense .smoke.s2 { animation-delay: 1.3s; } .incense .smoke.s3 { animation-delay: 2.6s; }
+@keyframes smoke { 0% { transform: translate(-50%,0) scale(.6); opacity: 0; } 20% { opacity: .5; } 100% { transform: translate(calc(-50% + 10px),-46px) scale(2.4); opacity: 0; } }
+.altar-word { flex: 1; font-size: .86rem; color: #7a5a2c; line-height: 1.5; }
+.bell-ripple { position: absolute; left: 44px; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; border: 2px solid rgba(240,180,78,.7); pointer-events: none; animation: bellrip 2s ease-out forwards; }
+@keyframes bellrip { from { transform: scale(.3); opacity: .9; } to { transform: scale(3.6); opacity: 0; } }
+
+/* 소원 분류 칩 */
+.cat-pick { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.cat-opt { border: none; cursor: pointer; border-radius: 12px; background: #f3ece0; color: var(--ink-soft); font-size: .8rem; font-weight: 700; padding: 7px 10px; display: flex; align-items: center; gap: 4px; }
+.cat-opt span { font-size: 1rem; }
+.cat-opt.on { background: #f8e3bd; color: #7a5422; box-shadow: 0 0 0 2px #f0c46f inset; }
+.cat-filter { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 2px; scrollbar-width: none; }
+.cat-filter::-webkit-scrollbar { display: none; }
+.cat-chip { flex: none; border: none; cursor: pointer; border-radius: 999px; padding: 6px 12px; font-size: .78rem; font-weight: 700; background: #f1e9da; color: var(--ink-soft); white-space: nowrap; }
+.cat-chip.on { background: #f0b44e; color: #fff; }
+.wcat { display: inline-block; font-size: .7rem; font-weight: 700; color: #8a6332; background: #fbefd9; border-radius: 999px; padding: 1px 8px; margin-right: 6px; vertical-align: middle; }
+.wcard.letgo .wcat { color: #4f7444; background: #e7f2dc; }
+
+/* 계단 추락 */
+.sg-me.falling { animation: tumble .62s cubic-bezier(.4,0,.8,1) forwards; }
+@keyframes tumble { 0% { transform: translateY(0) rotate(0); } 30% { transform: translate(-10px,14px) rotate(-40deg); } 60% { transform: translate(8px,40px) rotate(-200deg); } 100% { transform: translate(0,70px) rotate(-360deg); opacity: .85; } }

@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" />
-  <link rel="stylesheet" href="css/style.css?v=9" />
+  <link rel="stylesheet" href="css/style.css?v=10" />
   <style>[hidden]{display:none !important;}</style>
 </head>
 <body class="t-day">
@@ -130,12 +130,20 @@
 
   <!-- ===== 염원 등불터 ===== -->
   <div class="modal-backdrop" id="boardModal" hidden>
-    <div class="modal modal-board" data-theme="amber">
+    <div class="modal modal-board modal-lantern" data-theme="amber">
       <div class="m-head"><span class="m-ico">🏮</span><h2>염원 등불터</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
+      <div class="altar">
+        <button class="bell-btn" id="bellBtn" type="button" aria-label="소원 종 울리기">
+          <span class="bell-ico">🔔</span><span class="bell-txt">소원 종<br>울리기</span>
+        </button>
+        <div class="incense"><span class="smoke s1"></span><span class="smoke s2"></span><span class="smoke s3"></span>🕯️</div>
+        <p class="altar-word" id="altarWord">마음을 담아 천천히 한 줄을 적어요.</p>
+      </div>
       <div class="board-top">
         <div class="tabs" role="tablist"><button class="tab on" data-tab="all" role="tab">함께 보기</button><button class="tab" data-tab="mine" role="tab">내 마음</button></div>
         <button class="btn-primary" id="openWrite">＋ 마음 올리기</button>
       </div>
+      <div class="cat-filter" id="catFilter"></div>
       <div class="board-list" id="boardList"></div>
       <p class="board-note">공감 5개가 모이면 별이 되어 별빛 언덕으로 올라가요. 불편한 글은 🚩로 알려 주세요.</p>
       <div class="modal-foot"><span class="counter" id="boardCount"></span><span class="counter">올리면 🪙5 · 공감하면 🪙1</span></div>
@@ -151,6 +159,8 @@
         <button class="pill" data-kind="내려놓기" role="radio" aria-checked="false">🍂 내려놓을 마음</button>
       </div>
       <p class="modal-desc" id="kindDesc">이루어지길 바라는 마음을 등불로 띄워요.</p>
+      <label class="form-label">어떤 마음인가요?</label>
+      <div class="cat-pick" id="catPick"></div>
       <div class="kind-words">🌿 <b>고운 말, 바른 말</b>로 적어요. 내가 한 말과 행동은 다시 나에게 돌아와요.</div>
       <textarea id="wishInput" maxlength="100" rows="3" placeholder="예) 오늘도 무사히 지나가기를"></textarea>
       <p class="write-rule">친구 이름·연락처는 빼고, 내 마음만 담아요. 올리면 바로 모두에게 보여요.</p>
@@ -323,39 +333,6 @@
     </div>
   </div>
 
-  <!-- ===== 생각 나눔터 ===== -->
-  <div class="modal-backdrop" id="thoughtsModal" hidden>
-    <div class="modal modal-board modal-links" data-theme="mint">
-      <div class="m-head"><span class="m-ico">💬</span><h2>생각 나눔터</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
-      <p class="modal-desc">마음속 생각을 자유롭게 나눠요. 함께 보고 싶은 링크도 올릴 수 있어요.</p>
-      <div class="links-top" style="justify-content:flex-end">
-        <button class="btn-primary" id="openThoughtWrite">＋ 생각 올리기</button>
-      </div>
-      <div class="link-list" id="thoughtList"></div>
-      <div class="modal-foot"><span class="counter" id="thoughtsCount"></span><span class="counter">올리면 🪙5 · 불편한 글은 🚩</span></div>
-    </div>
-  </div>
-
-  <!-- ===== 생각 올리기 ===== -->
-  <div class="modal-backdrop" id="thoughtFormModal" hidden>
-    <div class="modal" data-theme="mint">
-      <div class="m-head"><span class="m-ico">✏️</span><h2>생각 올리기</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
-      <div class="kind-words">🌿 <b>고운 말, 바른 말</b>로 나눠요. 내가 한 말과 행동은 다시 나에게 돌아와요.</div>
-      <label class="form-label">나누고 싶은 생각</label>
-      <textarea id="thoughtInput" maxlength="160" rows="3" placeholder="예) 친구가 힘들어 보일 때 먼저 말을 걸어 주면 좋겠어요"></textarea>
-      <label class="form-label">함께 볼 링크 <small>(선택 — 없으면 비워 둬요)</small></label>
-      <input id="thoughtUrl" class="form-input" type="url" inputmode="url" placeholder="https://... (안 넣어도 돼요)" />
-      <label class="form-label">나눈 사람 <small>(별명, 바꿔도 돼요)</small></label>
-      <input id="thoughtNick" class="form-input" type="text" maxlength="12" placeholder="예) 포근한 바람" />
-      <p class="write-rule">친구를 놀리거나 이름·연락처가 담긴 글은 올리지 않아요. 올린 생각은 별명과 함께 모두에게 보여요.</p>
-      <div class="modal-foot">
-        <span class="counter" id="thoughtCharCount">0 / 160</span>
-        <div class="modal-actions"><button class="btn-ghost" id="thoughtCancel">닫기</button><button class="btn-primary" id="thoughtSubmit">나누기</button></div>
-      </div>
-      <p class="modal-msg" id="thoughtMsg"></p>
-    </div>
-  </div>
-
   <!-- ===== 명언 계단 (게임 화면) ===== -->
   <div class="stair-game" id="stairGame" hidden>
     <div class="sg-sky" id="sgSky"></div>
@@ -403,10 +380,10 @@
     <p>마음을 올리는 중…</p>
   </div>
 
-  <script src="js/config.js?v=9"></script>
-  <script src="js/badwords.js?v=9"></script>
-  <script src="js/art.js?v=9"></script>
-  <script src="js/quotes.js?v=9"></script>
-  <script src="js/app.js?v=9"></script>
+  <script src="js/config.js?v=10"></script>
+  <script src="js/badwords.js?v=10"></script>
+  <script src="js/art.js?v=10"></script>
+  <script src="js/quotes.js?v=10"></script>
+  <script src="js/app.js?v=10"></script>
 </body>
 </html>

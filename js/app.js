@@ -26,7 +26,7 @@
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
 
   /* ===================== 상수 ===================== */
-  const W = 6040, SPEED = 250, DSPEED = 0.85, NEAR = 130, STAR_AT = 5;
+  const W = 5700, SPEED = 250, DSPEED = 0.85, NEAR = 130, STAR_AT = 5;
   const KIND_HOPE = '바람', KIND_LETGO = '내려놓기';
   const ADJ = ['느린', '따뜻한', '조용한', '포근한', '맑은', '다정한', '싱그러운', '잔잔한', '반짝이는', '수줍은', '너그러운', '차분한', '말랑한', '산뜻한', '고요한', '부드러운'];
   const NOUN = ['걸음', '바람', '새벽', '구름', '오솔길', '햇살', '이슬', '나뭇잎', '달빛', '시냇물', '솔방울', '민들레', '별빛', '도토리', '꽃잎', '숲길'];
@@ -34,16 +34,15 @@
   const ZONES = [
     { id: 'plaza', x: 360, name: '쉼터 광장', short: '광장', icon: '🪧', tint: '#f4e7cf' },
     { id: 'shop', x: 820, name: '숲속 가게', short: '가게', icon: '🏪', tint: '#d6efe4' },
-    { id: 'links', x: 1300, name: '링크 나눔터', short: '링크', icon: '🎁', tint: '#fbdcd9', big: true },
-    { id: 'thoughts', x: 1760, name: '생각 나눔터', short: '생각', icon: '💬', tint: '#d7f0e4', big: true },
-    { id: 'tree', x: 2240, name: '숨 쉬는 나무', short: '숨 고르기', icon: '🌳', tint: '#ddeed0' },
-    { id: 'spring', x: 2700, name: '마음 구슬 샘', short: '마음 구슬', icon: '🫧', tint: '#dbecf5' },
-    { id: 'lantern', x: 3180, name: '염원 등불터', short: '염원', icon: '🏮', tint: '#fbe6c4' },
-    { id: 'garden', x: 3700, name: '함께 꽃밭', short: '꽃밭', icon: '🌷', tint: '#fadde4' },
-    { id: 'pond', x: 4200, name: '마음 날씨 연못', short: '마음 날씨', icon: '🪷', tint: '#d6edf2' },
-    { id: 'rain', x: 4680, name: '빗소리 정자', short: '빗소리', icon: '☔', tint: '#dfe7ec' },
-    { id: 'stair', x: 5160, name: '명언 계단', short: '명언 계단', icon: '🪜', tint: '#f1e4cc' },
-    { id: 'hill', x: 5660, name: '별빛 언덕', short: '별빛 언덕', icon: '⭐', tint: '#e6def5' },
+    { id: 'links', x: 1340, name: '링크 나눔터', short: '링크', icon: '🎁', tint: '#fbdcd9', big: true },
+    { id: 'tree', x: 1880, name: '숨 쉬는 나무', short: '숨 고르기', icon: '🌳', tint: '#ddeed0' },
+    { id: 'spring', x: 2340, name: '마음 구슬 샘', short: '마음 구슬', icon: '🫧', tint: '#dbecf5' },
+    { id: 'lantern', x: 2820, name: '염원 등불터', short: '염원', icon: '🏮', tint: '#fbe6c4', big: true },
+    { id: 'garden', x: 3360, name: '함께 꽃밭', short: '꽃밭', icon: '🌷', tint: '#fadde4' },
+    { id: 'pond', x: 3860, name: '마음 날씨 연못', short: '마음 날씨', icon: '🪷', tint: '#d6edf2' },
+    { id: 'rain', x: 4340, name: '빗소리 정자', short: '빗소리', icon: '☔', tint: '#dfe7ec' },
+    { id: 'stair', x: 4820, name: '명언 계단', short: '명언 계단', icon: '🪜', tint: '#f1e4cc' },
+    { id: 'hill', x: 5320, name: '별빛 언덕', short: '별빛 언덕', icon: '⭐', tint: '#e6def5' },
   ];
   const zoneById = (id) => ZONES.find((z) => z.id === id);
   const PURPOSES = ['수업용', '일상 상식', '음악', '기타'];
@@ -89,10 +88,25 @@
     stair: { name: '명언 계단 10칸', ico: '🪜', each: 1, max: 22 },
     stairDone: { name: '108계단 완주', ico: '🎉', each: 10, max: 10 },
     pet: { name: '동물 쓰다듬기', ico: '🐑', each: 1, max: 5 },
+    bell: { name: '소원 종 울리기', ico: '🔔', each: 1, max: 3 },
   };
-  const wallet = Object.assign({ coins: 0, owned: { acc: [0], pet: [0] }, c: 0, p: 0, day: '', earn: {}, gift: false }, store.get('ms_wallet', {}) || {});
+  // 염원 분류 (서버 N.CAT 과 같은 순서·개수)
+  const WISH_CATS = [
+    { ico: '🌱', name: '건강' }, { ico: '👨‍👩‍👧', name: '가족' }, { ico: '🤝', name: '친구' }, { ico: '📚', name: '공부' },
+    { ico: '⭐', name: '꿈' }, { ico: '🙏', name: '감사' }, { ico: '🌙', name: '마음' }, { ico: '🍀', name: '그 밖에' },
+  ];
+  const catOf = (i) => WISH_CATS[clamp(i | 0, 0, WISH_CATS.length - 1)];
+  const wallet = Object.assign({ coins: 0, owned: { acc: [0], pet: [0] }, c: 0, p: 0, wornSlots: null, day: '', earn: {}, gift: false }, store.get('ms_wallet', {}) || {});
   if (!wallet.owned || !Array.isArray(wallet.owned.acc)) wallet.owned = { acc: [0], pet: [0] };
-  wallet.c = clamp(wallet.c | 0, 0, A.ACC.length - 1); wallet.p = clamp(wallet.p | 0, 0, A.PET.length - 1);
+  wallet.p = clamp(wallet.p | 0, 0, A.PET.length - 1);
+  // 장식을 슬롯별로 여러 개 착용 (예전 단일 장식 wallet.c 은 자동으로 옮겨요)
+  if (!wallet.wornSlots || typeof wallet.wornSlots !== 'object') {
+    wallet.wornSlots = {};
+    const old = clamp(wallet.c | 0, 0, A.ACC.length - 1);
+    if (old) wallet.wornSlots[A.ACC_SLOT[old]] = old;
+  }
+  function wornArr() { return Object.keys(wallet.wornSlots).map((k) => wallet.wornSlots[k] | 0).filter((x) => x >= 1 && x <= 13); }
+  function isWorn(id) { return wallet.wornSlots[A.ACC_SLOT[id]] === id; }
   function saveWallet() { store.set('ms_wallet', wallet); }
   function rollDay() { if (wallet.day !== today()) { wallet.day = today(); wallet.earn = {}; saveWallet(); } }
   function renderCoins(bump) {
@@ -123,7 +137,7 @@
     wallet.coins -= n; saveWallet(); renderCoins(true);
     return true;
   }
-  const look = () => Object.assign({}, profile || { a: 0, b: 0, s: 0, h: 0, hs: 0, o: 0, ot: 0 }, { c: wallet.c, p: wallet.p });
+  const look = () => Object.assign({}, profile || { a: 0, b: 0, s: 0, h: 0, hs: 0, o: 0, ot: 0 }, { worn: wornArr(), p: wallet.p });
 
   /* ===================== 화면 크기 ===================== */
   let vw = 0, vh = 0, bandTop = 0, bandBot = 0, bandH = 1, lmScale = 1, cam = 0;
@@ -452,42 +466,57 @@
       tone([784, 1046.5], 0.08, 0.08, 0.4);
     }
     // 빗소리 정자: 소리 켜기와 상관없이 직접 고른 소리를 틀어요
+    // 전자음 없이, 부드럽게 걸러낸 '소음'으로 빗소리·시냇물·모닥불을 만들어요.
+    function noiseBurst(dest, t, dur, vol, type, freq, q) {
+      const src = ctx.createBufferSource(); src.buffer = noiseBuf('white');
+      const bp = ctx.createBiquadFilter(); bp.type = type; bp.frequency.value = freq; if (q) bp.Q.value = q;
+      const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + Math.min(0.01, dur * 0.3)); g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+      src.connect(bp); bp.connect(g); g.connect(dest); src.start(t); src.stop(t + dur + 0.05);
+    }
     function ambient(kind) {
       ensure(); if (!ctx) return;
       if (ctx.state === 'suspended') ctx.resume();
       stopAmbient(true);
       const nodes = [];
-      const src = loopSrc(noiseBuf(kind === 'fire' ? 'brown' : 'white'));
+      // 바탕 소리
+      const src = loopSrc(noiseBuf('brown'));
       const f = ctx.createBiquadFilter();
       const g = ctx.createGain();
-      if (kind === 'rain') { f.type = 'bandpass'; f.frequency.value = 2600; f.Q.value = 0.4; g.gain.value = 0.16; }
-      else if (kind === 'stream') {
-        f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 0.7; g.gain.value = 0.22;
-        const lfo = ctx.createOscillator(); lfo.frequency.value = 0.35; const lg = ctx.createGain(); lg.gain.value = 300;
+      if (kind === 'rain') {
+        // 부드러운 빗줄기: 낮게 걸러낸 쉬——
+        f.type = 'lowpass'; f.frequency.value = 1500; f.Q.value = 0.3; g.gain.value = 0.3;
+      } else if (kind === 'stream') {
+        // 졸졸 흐르는 시냇물: 중간 대역이 천천히 흔들려요
+        f.type = 'bandpass'; f.frequency.value = 700; f.Q.value = 0.6; g.gain.value = 0.34;
+        const lfo = ctx.createOscillator(); lfo.frequency.value = 0.18; const lg = ctx.createGain(); lg.gain.value = 180;
         lfo.connect(lg); lg.connect(f.frequency); lfo.start(); nodes.push(lfo);
-      } else { f.type = 'lowpass'; f.frequency.value = 500; g.gain.value = 0.5; }
+      } else {
+        // 모닥불: 낮고 따뜻한 울림
+        f.type = 'lowpass'; f.frequency.value = 360; g.gain.value = 0.5;
+      }
       src.connect(f); f.connect(g); g.connect(ambG); src.start(); nodes.push(src);
       let timer = null;
       const tick = () => {
         const t = ctx.currentTime;
         if (kind === 'fire') {
-          const c = ctx.createBufferSource(); c.buffer = noiseBuf('white');
-          const cg = ctx.createGain(); cg.gain.setValueAtTime(rand(0.05, 0.18), t); cg.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
-          const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1800;
-          c.connect(hp); hp.connect(cg); cg.connect(ambG); c.start(t); c.stop(t + 0.05);
-          timer = setTimeout(tick, rand(60, 420));
+          // 탁탁 — 걸러낸 소음 짧은 터짐
+          noiseBurst(ambG, t, rand(0.015, 0.05), rand(0.06, 0.2), 'highpass', rand(1400, 3200), 0.5);
+          if (Math.random() < 0.25) noiseBurst(ambG, t + 0.02, 0.02, 0.12, 'bandpass', rand(600, 1200), 1);
+          timer = setTimeout(tick, rand(80, 500));
+        } else if (kind === 'rain') {
+          // 톡 — 부드러운 물방울
+          noiseBurst(ambG, t, rand(0.04, 0.09), rand(0.015, 0.05), 'bandpass', rand(900, 2000), 1.2);
+          timer = setTimeout(tick, rand(90, 320));
         } else {
-          const o = ctx.createOscillator(), og = ctx.createGain(), fr = rand(1200, 3200);
-          o.frequency.setValueAtTime(fr, t); o.frequency.exponentialRampToValueAtTime(fr * 0.6, t + 0.08);
-          og.gain.setValueAtTime(kind === 'rain' ? 0.03 : 0.02, t); og.gain.exponentialRampToValueAtTime(0.0005, t + 0.1);
-          o.connect(og); og.connect(ambG); o.start(t); o.stop(t + 0.12);
-          timer = setTimeout(tick, rand(kind === 'rain' ? 40 : 200, kind === 'rain' ? 260 : 900));
+          // 또르르 — 물 구르는 소리
+          noiseBurst(ambG, t, rand(0.05, 0.12), rand(0.02, 0.05), 'bandpass', rand(1400, 2800), 2);
+          timer = setTimeout(tick, rand(180, 600));
         }
       };
       tick();
       ambG.gain.cancelScheduledValues(ctx.currentTime);
       ambG.gain.setValueAtTime(0, ctx.currentTime);
-      ambG.gain.linearRampToValueAtTime(0.9, ctx.currentTime + 1.2);
+      ambG.gain.linearRampToValueAtTime(0.9, ctx.currentTime + 1.4);
       amb = { nodes, stop() { clearTimeout(timer); nodes.forEach((n) => { try { n.stop(); } catch (e) { /* */ } }); } };
     }
     function stopAmbient(now) {
@@ -503,56 +532,109 @@
       step(i) { tone([392 + (i % 8) * 33], 0, 0.12, 0.16, 'triangle'); },
       coin() { tone([988, 1318.5], 0.07, 0.08, 0.3, 'triangle'); },
       chime(soft, force) { tone(soft ? [523.25, 659.25] : [523.25, 659.25, 783.99, 1046.5], 0.12, soft ? 0.07 : 0.11, 1.2, 'sine', force); },
+      // 싱잉볼 같은 맑고 긴 종소리 (소리 꺼져 있어도 이 순간엔 들려줘요)
+      bell() {
+        ensure(); if (!ctx) return;
+        if (ctx.state === 'suspended') ctx.resume();
+        const t = ctx.currentTime, base = 330, partials = [1, 2.0, 2.76, 3.98];
+        partials.forEach((m, i) => {
+          const o = ctx.createOscillator(), g = ctx.createGain();
+          o.type = 'sine'; o.frequency.value = base * m * (1 + (i ? 0.004 : 0));
+          const vol = 0.14 / (i + 1);
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.linearRampToValueAtTime(vol, t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0008, t + 4.2 - i * 0.5);
+          o.connect(g); g.connect(sfx); o.start(t); o.stop(t + 4.4);
+        });
+        // 은은한 맥놀이
+        const o2 = ctx.createOscillator(), g2 = ctx.createGain();
+        o2.type = 'sine'; o2.frequency.value = base * 1.004;
+        g2.gain.setValueAtTime(0.0001, t); g2.gain.linearRampToValueAtTime(0.05, t + 0.03); g2.gain.exponentialRampToValueAtTime(0.0008, t + 3.6);
+        o2.connect(g2); g2.connect(sfx); o2.start(t); o2.stop(t + 3.8);
+      },
     };
   })();
 
   /* ===================== 배경음악 (클래식·캐럴) ===================== */
   const Music = (function () {
-    // 모두 저작권이 없는 옛 곡(캐럴·클래식)을 음 하나하나 소리로 만들어 들려줘요.
-    const F = { 'C3': 130.81, 'D3': 146.83, 'E3': 164.81, 'F3': 174.61, 'G3': 196.00, 'A3': 220.00, 'B3': 246.94, 'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23, 'G4': 392.00, 'A4': 440.00, 'B4': 493.88, 'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'F5': 698.46, 'G5': 783.99, 'A5': 880.00, '-': 0 };
-    const n = (name, d) => ({ f: F[name] || 0, d: d });
-    const TRACKS = {
-      jingle: { name: '징글벨', bpm: 132, bass: ['C3', 'G3'], mel: [['E4', 1], ['E4', 1], ['E4', 2], ['E4', 1], ['E4', 1], ['E4', 2], ['E4', 1], ['G4', 1], ['C4', 1.5], ['D4', .5], ['E4', 4], ['F4', 1], ['F4', 1], ['F4', 1.5], ['F4', .5], ['F4', 1], ['E4', 1], ['E4', 1], ['E4', .5], ['E4', .5], ['E4', 1], ['D4', 1], ['D4', 1], ['E4', 1], ['D4', 2], ['G4', 2]] },
-      silent: { name: '고요한 밤', bpm: 96, bass: ['G3', 'C3'], mel: [['G4', 1.5], ['A4', .5], ['G4', 1], ['E4', 3], ['G4', 1.5], ['A4', .5], ['G4', 1], ['E4', 3], ['D5', 2], ['D5', 1], ['B4', 3], ['C5', 2], ['C5', 1], ['G4', 3]] },
-      ode: { name: '환희의 송가', bpm: 120, bass: ['C3', 'G3'], mel: [['E4', 1], ['E4', 1], ['F4', 1], ['G4', 1], ['G4', 1], ['F4', 1], ['E4', 1], ['D4', 1], ['C4', 1], ['C4', 1], ['D4', 1], ['E4', 1], ['E4', 1.5], ['D4', .5], ['D4', 2], ['E4', 1], ['E4', 1], ['F4', 1], ['G4', 1], ['G4', 1], ['F4', 1], ['E4', 1], ['D4', 1], ['C4', 1], ['C4', 1], ['D4', 1], ['E4', 1], ['D4', 1.5], ['C4', .5], ['C4', 2]] },
-      canon: { name: '캐논(파헬벨)', bpm: 100, bass: ['D3', 'A3', 'B3', 'F3', 'G3', 'D3', 'G3', 'A3'], mel: [['F4', 2], ['E4', 2], ['D4', 2], ['C4', 2], ['B3', 2], ['A3', 2], ['B3', 2], ['C4', 2], ['D4', 2], ['C4', 2], ['B3', 2], ['A3', 2], ['G3', 2], ['F3', 2], ['G3', 2], ['E4', 2]] },
-      gymnopedie: { name: '짐노페디(사티)', bpm: 76, bass: ['G3', 'D3', 'G3', 'D3'], mel: [['F5', 3], ['E5', 1], ['-', 2], ['D5', 2], ['A4', 2], ['B4', 2], ['-', 2], ['F5', 3], ['E5', 1], ['-', 2], ['D5', 2], ['A4', 2], ['B4', 4]] },
-      joy: { name: '기쁘다 구주 오셨네', bpm: 118, bass: ['C3', 'G3', 'F3', 'C3'], mel: [['C5', 1.5], ['B4', .5], ['A4', 1], ['G4', 1.5], ['F4', .5], ['E4', 2], ['E4', 1], ['E4', 1], ['F4', 1], ['F4', 1], ['G4', 2], ['G4', .75], ['F4', .25], ['E4', 1], ['E4', .75], ['D4', .25], ['C4', 2]] },
-      wish: { name: '우리 모두 메리 크리스마스', bpm: 128, bass: ['G3', 'C3', 'F3', 'G3'], mel: [['G4', 1], ['C5', 1], ['C5', .5], ['D5', .5], ['C5', .5], ['B4', .5], ['A4', 1], ['A4', 1], ['D5', 1], ['D5', .5], ['E5', .5], ['D5', .5], ['C5', .5], ['B4', 1], ['G4', 1], ['E5', 1], ['E5', .5], ['F5', .5], ['E5', .5], ['D5', .5], ['C5', 1], ['A4', 1], ['G4', .5], ['G4', .5], ['A4', 1], ['D5', 1], ['B4', 1], ['C5', 2]] },
-      deck: { name: '징글벨 락·데크 더 홀', bpm: 120, bass: ['C3', 'G3', 'C3', 'G3'], mel: [['G5', 1], ['F5', .5], ['E5', .5], ['D5', 1], ['C5', 1], ['D5', .5], ['E5', .5], ['F5', .5], ['D5', .5], ['E5', .5], ['D5', .5], ['C5', .5], ['B4', .5], ['C5', 2], ['D5', 1], ['E5', .5], ['F5', .5], ['E5', .5], ['D5', .5], ['C5', 1], ['B4', 1], ['C5', 2]] },
+    // 전자음 대신 '부드러운 종·오르골 + 잔잔한 울림(리버브)'로 숲에 어울리게 들려줘요.
+    const F = { 'C3': 130.81, 'D3': 146.83, 'E3': 164.81, 'F3': 174.61, 'G3': 196.00, 'A3': 220.00, 'B3': 246.94, 'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23, 'G4': 392.00, 'A4': 440.00, 'B4': 493.88, 'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'F5': 698.46, 'G5': 783.99, 'A5': 880.00, 'G2': 98.00, 'D2': 73.42, 'C2': 65.41, '-': 0 };
+    const CAROLS = {
+      jingle: { name: '징글벨', bpm: 128, mel: [['E4', 1], ['E4', 1], ['E4', 2], ['E4', 1], ['E4', 1], ['E4', 2], ['E4', 1], ['G4', 1], ['C4', 1.5], ['D4', .5], ['E4', 4], ['F4', 1], ['F4', 1], ['F4', 1.5], ['F4', .5], ['F4', 1], ['E4', 1], ['E4', 1], ['E4', .5], ['E4', .5], ['E4', 1], ['D4', 1], ['D4', 1], ['E4', 1], ['D4', 2], ['G4', 2]] },
+      silent: { name: '고요한 밤', bpm: 92, mel: [['G4', 1.5], ['A4', .5], ['G4', 1], ['E4', 3], ['G4', 1.5], ['A4', .5], ['G4', 1], ['E4', 3], ['D5', 2], ['D5', 1], ['B4', 3], ['C5', 2], ['C5', 1], ['G4', 3]] },
+      joy: { name: '기쁘다 구주 오셨네', bpm: 112, mel: [['C5', 1.5], ['B4', .5], ['A4', 1], ['G4', 1.5], ['F4', .5], ['E4', 2], ['E4', 1], ['E4', 1], ['F4', 1], ['F4', 1], ['G4', 2], ['G4', .75], ['F4', .25], ['E4', 1], ['E4', .75], ['D4', .25], ['C4', 2]] },
+      wish: { name: '우리 모두 메리 크리스마스', bpm: 124, mel: [['G4', 1], ['C5', 1], ['C5', .5], ['D5', .5], ['C5', .5], ['B4', .5], ['A4', 1], ['A4', 1], ['D5', 1], ['D5', .5], ['E5', .5], ['D5', .5], ['C5', .5], ['B4', 1], ['G4', 1], ['E5', 1], ['E5', .5], ['F5', .5], ['E5', .5], ['D5', .5], ['C5', 1], ['A4', 1], ['G4', .5], ['G4', .5], ['A4', 1], ['D5', 1], ['B4', 1], ['C5', 2]] },
+      deck: { name: '데크 더 홀', bpm: 118, mel: [['G5', 1], ['F5', .5], ['E5', .5], ['D5', 1], ['C5', 1], ['D5', .5], ['E5', .5], ['F5', .5], ['D5', .5], ['E5', .5], ['D5', .5], ['C5', .5], ['B4', .5], ['C5', 2], ['D5', 1], ['E5', .5], ['F5', .5], ['E5', .5], ['D5', .5], ['C5', 1], ['B4', 1], ['C5', 2]] },
     };
-    let ctx, master, on = '', timers = [], barTimer = null;
+    // 잔잔한 숲 분위기 음악(멜로디 없이 패드 화음 + 가끔 맑은 종)
+    const SCAPES = {
+      bowl: { name: '숲속 명상', chord: ['G2', 'D3', 'G3', 'B3'], bells: ['G4', 'B4', 'D5', 'G5'], every: [5, 9], wave: 'sine' },
+      sunlight: { name: '따뜻한 햇살', chord: ['C3', 'G3', 'C4', 'E4'], bells: ['G4', 'C5', 'E5', 'G5'], every: [4, 7], wave: 'triangle' },
+      chime: { name: '바람 풍경 소리', chord: ['D3', 'A3', 'D4'], bells: ['A4', 'D5', 'E5', 'G5', 'A5'], every: [2.5, 5], wave: 'sine' },
+    };
+    const TRACKS = {};
+    Object.keys(CAROLS).forEach((k) => { TRACKS[k] = Object.assign({ kind: 'carol' }, CAROLS[k]); });
+    Object.keys(SCAPES).forEach((k) => { TRACKS[k] = Object.assign({ kind: 'scape' }, SCAPES[k]); });
+
+    let ctx, master, wet, verb, on = '', timer = null, nodes = [];
+    function makeVerb() {
+      // 간단한 임펄스 리버브로 전자음 느낌을 덜어 줘요
+      const len = Math.floor(2.6 * ctx.sampleRate), buf = ctx.createBuffer(2, len, ctx.sampleRate);
+      for (let ch = 0; ch < 2; ch++) { const d = buf.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6); }
+      const c = ctx.createConvolver(); c.buffer = buf; return c;
+    }
     function ensure() {
       if (ctx) return;
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
       ctx = new AC();
       master = ctx.createGain(); master.gain.value = 0.0; master.connect(ctx.destination);
+      verb = makeVerb(); wet = ctx.createGain(); wet.gain.value = 0.9; verb.connect(wet); wet.connect(master);
     }
-    function pluck(freq, start, dur, vol, type) {
+    function dest() { return { dry: master, send: verb }; }
+    // 오르골/종 같은 음색: 기음 + 옥타브(여린) 사인, 부드러운 감쇠, 울림 추가
+    function bellNote(freq, start, dur, vol, wave) {
       if (!freq) return;
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = type || 'triangle'; o.frequency.value = freq;
-      g.gain.setValueAtTime(0.0001, start);
-      g.gain.linearRampToValueAtTime(vol, start + 0.03);
-      g.gain.exponentialRampToValueAtTime(0.0008, start + dur);
-      o.connect(g); g.connect(master); o.start(start); o.stop(start + dur + 0.05);
+      [[1, vol, wave || 'sine'], [2, vol * 0.3, 'sine']].forEach(([m, v, w]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = w; o.frequency.value = freq * m;
+        g.gain.setValueAtTime(0.0001, start);
+        g.gain.linearRampToValueAtTime(v, start + 0.04);
+        g.gain.exponentialRampToValueAtTime(0.0007, start + dur);
+        o.connect(g); g.connect(master); g.connect(verb);
+        o.start(start); o.stop(start + dur + 0.05);
+      });
     }
-    function playTrack(key) {
-      const tr = TRACKS[key]; if (!tr) return;
-      const beat = 60 / tr.bpm;
-      let i = 0, bass = 0;
-      const total = tr.mel.reduce((a, m) => a + m[1], 0);
+    function pad(freqs, gain) {
+      // 숨 쉬듯 천천히 커졌다 작아지는 화음
+      freqs.forEach((f, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain(), lfo = ctx.createOscillator(), lg = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = f * (1 + (i % 2 ? 0.003 : -0.002));
+        g.gain.value = gain / freqs.length;
+        lfo.type = 'sine'; lfo.frequency.value = 0.05 + i * 0.012; lg.gain.value = g.gain.value * 0.6;
+        lfo.connect(lg); lg.connect(g.gain);
+        o.connect(g); g.connect(master); g.connect(verb);
+        o.start(); lfo.start(); nodes.push(o, lfo);
+      });
+    }
+    function playCarol(tr) {
+      const beat = 60 / tr.bpm, total = tr.mel.reduce((a, m) => a + m[1], 0);
       function bar() {
-        const t0 = ctx.currentTime + 0.05;
-        let t = t0;
-        tr.mel.forEach((m) => { pluck(m[0] === '-' ? 0 : F[m[0]], t, m[1] * beat * 0.95, 0.12, 'triangle'); t += m[1] * beat; });
-        // 낮은 베이스 반주
-        let bt = t0, step = 2 * beat;
-        for (let s = 0; s * step < total * beat; s++) { pluck(F[tr.bass[bass % tr.bass.length]] / 2 || 0, bt, step * 0.9, 0.06, 'sine'); bass++; bt += step; }
-        barTimer = setTimeout(bar, total * beat * 1000 + 400);
+        let t = ctx.currentTime + 0.1;
+        tr.mel.forEach((m) => { bellNote(m[0] === '-' ? 0 : F[m[0]], t, Math.min(m[1] * beat * 1.4, 2.4), 0.13, 'triangle'); t += m[1] * beat; });
+        timer = setTimeout(bar, total * beat * 1000 + 900);
       }
       bar();
+    }
+    function playScape(tr) {
+      pad(tr.chord.map((n) => F[n]), 0.12);
+      function ring() {
+        const n = tr.bells[Math.floor(Math.random() * tr.bells.length)];
+        bellNote(F[n], ctx.currentTime + 0.05, 2.6, 0.08, tr.wave);
+        if (Math.random() < 0.3) bellNote(F[tr.bells[Math.floor(Math.random() * tr.bells.length)]], ctx.currentTime + 0.3, 2.2, 0.05, tr.wave);
+        const gap = tr.every[0] + Math.random() * (tr.every[1] - tr.every[0]);
+        timer = setTimeout(ring, gap * 1000);
+      }
+      timer = setTimeout(ring, 600);
     }
     function play(key) {
       if (key === on) return on;
@@ -563,14 +645,15 @@
       on = key;
       master.gain.cancelScheduledValues(ctx.currentTime);
       master.gain.setValueAtTime(0.0001, ctx.currentTime);
-      master.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 1.2);
-      playTrack(key);
+      master.gain.linearRampToValueAtTime(0.55, ctx.currentTime + 1.4);
+      const tr = TRACKS[key];
+      if (tr.kind === 'scape') playScape(tr); else playCarol(tr);
       return on;
     }
     function stop(silent) {
-      clearTimeout(barTimer); barTimer = null;
-      timers.forEach(clearTimeout); timers = [];
-      if (ctx && master && !silent) master.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4);
+      clearTimeout(timer); timer = null;
+      nodes.forEach((n) => { try { n.stop(); } catch (e) { /* */ } }); nodes = [];
+      if (ctx && master && !silent) master.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
       if (!silent) on = '';
     }
     return { play, stop, TRACKS, current: () => on };
@@ -622,8 +705,8 @@
   let visitsToday = 0, online = 1, presenceOk = false;
   const normKind = (k) => (k === KIND_LETGO ? KIND_LETGO : KIND_HOPE);
   function normWish(w) {
-    if (typeof w === 'string') return { id: '', text: w, kind: KIND_HOPE, empathy: 0, at: 0 };
-    return { id: String(w.id || ''), text: String(w.text || w.content || ''), kind: normKind(w.kind), empathy: Number(w.empathy) || 0, at: Number(w.at) || 0 };
+    if (typeof w === 'string') return { id: '', text: w, kind: KIND_HOPE, empathy: 0, cat: 0, at: 0 };
+    return { id: String(w.id || ''), text: String(w.text || w.content || ''), kind: normKind(w.kind), empathy: Number(w.empathy) || 0, cat: clamp(w.cat | 0, 0, 7), at: Number(w.at) || 0 };
   }
   const normFlower = (f) => ({ f: clamp(f.f | 0, 0, 5), x: clamp(+f.x || 0, 0, 100), y: clamp(+f.y || 0, 0, 100) });
   function normLink(l) {
@@ -694,7 +777,6 @@
     if (!$('gardenModal').hidden) renderGarden();
     if (!$('pondModal').hidden) renderMoodToday();
     if (!$('linksModal').hidden) renderLinks();
-    if (!$('thoughtsModal').hidden) renderThoughts();
   }
   function renderBadge() {
     const parts = [];
@@ -706,7 +788,6 @@
     const set = (id, t) => { const e = $('sub-' + id); if (e) e.textContent = t; };
     set('plaza', '안내'); set('shop', '🪙 ' + wallet.coins);
     set('links', state.links.length ? state.links.length + '개 링크' : '링크 나눔');
-    set('thoughts', state.thoughts.length ? state.thoughts.length + '개 생각' : '생각 나눔');
     set('tree', breaths + '번 숨'); set('spring', beadTotal + '알');
     set('lantern', state.wishes.length ? state.wishes.length + '개 마음' : '함께 보기');
     set('garden', state.flowers.length + '송이'); set('pond', moodPicked() !== null ? MOODS[moodPicked()].ico + ' 오늘' : '오늘 날씨');
@@ -816,8 +897,8 @@
   }
 
   /* ===================== 모달 ===================== */
-  const MODALS = ['introModal', 'guideModal', 'breathModal', 'beadsModal', 'boardModal', 'wishModal', 'starsModal', 'shopModal', 'gardenModal', 'pondModal', 'rainModal', 'walletModal', 'bookModal', 'mapModal', 'linksModal', 'linkFormModal', 'musicModal', 'seasonModal', 'thoughtsModal', 'thoughtFormModal'];
-  const ZONE_OF_MODAL = { guideModal: 'plaza', breathModal: 'tree', beadsModal: 'spring', boardModal: 'lantern', starsModal: 'hill', shopModal: 'shop', gardenModal: 'garden', pondModal: 'pond', rainModal: 'rain', linksModal: 'links', thoughtsModal: 'thoughts' };
+  const MODALS = ['introModal', 'guideModal', 'breathModal', 'beadsModal', 'boardModal', 'wishModal', 'starsModal', 'shopModal', 'gardenModal', 'pondModal', 'rainModal', 'walletModal', 'bookModal', 'mapModal', 'linksModal', 'linkFormModal', 'musicModal', 'seasonModal'];
+  const ZONE_OF_MODAL = { guideModal: 'plaza', breathModal: 'tree', beadsModal: 'spring', boardModal: 'lantern', starsModal: 'hill', shopModal: 'shop', gardenModal: 'garden', pondModal: 'pond', rainModal: 'rain', linksModal: 'links' };
   const modalOpen = () => MODALS.some((id) => !$(id).hidden) || !$('ritual').hidden || !$('loading').hidden || !$('stairGame').hidden;
   const isTyping = () => { const a = document.activeElement; return !!a && (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT'); };
   function openModal(id) { $(id).hidden = false; }
@@ -864,7 +945,6 @@
     else if (id === 'rain') openModal('rainModal');
     else if (id === 'stair') openStair();
     else if (id === 'links') openLinks();
-    else if (id === 'thoughts') openThoughts();
   }
   function goTo(id, enter) {
     const z = zoneById(id); if (!z) return;
@@ -1064,7 +1144,7 @@
       if (!u || !u.k) return;
       const p = validProfile({ a: u.a | 0, b: u.b | 0, s: u.s | 0, h: u.h | 0, hs: u.hs | 0, o: u.o | 0, ot: u.ot | 0 });
       if (!p) return;
-      p.c = clamp(u.c | 0, 0, A.ACC.length - 1);
+      p.worn = (Array.isArray(u.w) ? u.w : (u.c ? [u.c] : [])).map((x) => clamp(x | 0, 0, A.ACC.length - 1)).filter((x) => x >= 1);
       const pet = clamp(u.p | 0, 0, A.PET.length - 1);
       keep.add(u.k);
       let o = others.get(u.k);
@@ -1073,7 +1153,7 @@
         peopleEl.appendChild(o.el);
         others.set(u.k, o);
       }
-      const lk = [p.a, p.b, p.s, p.h, p.hs, p.o, p.ot, p.c].join(',');
+      const lk = [p.a, p.b, p.s, p.h, p.hs, p.o, p.ot, p.worn.join('-')].join(',');
       if (o.look && o.look !== lk) setLook(o.el, p, false);
       o.look = lk; o.name = nameOf(p);
       setPet(o, pet);
@@ -1120,7 +1200,7 @@
   function presencePayload() {
     const L = look();
     return { type: 'presence', sessionId: sid, x: Math.round(me.x), y: Math.round(me.d * 100) / 100, z: me.zone || '', f: me.facing,
-      a: L.a, b: L.b, s: L.s, h: L.h, hs: L.hs, o: L.o, ot: L.ot, c: L.c, p: L.p, e: me.e, hf: me.hf, ev: me.ev };
+      a: L.a, b: L.b, s: L.s, h: L.h, hs: L.hs, o: L.o, ot: L.ot, w: L.worn || [], p: L.p, e: me.e, hf: me.hf, ev: me.ev };
   }
   let pushAgain = false;
   async function presenceOnce() {
@@ -1209,6 +1289,21 @@
     renderBoard();
     if (boardTab === 'mine') syncMine();
   }));
+  const ALTAR_WORDS = ['마음을 담아 천천히 한 줄을 적어요.', '종을 울리고 잠시 눈을 감아 보세요.', '내가 보낸 다정함은 나에게 돌아와요.', '오늘 하루도 애썼어요. 깊게 숨을 쉬어요.', '작은 바람도 소중한 마음이에요.'];
+  let bellBusy = false;
+  function ringBell() {
+    if (bellBusy) return; bellBusy = true;
+    Sound.bell();
+    const altar = document.querySelector('.altar');
+    if (altar) {
+      for (let i = 0; i < 3; i++) { const r = el('span', 'bell-ripple'); r.style.animationDelay = (i * 0.25) + 's'; altar.appendChild(r); setTimeout(() => r.remove(), 2200); }
+    }
+    $('altarWord').textContent = ['댕——', '마음이 한결 맑아졌어요.', '좋아요. 천천히 숨을 쉬어요.'][randInt(3)];
+    const got = earn('bell');
+    setTimeout(() => { $('altarWord').textContent = ALTAR_WORDS[randInt(ALTAR_WORDS.length)]; }, 2600);
+    setTimeout(() => { bellBusy = false; }, 1400);
+  }
+  if ($('bellBtn')) $('bellBtn').addEventListener('click', (e) => { e.currentTarget.blur(); ringBell(); });
   const getMine = () => store.get('ms_mine', []) || [];
   const getLikes = () => store.get('ms_likes', {}) || {};
   function timeAgo(ms) {
@@ -1227,7 +1322,9 @@
   }
   function wishCard(w, isMine) {
     const c = el('div', 'wcard' + (w.kind === KIND_LETGO ? ' letgo' : ''));
-    const t = el('div', 'wtext'); t.textContent = (w.kind === KIND_LETGO ? '🍂 ' : '🏮 ') + w.text;
+    const ct = catOf(w.cat);
+    const t = el('div', 'wtext'); t.innerHTML = `<span class="wcat">${ct.ico} ${ct.name}</span>`;
+    t.append((w.kind === KIND_LETGO ? '🍂 ' : '🏮 ') + w.text);
     const meta = el('div', 'wmeta');
     const left = el('span');
     const ago = timeAgo(w.at);
@@ -1268,7 +1365,9 @@
   function mineCard(m, live) {
     if (live) return wishCard(live, true);
     const c = el('div', 'wcard' + (m.kind === KIND_LETGO ? ' letgo' : ''));
-    const t = el('div', 'wtext'); t.textContent = (m.kind === KIND_LETGO ? '🍂 ' : '🏮 ') + m.text;
+    const ct = catOf(m.cat || 0);
+    const t = el('div', 'wtext'); t.innerHTML = `<span class="wcat">${ct.ico} ${ct.name}</span>`;
+    t.append((m.kind === KIND_LETGO ? '🍂 ' : '🏮 ') + m.text);
     const meta = el('div', 'wmeta');
     const st = el('span', 'wstatus');
     meta.appendChild(st);
@@ -1279,14 +1378,30 @@
     c.append(t, meta);
     return c;
   }
+  let catFilter = -1;
+  function renderCatFilter() {
+    const bar = $('catFilter');
+    bar.hidden = boardTab !== 'all';
+    if (boardTab !== 'all') return;
+    bar.textContent = '';
+    const mk = (label, v) => {
+      const b = el('button', 'cat-chip' + (v === catFilter ? ' on' : ''), label); b.type = 'button';
+      b.addEventListener('click', () => { catFilter = v; renderBoard(); });
+      bar.appendChild(b);
+    };
+    mk('전체', -1);
+    WISH_CATS.forEach((c, i) => { if (state.wishes.some((w) => w.cat === i)) mk(c.ico + c.name, i); });
+  }
   function renderBoard() {
+    renderCatFilter();
     const list = $('boardList');
     list.textContent = '';
     const mine = getMine();
     const mineIds = new Set(mine.map((m) => m.id).filter(Boolean));
     if (boardTab === 'all') {
-      if (!state.wishes.length) list.appendChild(emptyEl('아직 떠 있는 등불이 없어요.<br>첫 마음을 올려 보세요.'));
-      state.wishes.forEach((w) => list.appendChild(wishCard(w, !sheetMode || (w.id && mineIds.has(w.id)))));
+      const shown = state.wishes.filter((w) => catFilter < 0 || w.cat === catFilter);
+      if (!shown.length) list.appendChild(emptyEl(state.wishes.length ? '이 분류의 마음은 아직 없어요.' : '아직 떠 있는 등불이 없어요.<br>첫 마음을 올려 보세요.'));
+      shown.forEach((w) => list.appendChild(wishCard(w, !sheetMode || (w.id && mineIds.has(w.id)))));
       $('boardCount').textContent = state.wishes.length ? '떠 있는 마음 ' + state.wishes.length + '개' : '';
     } else {
       if (!mine.length) list.appendChild(emptyEl('아직 올린 마음이 없어요.<br>[＋ 마음 올리기]를 눌러 보세요.'));
@@ -1373,9 +1488,19 @@
     $('wishSubmit').textContent = KIND_TEXT[k].btn;
   }
   document.querySelectorAll('.pill').forEach((p) => p.addEventListener('click', () => setKind(p.dataset.kind)));
+  let wishCat = 0;
+  function renderCatPick() {
+    const box = $('catPick'); box.textContent = '';
+    WISH_CATS.forEach((c, i) => {
+      const b = el('button', 'cat-opt' + (i === wishCat ? ' on' : ''), `<span>${c.ico}</span>${c.name}`); b.type = 'button';
+      b.addEventListener('click', () => { wishCat = i; renderCatPick(); });
+      box.appendChild(b);
+    });
+  }
   function openWrite(kind) {
     $('wishMsg').textContent = ''; $('wishMsg').className = 'modal-msg';
     $('wishInput').value = ''; $('charCount').textContent = '0 / 100';
+    wishCat = 0; renderCatPick();
     setKind(kind || KIND_HOPE);
     openModal('wishModal');
     setTimeout(() => $('wishInput').focus(), 60);
@@ -1395,26 +1520,26 @@
     if (!first.ok) return showMsg(first.reason, 'err');
     const wait = cooldownLeft();
     if (wait > 0) return showMsg(wait + '초 뒤에 다시 올릴 수 있어요.', 'err');
-    const kind = wishKind;
+    const kind = wishKind, cat = wishCat;
     $('wishSubmit').disabled = true; $('loading').hidden = false;
     try {
       let r;
       if (sheetMode) {
-        try { r = await sheetPost({ type: 'wish', content: text, sessionId: sid, kind }); }
+        try { r = await sheetPost({ type: 'wish', content: text, sessionId: sid, kind, cat }); }
         catch (e) { r = { ok: false, reason: '연결이 원활하지 않아요. 잠시 뒤 다시 시도해 주세요.' }; }
       } else {
         await delay(600);
         const id = 'L' + Date.now();
-        state.wishes.unshift({ id, text, kind, empathy: 0, at: Date.now() });
+        state.wishes.unshift({ id, text, kind, empathy: 0, cat, at: Date.now() });
         saveLocal();
         r = { ok: true, id, kind };
       }
       if (!r || !r.ok) return showMsg((r && r.reason) || '조금 더 따뜻한 말로 적어 주세요.', 'err');
       store.set('ms_last_wish', Date.now());
       const mine = getMine();
-      mine.unshift({ id: r.id || '', text, kind, at: Date.now(), status: r.pending ? 'pending' : 'public' });
+      mine.unshift({ id: r.id || '', text, kind, cat, at: Date.now(), status: r.pending ? 'pending' : 'public' });
       store.set('ms_mine', mine.slice(0, 50));
-      if (sheetMode && !r.pending && r.id) { const nw = { id: r.id, text, kind, empathy: 0, at: Date.now() }; state.wishes.unshift(nw); seen.add(r.id); rememberMine(nw); }
+      if (sheetMode && !r.pending && r.id) { const nw = { id: r.id, text, kind, empathy: 0, cat, at: Date.now() }; state.wishes.unshift(nw); seen.add(r.id); rememberMine(nw); }
       closeModal('wishModal');
       afterState(); renderBoard();
       earn('wish');
@@ -1458,41 +1583,55 @@
   }));
   function openShop() { $('shopTalk').textContent = SHOP_TALK[randInt(SHOP_TALK.length)]; renderShop(); openModal('shopModal'); }
   function petThumb(p) { const k = A.PET_ART[p]; return k ? `<div class="ani">${A.ANIMAL[k].svg}</div>` : ''; }
-  function renderShop(previewOverride) {
+  function previewWith(accId) {
+    // 미리보기: 이 장식을 함께 착용했을 때의 모습
+    const slots = Object.assign({}, wallet.wornSlots);
+    if (accId) slots[A.ACC_SLOT[accId]] = accId;
+    return Object.assign(look(), { worn: Object.keys(slots).map((k) => slots[k] | 0).filter((x) => x >= 1) });
+  }
+  function renderShop() {
     renderCoins();
-    const L = Object.assign(look(), previewOverride || {});
-    $('shopPreview').innerHTML = A.person(L) + (L.p ? `<div class="pv-pet">${A.ANIMAL[A.PET_ART[L.p]].svg}</div>` : '');
+    renderShopPreview();
     const grid = $('shopGrid'); grid.textContent = '';
     const list = shopTab === 'acc' ? A.ACC : A.PET;
     const owned = wallet.owned[shopTab];
-    const cur = shopTab === 'acc' ? wallet.c : wallet.p;
     list.forEach((it) => {
       if (it.id === 0) return;
-      const has = owned.indexOf(it.id) >= 0, wearing = cur === it.id;
+      const has = owned.indexOf(it.id) >= 0;
+      const wearing = shopTab === 'acc' ? isWorn(it.id) : wallet.p === it.id;
       const card = el('div', 'item' + (wearing ? ' on' : ''));
-      const thumb = shopTab === 'acc' ? A.person(Object.assign(look(), { c: it.id })) : petThumb(it.id);
+      const thumb = shopTab === 'acc'
+        ? A.person(Object.assign(look(), { worn: [it.id] }))
+        : petThumb(it.id);
       card.innerHTML = `<div class="thumb">${thumb}</div><div class="iname">${it.name}</div>`;
       const b = el('button'); b.type = 'button';
-      if (wearing) { b.textContent = '벗기'; }
+      if (wearing) { b.textContent = '벗기'; b.className = 'wear'; }
       else if (has) { b.textContent = '착용'; b.className = 'wear'; }
       else { b.textContent = '🪙 ' + it.price; b.className = 'buy'; b.disabled = wallet.coins < it.price; }
       b.addEventListener('click', () => shopAction(it, has, wearing));
       card.appendChild(b);
-      card.addEventListener('pointerenter', () => { if (!isTouch) $('shopPreview').innerHTML = A.person(Object.assign(look(), shopTab === 'acc' ? { c: it.id } : {})) + (shopTab === 'pet' ? `<div class="pv-pet">${A.ANIMAL[A.PET_ART[it.id]].svg}</div>` : (L.p ? `<div class="pv-pet">${A.ANIMAL[A.PET_ART[L.p]].svg}</div>` : '')); });
+      card.addEventListener('pointerenter', () => { if (!isTouch) $('shopPreview').innerHTML = previewHTML(shopTab === 'acc' ? previewWith(it.id) : Object.assign(look(), { p: it.id })); });
       card.addEventListener('pointerleave', () => { if (!isTouch) renderShopPreview(); });
       grid.appendChild(card);
     });
   }
-  function renderShopPreview() { const L = look(); $('shopPreview').innerHTML = A.person(L) + (L.p ? `<div class="pv-pet">${A.ANIMAL[A.PET_ART[L.p]].svg}</div>` : ''); }
+  function previewHTML(L) { return A.person(L) + (L.p ? `<div class="pv-pet">${A.ANIMAL[A.PET_ART[L.p]].svg}</div>` : ''); }
+  function renderShopPreview() { $('shopPreview').innerHTML = previewHTML(look()); }
   function shopAction(it, has, wearing) {
-    const key = shopTab === 'acc' ? 'c' : 'p';
-    if (wearing) wallet[key] = 0;
-    else if (has) wallet[key] = it.id;
-    else {
-      if (!spend(it.price)) { $('shopTalk').textContent = '동전이 조금 모자라요. 쉼터를 돌며 모아 와요!'; return; }
-      wallet.owned[shopTab].push(it.id); wallet[key] = it.id;
-      $('shopTalk').textContent = it.name + '! 정말 잘 어울려요.';
-      Sound.chime(true); sparkle();
+    if (shopTab === 'pet') {
+      if (wearing) wallet.p = 0;
+      else if (has) wallet.p = it.id;
+      else { if (!spend(it.price)) { $('shopTalk').textContent = '동전이 조금 모자라요. 쉼터를 돌며 모아 와요!'; return; } wallet.owned.pet.push(it.id); wallet.p = it.id; $('shopTalk').textContent = it.name + ' 친구가 생겼어요!'; Sound.chime(true); sparkle(); }
+    } else {
+      const slot = A.ACC_SLOT[it.id];
+      if (wearing) { delete wallet.wornSlots[slot]; }
+      else if (has) { wallet.wornSlots[slot] = it.id; }
+      else {
+        if (!spend(it.price)) { $('shopTalk').textContent = '동전이 조금 모자라요. 쉼터를 돌며 모아 와요!'; return; }
+        wallet.owned.acc.push(it.id); wallet.wornSlots[slot] = it.id;
+        $('shopTalk').textContent = it.name + '! 여러 개를 함께 꾸밀 수 있어요.';
+        Sound.chime(true); sparkle();
+      }
     }
     saveWallet();
     applyMyLook();
@@ -1579,10 +1718,13 @@
   function openMusic() {
     const list = $('musicList'); list.textContent = '';
     const opts = [['off', '🔕', '끄기', '조용히'], ['forest', '🌲', '숲 소리', '새소리와 바람']];
-    Object.keys(Music.TRACKS).forEach((k) => {
-      const icons = { jingle: '🔔', silent: '🌙', joy: '🎄', wish: '⛄', deck: '🎁', ode: '🎼', canon: '🎻', gymnopedie: '🎹' };
-      const carolSet = { jingle: 1, silent: 1, joy: 1, wish: 1, deck: 1 };
-      opts.push([k, icons[k] || '🎵', Music.TRACKS[k].name, carolSet[k] ? '크리스마스 캐럴' : '클래식']);
+    const icons = { bowl: '🧘', sunlight: '🌼', chime: '🎐', jingle: '🔔', silent: '🌙', joy: '🎄', wish: '⛄', deck: '🎁' };
+    // 숲 분위기 음악 먼저, 그다음 크리스마스 캐럴
+    const order = ['bowl', 'sunlight', 'chime', 'jingle', 'silent', 'joy', 'wish', 'deck'];
+    const carolSet = { jingle: 1, silent: 1, joy: 1, wish: 1, deck: 1 };
+    order.forEach((k) => {
+      if (!Music.TRACKS[k]) return;
+      opts.push([k, icons[k] || '🎵', Music.TRACKS[k].name, carolSet[k] ? '크리스마스 캐럴' : '잔잔한 숲 음악']);
     });
     const cur = musicChoice;
     opts.forEach(([key, ico, name, sub]) => {
@@ -1804,7 +1946,6 @@
     openModal('thoughtFormModal');
     setTimeout(() => $('thoughtInput').focus(), 60);
   }
-  $('thoughtInput').addEventListener('input', () => { $('thoughtCharCount').textContent = $('thoughtInput').value.length + ' / 160'; });
   async function submitThought() {
     const text = $('thoughtInput').value.trim();
     const url = $('thoughtUrl').value.trim();
@@ -1842,9 +1983,6 @@
       toast(editing ? '✏️ 생각을 고쳤어요.' : (r.pending ? '올렸어요. 선생님이 확인하면 보여요.' : '💬 생각을 나눔터에 올렸어요. 고마워요!'));
     } finally { $('thoughtSubmit').disabled = false; }
   }
-  $('openThoughtWrite').addEventListener('click', () => openThoughtForm());
-  $('thoughtCancel').addEventListener('click', () => closeModal('thoughtFormModal'));
-  $('thoughtSubmit').addEventListener('click', submitThought);
 
   /* ===================== 계절 ===================== */
   const SEASONS = [
@@ -2093,12 +2231,7 @@
     btn.classList.add('press'); setTimeout(() => btn.classList.remove('press'), 120);
     const meEl = $('sgMe');
     if (sg.cur >= STEPS) return;
-    if (sg.dirs[sg.cur + 1] !== dir) {
-      sg.miss++;
-      meEl.classList.remove('slip'); void meEl.offsetWidth; meEl.classList.add('slip');
-      $('sgTip').textContent = '앗, 반대쪽이에요. 천천히 다시!';
-      return;
-    }
+    if (sg.dirs[sg.cur + 1] !== dir) { fallStair(); return; }
     sg.cur++;
     meEl.querySelector('.flipper').style.transform = dir < 0 ? 'scaleX(-1)' : '';
     meEl.classList.remove('step'); void meEl.offsetWidth; meEl.classList.add('step');
@@ -2109,6 +2242,24 @@
     if (sg.cur % 10 === 0) { setTimeout(() => showQuote(sg.cur), 260); }
     else if (sg.cur % 10 === 7) $('sgTip').textContent = '조금만 더 가면 말 한마디가 기다려요';
     else if (sg.cur % 10 === 1) $('sgTip').textContent = '좋아요, 한 칸씩 천천히';
+  }
+  // 발을 헛디디면 아래 쉼 지점(10칸 단위)까지 미끄러져 떨어져요
+  function fallStair() {
+    if (sg.busy) return;
+    sg.busy = true; sg.miss++;
+    const meEl = $('sgMe');
+    const checkpoint = Math.floor((sg.cur - 1) / 10) * 10; // 방금 밟은 칸 아래 쉼터
+    const target = Math.max(0, checkpoint);
+    const dropped = sg.cur - target;
+    meEl.classList.add('falling');
+    Sound.tok();
+    $('sgTip').textContent = dropped > 1 ? '앗, 미끄러졌어요! 다시 천천히 올라가요' : '앗, 반대쪽이에요. 천천히 다시!';
+    setTimeout(() => {
+      meEl.classList.remove('falling');
+      sg.cur = target;
+      stairCamera();
+      setTimeout(() => { sg.busy = false; }, 150);
+    }, dropped > 1 ? 650 : 280);
   }
   function pickQuote() {
     const got = new Set(quoteBook());
@@ -2237,7 +2388,7 @@
     openModal('introModal');
   }
   function renderIntro() {
-    const L = Object.assign({}, draft, { c: wallet.c });
+    const L = Object.assign({}, draft, { worn: wornArr() });
     $('introPreview').innerHTML = A.person(L);
     $('introNick').textContent = nameOf(draft);
     const box = $('lookOpts'); box.textContent = '';
@@ -2327,7 +2478,7 @@
     setInterval(() => { if (!document.hidden) refreshState(false); }, 20000);
 
     // 시험용 창(개발자가 확인할 때만 사용)
-    window.__ms = { me, others, state, wallet, critters, sg, goTo, enterZone, keys, earn, climb, sendEmote, applyTime, applySeason, openLinks, openThoughts, openMusic, openSeason, chooseMusic, flySanta, submitLink, submitThought, linkForm, refreshState, renderBoard, get season() { return season; }, get musicChoice() { return musicChoice; }, get cam() { return cam; }, get myKey() { return myKey; }, get nearPerson() { return nearPerson; } };
+    window.__ms = { me, others, state, wallet, critters, sg, goTo, enterZone, keys, earn, climb, sendEmote, applyTime, applySeason, openLinks, openMusic, openSeason, chooseMusic, flySanta, submitLink, linkForm, refreshState, renderBoard, get season() { return season; }, get musicChoice() { return musicChoice; }, get cam() { return cam; }, get myKey() { return myKey; }, get nearPerson() { return nearPerson; } };
   }
   start();
 })();

@@ -1,6 +1,6 @@
 /**
  * ============================================================
- *  온라인 마음쉼터 — Google Apps Script 백엔드 v6 (닉네임·수정)
+ *  온라인 마음쉼터 — Google Apps Script 백엔드 v7 (소원 분류·다중 장식)
  *  (구글 시트가 '염원 저장소'이자 '교사 관리 화면'이 됩니다)
  *
  *  v3에서 달라진 점
@@ -44,7 +44,7 @@ const FLOWER_SHEET = '꽃밭';
 const MOOD_SHEET = '마음날씨';
 const LINK_SHEET = '링크';
 const THINK_SHEET = '생각';
-const WISH_HEADERS = ['작성시각', '내용', '상태', '세션ID', '메모', 'ID', '종류', '공감', '해소', '신고', '신고자'];
+const WISH_HEADERS = ['작성시각', '내용', '상태', '세션ID', '메모', 'ID', '종류', '공감', '해소', '신고', '신고자', '분류'];
 const VISIT_HEADERS = ['방문시각', '세션ID'];
 const FLOWER_HEADERS = ['심은시각', '누가', '꽃', 'x', 'y'];
 const MOOD_HEADERS = ['시각', '누가', '날씨'];
@@ -66,7 +66,7 @@ const LINK_PER_DAY = 10;       // 한 사람이 하루에 올리는 링크
 const LINK_COOLDOWN_SEC = 20;
 const STATUS = { PUBLIC: '공개', PENDING: '검토중', HIDDEN: '숨김', BLOCKED: '차단' };
 const KIND = { HOPE: '바람', LETGO: '내려놓기' };
-const COL = { AT: 1, TEXT: 2, STATUS: 3, SID: 4, MEMO: 5, ID: 6, KIND: 7, EMP: 8, REL: 9, REP: 10, REPBY: 11 };
+const COL = { AT: 1, TEXT: 2, STATUS: 3, SID: 4, MEMO: 5, ID: 6, KIND: 7, EMP: 8, REL: 9, REP: 10, REPBY: 11, CAT: 12 };
 
 const MAX_LEN = 100;           // 염원 최대 글자 수
 const COOLDOWN_SEC = 30;       // 같은 사람이 다시 올리기까지 대기(초)
@@ -81,10 +81,10 @@ const FLOWER_SHOW = 160;       // 화면에 보내는 꽃 수
 const FLOWER_PER_DAY = 30;     // 한 사람이 하루에 심을 수 있는 꽃
 const PRESENCE_TTL_MS = 25000; // 이 시간 동안 소식이 없으면 접속 종료로 봄
 const PRESENCE_MAX = 80;
-const WORLD_W = 6040;
-const ZONES = ['', 'plaza', 'shop', 'links', 'thoughts', 'tree', 'spring', 'lantern', 'garden', 'pond', 'rain', 'stair', 'hill'];
+const WORLD_W = 5700;
+const ZONES = ['', 'plaza', 'shop', 'links', 'tree', 'spring', 'lantern', 'garden', 'pond', 'rain', 'stair', 'hill'];
 // 화면(app.js)의 목록 길이와 같아야 합니다
-const N = { ADJ: 16, NOUN: 16, SKIN: 5, HAIR: 8, STYLE: 6, OUTFIT: 8, TYPE: 4, ACC: 14, PET: 7, EMO: 6, FLOWER: 6, MOOD: 6 };
+const N = { ADJ: 16, NOUN: 16, SKIN: 5, HAIR: 8, STYLE: 6, OUTFIT: 8, TYPE: 4, ACC: 14, PET: 7, EMO: 6, FLOWER: 6, MOOD: 6, CAT: 8 };
 const TZ = 'Asia/Seoul';
 
 // 화면의 금칙어 목록(badwords.js)과 같게 맞춰 두었습니다. 필요하면 둘 다 늘리세요.
@@ -215,15 +215,16 @@ function addWish_(body) {
   const sh = sheet_(WISH_SHEET, WISH_HEADERS);
   const id = newId_();
 
+  const cat = String(clampInt_(body.cat, 0, N.CAT - 1));
   if (verdict.result === 'deny') {
     // 막은 글도 '차단'으로 남겨 선생님이 지도에 참고할 수 있게 합니다.
-    append_(sh, [nowStr_(), text, STATUS.BLOCKED, sid, 'AI 판정: 부적절', id, kind, '0', '', '0', '']);
+    append_(sh, [nowStr_(), text, STATUS.BLOCKED, sid, 'AI 판정: 부적절', id, kind, '0', '', '0', '', cat]);
     return { ok: false, reason: '조금 더 따뜻한 말로 적어 주세요.' };
   }
 
   const isPublic = verdict.result === 'allow' || !REQUIRE_APPROVAL;
   const memo = verdict.result === 'allow' ? '' : (isPublic ? '' : verdict.memo);
-  append_(sh, [nowStr_(), text, isPublic ? STATUS.PUBLIC : STATUS.PENDING, sid, memo, id, kind, '0', '', '0', '']);
+  append_(sh, [nowStr_(), text, isPublic ? STATUS.PUBLIC : STATUS.PENDING, sid, memo, id, kind, '0', '', '0', '', cat]);
   cache.remove('pub');
 
   return isPublic
@@ -697,6 +698,7 @@ function presence_(body) {
     o: clampInt_(body.o, 0, N.OUTFIT - 1),
     ot: clampInt_(body.ot, 0, N.TYPE - 1),
     c: clampInt_(body.c, 0, N.ACC - 1),
+    w: Array.isArray(body.w) ? body.w.slice(0, 8).map(function (x) { return clampInt_(x, 0, N.ACC - 1); }) : [],
     p: clampInt_(body.p, 0, N.PET - 1),
     e: clampInt_(body.e, 0, N.EMO - 1),   // 인사 그림 번호
     hf: hf,                                // 하이파이브 상대
@@ -840,13 +842,14 @@ function publicState_() {
     const released = !!String(r[COL.REL - 1]).trim() || (at > 0 && now - at >= RELEASE_DAYS * 86400000);
     if (released) {
       out.stars.count++;
-      out.stars.recent.push({ text: String(r[COL.TEXT - 1]), kind: kind });
+      out.stars.recent.push({ text: String(r[COL.TEXT - 1]), kind: kind, cat: Number(r[COL.CAT - 1]) || 0 });
     } else {
       out.wishes.push({
         id: String(r[COL.ID - 1] || ''),
         text: String(r[COL.TEXT - 1]),
         kind: kind,
         empathy: Number(r[COL.EMP - 1]) || 0,
+        cat: Number(r[COL.CAT - 1]) || 0,
         at: at
       });
     }

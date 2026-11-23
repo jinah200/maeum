@@ -134,20 +134,31 @@
   }
 
   /** 사람 그리기 — p: {s 피부, h 머리색, hs 머리모양, o 옷색, ot 옷종류, c 장식} */
+  // 장식 슬롯 — 슬롯마다 하나씩, 여러 슬롯은 함께 착용돼요
+  const ACC_SLOT = { 1: 'hair', 2: 'hair', 3: 'hair', 4: 'face', 5: 'neck', 6: 'ears', 7: 'ears', 8: 'hat', 9: 'ears', 10: 'hat', 11: 'back', 12: 'hat', 13: 'ears' };
+  const FRONT_Z = [5, 4, 1, 2, 3, 9, 8, 10, 12, 13]; // 뒤→앞 그리는 순서
+  function wornList(p) {
+    let list = Array.isArray(p.worn) ? p.worn : (p.c ? [p.c] : []);
+    list = list.map((x) => x | 0).filter((x) => x >= 1 && x <= 13);
+    return list.filter((v, i) => list.indexOf(v) === i);
+  }
   function person(p) {
     const sk = pick(SKIN, p.s), hc = pick(HAIR, p.h), oc = pick(OUTFIT, p.o);
-    const st = p.hs | 0, c = p.c | 0;
+    const st = p.hs | 0;
+    const worn = wornList(p);
+    const backHead = worn.filter((id) => id === 6 || id === 7 || id === 13);
+    const fronts = FRONT_Z.filter((id) => worn.indexOf(id) >= 0);
     const b = body(p.ot | 0, oc, sk);
     return `<svg viewBox="0 0 80 110" class="psvg" aria-hidden="true">
       <ellipse class="p-shadow" cx="40" cy="104" rx="18" ry="4"/>
       <g class="body-g">
-        ${accBack(c === 11 ? 11 : -1)}
+        ${worn.indexOf(11) >= 0 ? accBack(11) : ''}
         ${hairBack(st, hc)}
         ${b.back}
         ${b.front}
         <rect x="36" y="54" width="8" height="7" rx="3" fill="${shade(sk, 0.93)}"/>
         <g class="head-g">
-          ${c === 6 || c === 7 || c === 13 ? accBack(c) : ''}
+          ${backHead.map((id) => accBack(id)).join('')}
           <ellipse cx="16.8" cy="41" rx="3.4" ry="4.4" fill="${sk}" stroke="${shade(sk, 0.84)}" stroke-width=".7"/><ellipse cx="63.2" cy="41" rx="3.4" ry="4.4" fill="${sk}" stroke="${shade(sk, 0.84)}" stroke-width=".7"/>
           <circle cx="40" cy="37" r="23.5" fill="${sk}" stroke="${shade(sk, 0.82)}" stroke-width=".9"/>
           <ellipse cx="31" cy="27" rx="13" ry="8.5" fill="#fff" opacity=".16"/>
@@ -161,7 +172,7 @@
           <ellipse cx="25" cy="49.5" rx="4.2" ry="2.7" fill="#ff9aa6" opacity=".5"/><ellipse cx="55" cy="49.5" rx="4.2" ry="2.7" fill="#ff9aa6" opacity=".5"/>
           <path class="mouth" d="M36.5 50.2 Q40 53.8 43.5 50.2" fill="none" stroke="#c76b62" stroke-width="1.7" stroke-linecap="round"/>
           ${hairFront(st, hc)}
-          ${accFront(c)}
+          ${fronts.map((id) => accFront(id)).join('')}
         </g>
       </g>
     </svg>`;
@@ -498,5 +509,5 @@
     <path d="M60 58 L60 36" stroke="#8aa06a" stroke-width="3.4" stroke-linecap="round"/>
     <path d="M60 40 Q78 30 77 48 Q65 53 60 40 Z" fill="#8fc46e"/><path d="M60 46 Q42 36 43 54 Q55 59 60 46 Z" fill="#a5d585"/></svg>`;
 
-  window.ART = { SKIN, HAIR, OUTFIT, STYLE_NAMES, TYPE_NAMES, ACC, PET, PET_ART, PET_SCALE, ANIMAL, FLOWERS, LM, SPROUT, SANTA, XTREE, GIFT, SNOWMAN, person, flower, shade };
+  window.ART = { SKIN, HAIR, OUTFIT, STYLE_NAMES, TYPE_NAMES, ACC, ACC_SLOT, PET, PET_ART, PET_SCALE, ANIMAL, FLOWERS, LM, SPROUT, SANTA, XTREE, GIFT, SNOWMAN, person, flower, shade };
 })();
