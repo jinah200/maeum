@@ -1,6 +1,6 @@
 /**
  * ============================================================
- *  온라인 마음쉼터 — Google Apps Script 백엔드 v3
+ *  온라인 마음쉼터 — Google Apps Script 백엔드 v4 (크리스마스)
  *  (구글 시트가 '염원 저장소'이자 '교사 관리 화면'이 됩니다)
  *
  *  v3에서 달라진 점
@@ -11,6 +11,7 @@
  *     되살리려면 상태를 '공개'로, 신고 칸을 0으로 바꾸세요.
  *   - [꽃밭] 시트: 동전으로 심은 꽃 (모두에게 보여요)
  *   - [마음날씨] 시트: 하루 한 번 고르는 오늘의 마음 날씨
+ *   - [링크] 시트: 함께 나누고 싶은 링크 (목적·학교급·과목·주제와 함께)
  *   - 함께 접속한 사람: 모습·장식·동물 친구·인사·하이파이브를 주고받습니다
  *     (모두 정해진 목록의 '번호'로만 오가서 글자가 끼어들 수 없습니다)
  *
@@ -24,6 +25,7 @@
  *   [방문] 방문시각 | 세션ID
  *   [꽃밭] 심은시각 | 누가 | 꽃 | x | y
  *   [마음날씨] 시각 | 누가 | 날씨
+ *   [링크] 시각 | 주소 | 목적 | 학교급 | 과목 | 주제 | 상태 | 세션ID | ID | 신고 | 신고자
  *   상태: 공개 / 검토중 / 숨김 / 차단  — 화면에는 '공개'만 보입니다.
  *   선생님이 글을 내리고 싶으면 상태를 '숨김'으로 바꾸면 됩니다.
  *
@@ -38,10 +40,20 @@ const WISH_SHEET = '염원';
 const VISIT_SHEET = '방문';
 const FLOWER_SHEET = '꽃밭';
 const MOOD_SHEET = '마음날씨';
+const LINK_SHEET = '링크';
 const WISH_HEADERS = ['작성시각', '내용', '상태', '세션ID', '메모', 'ID', '종류', '공감', '해소', '신고', '신고자'];
 const VISIT_HEADERS = ['방문시각', '세션ID'];
 const FLOWER_HEADERS = ['심은시각', '누가', '꽃', 'x', 'y'];
 const MOOD_HEADERS = ['시각', '누가', '날씨'];
+const LINK_HEADERS = ['시각', '주소', '목적', '학교급', '과목', '주제', '상태', '세션ID', 'ID', '신고', '신고자'];
+const LCOL = { AT: 1, URL: 2, PURP: 3, LEVEL: 4, SUBJ: 5, TOPIC: 6, STATUS: 7, SID: 8, ID: 9, REP: 10, REPBY: 11 };
+// 화면(app.js)의 목록과 같은 순서예요
+const PURPOSES = ['수업용', '일상 상식', '음악', '기타'];
+const LEVELS = ['유', '초', '중', '고'];
+const SUBJECTS = ['국', '수', '사', '과', '영', '음', '미', '체', '실', '기타'];
+const LINK_SHOW = 60;          // 화면에 보내는 링크 수
+const LINK_PER_DAY = 10;       // 한 사람이 하루에 올리는 링크
+const LINK_COOLDOWN_SEC = 20;
 const STATUS = { PUBLIC: '공개', PENDING: '검토중', HIDDEN: '숨김', BLOCKED: '차단' };
 const KIND = { HOPE: '바람', LETGO: '내려놓기' };
 const COL = { AT: 1, TEXT: 2, STATUS: 3, SID: 4, MEMO: 5, ID: 6, KIND: 7, EMP: 8, REL: 9, REP: 10, REPBY: 11 };
@@ -59,10 +71,10 @@ const FLOWER_SHOW = 160;       // 화면에 보내는 꽃 수
 const FLOWER_PER_DAY = 30;     // 한 사람이 하루에 심을 수 있는 꽃
 const PRESENCE_TTL_MS = 25000; // 이 시간 동안 소식이 없으면 접속 종료로 봄
 const PRESENCE_MAX = 80;
-const WORLD_W = 4200;
-const ZONES = ['', 'plaza', 'shop', 'tree', 'spring', 'lantern', 'garden', 'pond', 'rain', 'stair', 'hill'];
+const WORLD_W = 5760;
+const ZONES = ['', 'plaza', 'shop', 'links', 'tree', 'spring', 'lantern', 'garden', 'pond', 'rain', 'stair', 'hill'];
 // 화면(app.js)의 목록 길이와 같아야 합니다
-const N = { ADJ: 16, NOUN: 16, SKIN: 5, HAIR: 8, STYLE: 6, OUTFIT: 8, TYPE: 4, ACC: 12, PET: 7, EMO: 6, FLOWER: 6, MOOD: 6 };
+const N = { ADJ: 16, NOUN: 16, SKIN: 5, HAIR: 8, STYLE: 6, OUTFIT: 8, TYPE: 4, ACC: 14, PET: 7, EMO: 6, FLOWER: 6, MOOD: 6 };
 const TZ = 'Asia/Seoul';
 
 // 화면의 금칙어 목록(badwords.js)과 같게 맞춰 두었습니다. 필요하면 둘 다 늘리세요.
@@ -91,6 +103,12 @@ function setup() {
   sheet_(VISIT_SHEET, VISIT_HEADERS);
   sheet_(FLOWER_SHEET, FLOWER_HEADERS);
   sheet_(MOOD_SHEET, MOOD_HEADERS);
+  const lsh = sheet_(LINK_SHEET, LINK_HEADERS);
+  lsh.getRange(1, 1, 1, LINK_HEADERS.length).setValues([LINK_HEADERS]).setFontWeight('bold');
+  lsh.setFrozenRows(1);
+  lsh.getRange('G2:G5000').setDataValidation(SpreadsheetApp.newDataValidation()
+    .requireValueInList([STATUS.PUBLIC, STATUS.HIDDEN, STATUS.BLOCKED], true).setAllowInvalid(false).build());
+  lsh.setColumnWidth(2, 320); lsh.setColumnWidth(6, 220);
 
   // 예전 행에 ID · 종류 · 공감 · 신고 채우기
   const last = sh.getLastRow();
@@ -119,6 +137,7 @@ function doGet() {
       ok: true, v: 3,
       wishes: st.wishes, stars: st.stars,
       flowers: flowers_(), mood: moodToday_(),
+      links: links_(),
       visitsToday: visitsToday_()
     });
     cache.put('pub', body, 10); // 접속이 몰려도 시트를 덜 읽도록 10초 캐시
@@ -139,6 +158,8 @@ function doPost(e) {
       case 'mine': return out_(mine_(body));
       case 'flower': return out_(flower_(body));
       case 'mood': return out_(mood_(body));
+      case 'link': return out_(addLink_(body));
+      case 'linkreport': return out_(reportLink_(body));
       case 'presence': return out_(presence_(body));
       default: return out_({ ok: false, reason: '알 수 없는 요청이에요.' });
     }
@@ -374,6 +395,103 @@ function moodToday_() {
   }
   cache.put('moodToday', JSON.stringify(counts), 30);
   return counts;
+}
+
+/* ---------- 링크 나눔터 ---------- */
+function addLink_(body) {
+  var sid = sid_(body);
+  if (!sid) return { ok: false, reason: '잘못된 요청이에요.' };
+  var url = String(body.url || '').trim();
+  if (!/^https?:\/\/[^\s]+\.[^\s]+$/i.test(url) || url.length > 300 || /\s/.test(url)) {
+    return { ok: false, reason: 'http 로 시작하는 올바른 주소를 넣어 주세요.' };
+  }
+  var purp = clampInt_(body.purpose, 0, PURPOSES.length - 1);
+  var topic = String(body.topic || '').trim();
+  if (!topic) return { ok: false, reason: '어떤 링크인지 주제를 적어 주세요.' };
+  if (topic.length > 40) return { ok: false, reason: '주제는 40자 이내로 적어 주세요.' };
+  var tc = basicCheck_(topic);
+  if (!tc.ok) return { ok: false, reason: tc.reason };
+  var level = '', subj = '';
+  if (purp === 0) { // 수업용
+    level = LEVELS[clampInt_(body.level, 0, LEVELS.length - 1)];
+    subj = SUBJECTS[clampInt_(body.subject, 0, SUBJECTS.length - 1)];
+  }
+  var cache = CacheService.getScriptCache();
+  var who = hash_(sid);
+  if (cache.get('lc_' + who)) return { ok: false, reason: '잠시 뒤에 다시 올려 주세요.' };
+  var dayKey = 'ld_' + who + '_' + Utilities.formatDate(new Date(), TZ, 'yyyyMMdd');
+  var cnt = Number(cache.get(dayKey) || 0);
+  if (cnt >= LINK_PER_DAY) return { ok: false, reason: '오늘은 링크를 충분히 올렸어요. 내일 또 나눠요.' };
+  if (globalLimited_('gl', 30)) return { ok: false, reason: '지금 사람이 많아요. 잠시 뒤에 올려 주세요.' };
+  cache.put('lc_' + who, '1', LINK_COOLDOWN_SEC);
+  cache.put(dayKey, String(cnt + 1), 90000);
+
+  var id = newId_();
+  var status = REQUIRE_APPROVAL ? STATUS.PENDING : STATUS.PUBLIC;
+  append_(sheet_(LINK_SHEET, LINK_HEADERS),
+    [nowStr_(), url, PURPOSES[purp], level, subj, topic, status, sid, id, '0', '']);
+  cache.remove('pub');
+  return status === STATUS.PUBLIC
+    ? { ok: true, id: id }
+    : { ok: true, pending: true, id: id, reason: '올렸어요. 선생님이 확인하면 보여요.' };
+}
+
+function links_() {
+  var sh = sheet_(LINK_SHEET, LINK_HEADERS);
+  var last = sh.getLastRow();
+  if (last < 2) return [];
+  var start = Math.max(2, last - LINK_SHOW - 20);
+  var rows = sh.getRange(start, 1, last - start + 1, LINK_HEADERS.length).getValues();
+  var out = [];
+  rows.forEach(function (r) {
+    if (String(r[LCOL.STATUS - 1]) !== STATUS.PUBLIC || !r[LCOL.URL - 1]) return;
+    out.push({
+      id: String(r[LCOL.ID - 1] || ''),
+      url: String(r[LCOL.URL - 1]),
+      purpose: PURPOSES.indexOf(String(r[LCOL.PURP - 1])),
+      level: LEVELS.indexOf(String(r[LCOL.LEVEL - 1])),
+      subject: SUBJECTS.indexOf(String(r[LCOL.SUBJ - 1])),
+      topic: String(r[LCOL.TOPIC - 1]),
+      at: parseAt_(r[LCOL.AT - 1])
+    });
+  });
+  return out.slice(-LINK_SHOW).reverse();
+}
+
+function reportLink_(body) {
+  var id = String(body.id || '').slice(0, 20);
+  var sid = sid_(body);
+  if (!id || !sid) return { ok: false, reason: '잘못된 요청이에요.' };
+  if (globalLimited_('glr', 60)) return { ok: false, reason: '잠시 뒤에 다시 눌러 주세요.' };
+  var who = hash_(sid);
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { ok: false, reason: '잠시 뒤에 다시 눌러 주세요.' };
+  try {
+    var sh = sheet_(LINK_SHEET, LINK_HEADERS);
+    var last = sh.getLastRow();
+    if (last < 2) return { ok: false, reason: '찾을 수 없어요.' };
+    var start = Math.max(2, last - 400);
+    var ids = sh.getRange(start, LCOL.ID, last - start + 1, 1).getValues();
+    var row = 0;
+    for (var i = ids.length - 1; i >= 0; i--) if (String(ids[i][0]) === id) { row = start + i; break; }
+    if (!row) return { ok: false, reason: '찾을 수 없어요.' };
+    var v = sh.getRange(row, 1, 1, LINK_HEADERS.length).getValues()[0];
+    if (String(v[LCOL.SID - 1]) === sid) return { ok: false, reason: '내가 올린 링크는 신고할 수 없어요.' };
+    var by = String(v[LCOL.REPBY - 1] || '').split(',').filter(String);
+    if (by.indexOf(who) >= 0) return { ok: true, already: true };
+    by.push(who);
+    var n = (Number(v[LCOL.REP - 1]) || 0) + 1;
+    sh.getRange(row, LCOL.REP, 1, 2).setNumberFormat('@').setValues([[String(n), by.slice(-20).join(',')]]);
+    var hidden = false;
+    if (n >= HIDE_AT && String(v[LCOL.STATUS - 1]) === STATUS.PUBLIC) {
+      sh.getRange(row, LCOL.STATUS).setValue(STATUS.HIDDEN);
+      hidden = true;
+    }
+    CacheService.getScriptCache().remove('pub');
+    return { ok: true, hidden: hidden };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 /* ---------- 함께 접속한 사람 ---------- */

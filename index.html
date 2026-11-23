@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" />
-  <link rel="stylesheet" href="css/style.css?v=6" />
+  <link rel="stylesheet" href="css/style.css?v=7" />
   <style>[hidden]{display:none !important;}</style>
 </head>
 <body class="t-day">
@@ -17,8 +17,10 @@
   <div class="scene" id="scene">
     <div class="sky"></div>
     <div class="night-stars" id="nightStars"></div>
+    <div class="sky-stars" id="skyStars"></div>
     <div class="sun" id="sun"></div>
     <div class="clouds" id="clouds"></div>
+    <div class="santa-layer" id="santaLayer"></div>
     <div class="para hills" id="hills"><div class="hill hill-3"></div><div class="hill hill-2"></div></div>
     <div class="para treeline" id="treeline"></div>
     <div class="ground"></div>
@@ -31,6 +33,7 @@
     </div>
     <div class="fireflies" id="fireflies"></div>
     <div class="lantern-layer" id="lanternLayer"></div>
+    <div class="snow" id="snow"></div>
     <div class="vignette"></div>
   </div>
 
@@ -43,13 +46,17 @@
     <div class="tb-group">
       <button class="coin-chip" id="coinBtn" title="마음 동전" aria-label="마음 동전"><span class="coin-ico"></span><b id="coinCount">0</b></button>
       <button class="icon-btn" id="timeBtn" title="숲의 시간 바꾸기" aria-label="숲의 시간 바꾸기">☀️</button>
-      <button class="icon-btn" id="soundBtn" title="소리 켜기" aria-label="소리 켜기"><span id="soundIcon">🔈</span></button>
+      <button class="icon-btn" id="musicBtn" title="배경음악" aria-label="배경음악">🎵</button>
+      <button class="icon-btn" id="soundBtn" title="숲 소리 켜기" aria-label="숲 소리 켜기"><span id="soundIcon">🔈</span></button>
       <button class="icon-btn" id="strollBtn" title="산책하기" aria-label="산책하기">🚶</button>
       <button class="icon-btn" id="mapBtn" title="숲 지도" aria-label="숲 지도">🗺️</button>
     </div>
   </header>
 
   <div class="spacer"></div>
+
+  <!-- ===== 쉼터 들어가기 버튼 ===== -->
+  <button class="enter-btn" id="enterBtn" type="button" hidden></button>
 
   <!-- ===== 가까이 있는 친구와 인사 ===== -->
   <div class="interact" id="interact" hidden>
@@ -187,6 +194,11 @@
       <p class="modal-desc">꽃을 고르고 꽃밭을 눌러 심어요. 한 송이에 🪙3. 모두가 함께 가꾸는 꽃밭이에요.</p>
       <div class="seed-row" id="seedRow"></div>
       <div class="garden-plot" id="gardenPlot" role="button" aria-label="꽃 심을 곳"></div>
+      <div class="garden-pager" id="gardenPager" hidden>
+        <button class="pager-btn" id="gardenPrev" type="button" aria-label="이전 꽃밭">◀</button>
+        <span class="pager-label" id="gardenPageLabel">1 / 1번 꽃밭</span>
+        <button class="pager-btn" id="gardenNext" type="button" aria-label="다음 꽃밭">▶</button>
+      </div>
       <div class="modal-foot"><span class="counter" id="gardenCount">0송이</span><span class="counter">내 동전 <b class="coin-num" id="gardenCoins">0</b></span></div>
     </div>
   </div>
@@ -243,6 +255,54 @@
     </div>
   </div>
 
+  <!-- ===== 링크 나눔터 ===== -->
+  <div class="modal-backdrop" id="linksModal" hidden>
+    <div class="modal modal-board modal-links" data-theme="rose">
+      <div class="m-head"><span class="m-ico">🎁</span><h2>링크 나눔터</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
+      <p class="modal-desc">친구들과 나누고 싶은 좋은 링크를 올려요. 수업 자료, 재미있는 상식, 음악 무엇이든 좋아요.</p>
+      <div class="links-top">
+        <div class="ltabs" id="linkTabs"></div>
+        <button class="btn-primary" id="openLinkWrite">＋ 링크 올리기</button>
+      </div>
+      <div class="link-list" id="linkList"></div>
+      <div class="modal-foot"><span class="counter" id="linksCount"></span><span class="counter">올리면 🪙5 · 불편한 링크는 🚩</span></div>
+    </div>
+  </div>
+
+  <!-- ===== 링크 올리기 ===== -->
+  <div class="modal-backdrop" id="linkFormModal" hidden>
+    <div class="modal" data-theme="rose">
+      <div class="m-head"><span class="m-ico">🔗</span><h2>링크 올리기</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
+      <label class="form-label">주소 (http로 시작)</label>
+      <input id="linkUrl" class="form-input" type="url" inputmode="url" placeholder="https://..." />
+      <label class="form-label">목적</label>
+      <div class="chip-row" id="linkPurpose"></div>
+      <div id="linkClassRow" hidden>
+        <label class="form-label">학교급</label>
+        <div class="chip-row" id="linkLevel"></div>
+        <label class="form-label">과목</label>
+        <div class="chip-row" id="linkSubject"></div>
+      </div>
+      <label class="form-label">주제 <small>(어떤 내용인지 한 줄)</small></label>
+      <input id="linkTopic" class="form-input" type="text" maxlength="40" placeholder="예) 광합성 쉽게 정리한 영상" />
+      <p class="write-rule">친구를 놀리거나 이름·연락처가 담긴 링크는 올리지 않아요. 올린 링크는 모두에게 보여요.</p>
+      <div class="modal-foot">
+        <span class="counter">올리면 🪙5</span>
+        <div class="modal-actions"><button class="btn-ghost" id="linkCancel">닫기</button><button class="btn-primary" id="linkSubmit">나누기</button></div>
+      </div>
+      <p class="modal-msg" id="linkMsg"></p>
+    </div>
+  </div>
+
+  <!-- ===== 배경음악 ===== -->
+  <div class="modal-backdrop" id="musicModal" hidden>
+    <div class="modal" data-theme="mint">
+      <div class="m-head"><span class="m-ico">🎵</span><h2>배경음악</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
+      <p class="modal-desc">듣고 싶은 음악을 골라요. 크리스마스 캐럴과 잔잔한 클래식이 있어요.</p>
+      <div class="music-list" id="musicList"></div>
+    </div>
+  </div>
+
   <!-- ===== 명언 계단 (게임 화면) ===== -->
   <div class="stair-game" id="stairGame" hidden>
     <div class="sg-sky" id="sgSky"></div>
@@ -290,10 +350,10 @@
     <p>마음을 올리는 중…</p>
   </div>
 
-  <script src="js/config.js?v=6"></script>
-  <script src="js/badwords.js?v=6"></script>
-  <script src="js/art.js?v=6"></script>
-  <script src="js/quotes.js?v=6"></script>
-  <script src="js/app.js?v=6"></script>
+  <script src="js/config.js?v=7"></script>
+  <script src="js/badwords.js?v=7"></script>
+  <script src="js/art.js?v=7"></script>
+  <script src="js/quotes.js?v=7"></script>
+  <script src="js/app.js?v=7"></script>
 </body>
 </html>

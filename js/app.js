@@ -26,24 +26,31 @@
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
 
   /* ===================== 상수 ===================== */
-  const W = 4200, SPEED = 240, DSPEED = 0.85, NEAR = 120, STAR_AT = 5;
+  const W = 5760, SPEED = 250, DSPEED = 0.85, NEAR = 130, STAR_AT = 5;
   const KIND_HOPE = '바람', KIND_LETGO = '내려놓기';
   const ADJ = ['느린', '따뜻한', '조용한', '포근한', '맑은', '다정한', '싱그러운', '잔잔한', '반짝이는', '수줍은', '너그러운', '차분한', '말랑한', '산뜻한', '고요한', '부드러운'];
   const NOUN = ['걸음', '바람', '새벽', '구름', '오솔길', '햇살', '이슬', '나뭇잎', '달빛', '시냇물', '솔방울', '민들레', '별빛', '도토리', '꽃잎', '숲길'];
   const EMO = ['', '👋', '💚', '😊', '🙏', '🙌'];
   const ZONES = [
-    { id: 'plaza', x: 300, name: '쉼터 광장', short: '광장', icon: '🪧', tint: '#f4e7cf' },
-    { id: 'shop', x: 720, name: '숲속 가게', short: '가게', icon: '🏪', tint: '#d6efe4' },
-    { id: 'tree', x: 1140, name: '숨 쉬는 나무', short: '숨 고르기', icon: '🌳', tint: '#ddeed0' },
-    { id: 'spring', x: 1560, name: '마음 구슬 샘', short: '마음 구슬', icon: '🫧', tint: '#dbecf5' },
-    { id: 'lantern', x: 1980, name: '염원 등불터', short: '염원', icon: '🏮', tint: '#fbe6c4' },
-    { id: 'garden', x: 2400, name: '함께 꽃밭', short: '꽃밭', icon: '🌷', tint: '#fadde4' },
-    { id: 'pond', x: 2820, name: '마음 날씨 연못', short: '마음 날씨', icon: '🪷', tint: '#d6edf2' },
-    { id: 'rain', x: 3240, name: '빗소리 정자', short: '빗소리', icon: '☔', tint: '#dfe7ec' },
-    { id: 'stair', x: 3640, name: '명언 계단', short: '명언 계단', icon: '🪜', tint: '#f1e4cc' },
-    { id: 'hill', x: 4010, name: '별빛 언덕', short: '별빛 언덕', icon: '⭐', tint: '#e6def5' },
+    { id: 'plaza', x: 360, name: '쉼터 광장', short: '광장', icon: '🪧', tint: '#f4e7cf' },
+    { id: 'shop', x: 840, name: '숲속 가게', short: '가게', icon: '🏪', tint: '#d6efe4' },
+    { id: 'links', x: 1340, name: '링크 나눔터', short: '나눔터', icon: '🎁', tint: '#fbdcd9', big: true },
+    { id: 'tree', x: 1880, name: '숨 쉬는 나무', short: '숨 고르기', icon: '🌳', tint: '#ddeed0' },
+    { id: 'spring', x: 2360, name: '마음 구슬 샘', short: '마음 구슬', icon: '🫧', tint: '#dbecf5' },
+    { id: 'lantern', x: 2840, name: '염원 등불터', short: '염원', icon: '🏮', tint: '#fbe6c4' },
+    { id: 'garden', x: 3380, name: '함께 꽃밭', short: '꽃밭', icon: '🌷', tint: '#fadde4' },
+    { id: 'pond', x: 3920, name: '마음 날씨 연못', short: '마음 날씨', icon: '🪷', tint: '#d6edf2' },
+    { id: 'rain', x: 4400, name: '빗소리 정자', short: '빗소리', icon: '☔', tint: '#dfe7ec' },
+    { id: 'stair', x: 4880, name: '명언 계단', short: '명언 계단', icon: '🪜', tint: '#f1e4cc' },
+    { id: 'hill', x: 5380, name: '별빛 언덕', short: '별빛 언덕', icon: '⭐', tint: '#e6def5' },
   ];
   const zoneById = (id) => ZONES.find((z) => z.id === id);
+  const PURPOSES = ['수업용', '일상 상식', '음악', '기타'];
+  const PURPOSE_ICON = ['📚', '💡', '🎵', '🔗'];
+  const LEVELS = ['유', '초', '중', '고'];
+  const LEVEL_NAME = ['유치원', '초등', '중등', '고등'];
+  const SUBJECTS = ['국', '수', '사', '과', '영', '음', '미', '체', '실', '기타'];
+  const SUBJECT_NAME = ['국어', '수학', '사회', '과학', '영어', '음악', '미술', '체육', '실과', '기타'];
 
   /* ===================== 나 ===================== */
   let sid = null;
@@ -213,9 +220,37 @@
       decorEl.appendChild(e);
       decor.push({ el: e, x: rand(20, W - 20), d: rand(0, 1) });
     }
+    // 크리스마스 꾸미기 — 트리·선물·눈사람
+    const gcol = ['#d8453e', '#3f8a54', '#5e9bd6', '#f2a9c0', '#c98d5a'];
+    const rcol = ['#ffd94e', '#fbf7f2', '#9ccf7c'];
+    for (let i = 0; i < 11; i++) {
+      const e = el('div', 'xtree', A.XTREE);
+      decorEl.appendChild(e); decor.push({ el: e, x: rand(60, W - 60), d: rand(0.08, 0.85) });
+    }
+    for (let i = 0; i < 20; i++) {
+      const e = el('div', 'xgift', A.GIFT);
+      e.style.setProperty('--box', gcol[randInt(gcol.length)]); e.style.setProperty('--rib', rcol[randInt(rcol.length)]);
+      decorEl.appendChild(e); decor.push({ el: e, x: rand(30, W - 30), d: rand(0, 1) });
+    }
+    for (let i = 0; i < 5; i++) {
+      const e = el('div', 'xsnow', A.SNOWMAN);
+      decorEl.appendChild(e); decor.push({ el: e, x: rand(100, W - 100), d: rand(0.1, 0.8) });
+    }
+    // 눈 내리기
+    const snow = $('snow');
+    for (let i = 0; i < 46; i++) {
+      const f = el('div', 'flake', Math.random() < 0.5 ? '❄' : '•');
+      f.style.left = rand(0, 100) + '%';
+      f.style.fontSize = rand(8, 18).toFixed(0) + 'px';
+      f.style.setProperty('--sdur', rand(7, 16).toFixed(1) + 's');
+      f.style.setProperty('--sdrift', rand(-40, 40).toFixed(0) + 'px');
+      f.style.animationDelay = (-rand(0, 16)).toFixed(1) + 's';
+      f.style.opacity = rand(0.4, 0.95).toFixed(2);
+      snow.appendChild(f);
+    }
     ZONES.forEach((z) => {
       const art = A.LM[z.id];
-      const e = el('div', 'landmark');
+      const e = el('div', 'landmark' + (z.big ? ' big' : ''));
       e.dataset.zone = z.id;
       e.innerHTML = `<svg viewBox="0 0 ${art.vb[0]} ${art.vb[1]}" aria-hidden="true">${art.svg}</svg>` +
         `<div class="lm-label">${z.icon} ${z.name}</div>` +
@@ -227,9 +262,9 @@
     // 아래 바로가기
     const track = $('dockTrack');
     ZONES.forEach((z) => {
-      const b = el('button', 'dock-btn');
+      const b = el('button', 'dock-btn' + (z.big ? ' big' : ''));
       b.type = 'button'; b.dataset.go = z.id;
-      b.innerHTML = `<span class="dock-ico" style="--tint:${z.tint}">${z.icon}</span><span class="dock-name">${z.short}</span><span class="dock-sub" id="sub-${z.id}"></span>`;
+      b.innerHTML = `<span class="dock-ico" style="--tint:${z.tint}">${z.icon}</span><span class="dock-name">${z.short}</span><span class="dock-sub" id="sub-${z.id}"></span>` + (z.big ? '<span class="dock-flag">NEW</span>' : '');
       b.addEventListener('click', () => { b.blur(); goTo(z.id, true); });
       track.appendChild(b);
     });
@@ -482,6 +517,73 @@
     };
   })();
 
+  /* ===================== 배경음악 (클래식·캐럴) ===================== */
+  const Music = (function () {
+    // 모두 저작권이 없는 옛 곡(캐럴·클래식)을 음 하나하나 소리로 만들어 들려줘요.
+    const F = { 'C3': 130.81, 'D3': 146.83, 'E3': 164.81, 'F3': 174.61, 'G3': 196.00, 'A3': 220.00, 'B3': 246.94, 'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23, 'G4': 392.00, 'A4': 440.00, 'B4': 493.88, 'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'F5': 698.46, 'G5': 783.99, 'A5': 880.00, '-': 0 };
+    const n = (name, d) => ({ f: F[name] || 0, d: d });
+    const TRACKS = {
+      jingle: { name: '징글벨', bpm: 132, bass: ['C3', 'G3'], mel: [['E4', 1], ['E4', 1], ['E4', 2], ['E4', 1], ['E4', 1], ['E4', 2], ['E4', 1], ['G4', 1], ['C4', 1.5], ['D4', .5], ['E4', 4], ['F4', 1], ['F4', 1], ['F4', 1.5], ['F4', .5], ['F4', 1], ['E4', 1], ['E4', 1], ['E4', .5], ['E4', .5], ['E4', 1], ['D4', 1], ['D4', 1], ['E4', 1], ['D4', 2], ['G4', 2]] },
+      silent: { name: '고요한 밤', bpm: 96, bass: ['G3', 'C3'], mel: [['G4', 1.5], ['A4', .5], ['G4', 1], ['E4', 3], ['G4', 1.5], ['A4', .5], ['G4', 1], ['E4', 3], ['D5', 2], ['D5', 1], ['B4', 3], ['C5', 2], ['C5', 1], ['G4', 3]] },
+      ode: { name: '환희의 송가', bpm: 120, bass: ['C3', 'G3'], mel: [['E4', 1], ['E4', 1], ['F4', 1], ['G4', 1], ['G4', 1], ['F4', 1], ['E4', 1], ['D4', 1], ['C4', 1], ['C4', 1], ['D4', 1], ['E4', 1], ['E4', 1.5], ['D4', .5], ['D4', 2], ['E4', 1], ['E4', 1], ['F4', 1], ['G4', 1], ['G4', 1], ['F4', 1], ['E4', 1], ['D4', 1], ['C4', 1], ['C4', 1], ['D4', 1], ['E4', 1], ['D4', 1.5], ['C4', .5], ['C4', 2]] },
+      canon: { name: '캐논(파헬벨)', bpm: 100, bass: ['D3', 'A3', 'B3', 'F3', 'G3', 'D3', 'G3', 'A3'], mel: [['F4', 2], ['E4', 2], ['D4', 2], ['C4', 2], ['B3', 2], ['A3', 2], ['B3', 2], ['C4', 2], ['D4', 2], ['C4', 2], ['B3', 2], ['A3', 2], ['G3', 2], ['F3', 2], ['G3', 2], ['E4', 2]] },
+      gymnopedie: { name: '짐노페디(사티)', bpm: 76, bass: ['G3', 'D3', 'G3', 'D3'], mel: [['F5', 3], ['E5', 1], ['-', 2], ['D5', 2], ['A4', 2], ['B4', 2], ['-', 2], ['F5', 3], ['E5', 1], ['-', 2], ['D5', 2], ['A4', 2], ['B4', 4]] },
+    };
+    let ctx, master, on = '', timers = [], barTimer = null;
+    function ensure() {
+      if (ctx) return;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      ctx = new AC();
+      master = ctx.createGain(); master.gain.value = 0.0; master.connect(ctx.destination);
+    }
+    function pluck(freq, start, dur, vol, type) {
+      if (!freq) return;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = type || 'triangle'; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.linearRampToValueAtTime(vol, start + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0008, start + dur);
+      o.connect(g); g.connect(master); o.start(start); o.stop(start + dur + 0.05);
+    }
+    function playTrack(key) {
+      const tr = TRACKS[key]; if (!tr) return;
+      const beat = 60 / tr.bpm;
+      let i = 0, bass = 0;
+      const total = tr.mel.reduce((a, m) => a + m[1], 0);
+      function bar() {
+        const t0 = ctx.currentTime + 0.05;
+        let t = t0;
+        tr.mel.forEach((m) => { pluck(m[0] === '-' ? 0 : F[m[0]], t, m[1] * beat * 0.95, 0.12, 'triangle'); t += m[1] * beat; });
+        // 낮은 베이스 반주
+        let bt = t0, step = 2 * beat;
+        for (let s = 0; s * step < total * beat; s++) { pluck(F[tr.bass[bass % tr.bass.length]] / 2 || 0, bt, step * 0.9, 0.06, 'sine'); bass++; bt += step; }
+        barTimer = setTimeout(bar, total * beat * 1000 + 400);
+      }
+      bar();
+    }
+    function play(key) {
+      if (key === on) return on;
+      stop(true);
+      if (!key || key === 'off') { on = ''; return ''; }
+      ensure(); if (!ctx) return '';
+      if (ctx.state === 'suspended') ctx.resume();
+      on = key;
+      master.gain.cancelScheduledValues(ctx.currentTime);
+      master.gain.setValueAtTime(0.0001, ctx.currentTime);
+      master.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 1.2);
+      playTrack(key);
+      return on;
+    }
+    function stop(silent) {
+      clearTimeout(barTimer); barTimer = null;
+      timers.forEach(clearTimeout); timers = [];
+      if (ctx && master && !silent) master.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4);
+      if (!silent) on = '';
+    }
+    return { play, stop, TRACKS, current: () => on };
+  })();
+
   /* ===================== 서버 통신 ===================== */
   async function sheetFetch(options) {
     const ctrl = new AbortController();
@@ -497,8 +599,22 @@
   }
 
   /* ===================== 상태 ===================== */
-  const state = { wishes: [], stars: { count: 0, recent: [] }, flowers: [], mood: [0, 0, 0, 0, 0, 0] };
+  const state = { wishes: [], stars: { count: 0, recent: [] }, flowers: [], mood: [0, 0, 0, 0, 0, 0], links: [] };
   const seen = new Set();
+  // 방금 내가 올렸는데 아직 서버 목록에 안 뜬 염원 (사라짐 방지)
+  const myRecent = new Map();
+  function rememberMine(w) { if (w && w.id) myRecent.set(w.id, { w: w, t: Date.now() }); }
+  function mergeMyRecent() {
+    const now = Date.now();
+    myRecent.forEach((v, id) => {
+      if (now - v.t > 90000) { myRecent.delete(id); return; }
+      const rep = reported();
+      if (rep[id]) { myRecent.delete(id); return; }
+      // 이미 별이 됐거나 목록에 있으면 그대로, 없으면 다시 끼워 넣기
+      if (state.stars.recent.some((s) => s.text === v.w.text)) { myRecent.delete(id); return; }
+      if (!state.wishes.some((x) => x.id === id)) state.wishes.unshift(v.w);
+    });
+  }
   let visitsToday = 0, online = 1, presenceOk = false;
   const normKind = (k) => (k === KIND_LETGO ? KIND_LETGO : KIND_HOPE);
   function normWish(w) {
@@ -506,6 +622,13 @@
     return { id: String(w.id || ''), text: String(w.text || w.content || ''), kind: normKind(w.kind), empathy: Number(w.empathy) || 0, at: Number(w.at) || 0 };
   }
   const normFlower = (f) => ({ f: clamp(f.f | 0, 0, 5), x: clamp(+f.x || 0, 0, 100), y: clamp(+f.y || 0, 0, 100) });
+  function normLink(l) {
+    if (!l || !l.url) return null;
+    return { id: String(l.id || ''), url: String(l.url), purpose: clamp(l.purpose | 0, 0, 3),
+      level: Number.isInteger(l.level) && l.level >= 0 ? l.level : -1,
+      subject: Number.isInteger(l.subject) && l.subject >= 0 ? l.subject : -1,
+      topic: String(l.topic || ''), at: Number(l.at) || 0 };
+  }
   function loadLocal() {
     let L = store.get('ms_local', null);
     if (!L) {
@@ -517,9 +640,10 @@
     state.stars = L.stars || { count: 0, recent: [] };
     state.flowers = (L.flowers || []).map(normFlower);
     state.mood = L.mood && L.mood.day === today() ? L.mood.c : [0, 0, 0, 0, 0, 0];
+    state.links = (L.links || []).map(normLink).filter(Boolean);
   }
   function saveLocal() {
-    store.set('ms_local', { wishes: state.wishes.slice(0, 60), stars: state.stars, flowers: state.flowers.slice(-160), mood: { day: today(), c: state.mood } });
+    store.set('ms_local', { wishes: state.wishes.slice(0, 60), stars: state.stars, flowers: state.flowers.slice(-220), mood: { day: today(), c: state.mood }, links: state.links.slice(0, 60) });
   }
   const reported = () => store.get('ms_reported', {}) || {};
   async function refreshState(first) {
@@ -541,7 +665,9 @@
       state.stars = { count: Number(st.count) || 0, recent: (st.recent || []).map((s) => ({ text: String(s.text || ''), kind: normKind(s.kind) })) };
       if (Array.isArray(d.flowers)) state.flowers = d.flowers.map(normFlower);
       if (Array.isArray(d.mood)) state.mood = d.mood.slice(0, 6).map((n) => Number(n) || 0);
+      if (Array.isArray(d.links)) state.links = d.links.map(normLink).filter((x) => x && !rep[x.id]);
       visitsToday = Number(d.visitsToday) || visitsToday;
+      mergeMyRecent();
       if (first) ws.slice(0, 8).reverse().forEach((w, i) => setTimeout(() => floatLantern(w.text, w.kind), 600 + i * 1300));
       else fresh.slice(0, 3).forEach((w, i) => setTimeout(() => floatLantern(w.text, w.kind), i * 900));
       afterState();
@@ -551,11 +677,12 @@
     }
   }
   function afterState() {
-    renderBadge(); renderStarfield(); renderGardenBed(); renderDockSubs();
+    renderBadge(); renderStarfield(); renderGardenBed(); renderDockSubs(); renderSkyStars();
     if (!$('boardModal').hidden) renderBoard();
     if (!$('starsModal').hidden) renderStars();
     if (!$('gardenModal').hidden) renderGarden();
     if (!$('pondModal').hidden) renderMoodToday();
+    if (!$('linksModal').hidden) renderLinks();
   }
   function renderBadge() {
     const parts = [];
@@ -566,6 +693,7 @@
   function renderDockSubs() {
     const set = (id, t) => { const e = $('sub-' + id); if (e) e.textContent = t; };
     set('plaza', '안내'); set('shop', '🪙 ' + wallet.coins);
+    set('links', state.links.length ? state.links.length + '개 링크' : '링크 나눔');
     set('tree', breaths + '번 숨'); set('spring', beadTotal + '알');
     set('lantern', state.wishes.length ? state.wishes.length + '개 마음' : '함께 보기');
     set('garden', state.flowers.length + '송이'); set('pond', moodPicked() !== null ? MOODS[moodPicked()].ico + ' 오늘' : '오늘 날씨');
@@ -585,17 +713,65 @@
       starfieldEl.appendChild(s);
     }
   }
+  // 별이 된 염원 — 하늘에 떠 있어요
+  function renderSkyStars() {
+    const layer = $('skyStars');
+    if (!layer) return;
+    const recent = state.stars.recent || [];
+    const n = Math.min(Math.max(state.stars.count, recent.length), 40);
+    const prand = (i) => { const x = Math.sin(i * 45.233 + 11.7) * 9731.1; return x - Math.floor(x); };
+    layer.textContent = '';
+    for (let i = 0; i < n; i++) {
+      const wrap = el('div', 'sky-star');
+      const big = prand(i + 5) < 0.3;
+      wrap.innerHTML = '<span class="ss-mark">✦</span>';
+      wrap.style.left = (3 + prand(i) * 94) + '%';
+      wrap.style.top = (4 + prand(i + 50) * 34) + '%';
+      wrap.style.setProperty('--tw', (2.4 + prand(i + 9) * 2.6).toFixed(2) + 's');
+      wrap.style.animationDelay = (-prand(i + 3) * 6).toFixed(2) + 's';
+      wrap.querySelector('.ss-mark').style.fontSize = (big ? 20 : 12) + 'px';
+      const wish = recent[i];
+      if (wish) {
+        wrap.classList.add('named');
+        const lbl = el('span', 'ss-text'); lbl.textContent = wish.text;
+        wrap.appendChild(lbl);
+        wrap.addEventListener('click', () => { toast('⭐ ' + wish.text, 3200); });
+      }
+      layer.appendChild(wrap);
+    }
+  }
   function renderGardenBed() {
     const bed = $('gardenBed'), g = zoneById('garden');
     bed.textContent = '';
-    state.flowers.slice(-70).forEach((f, i) => {
+    // 꽃밭이 넓어졌어요 — 최근 꽃을 넓은 땅에 흩뿌려요
+    state.flowers.slice(-140).forEach((f, i) => {
       const e = el('div', 'gflower', A.flower(f.f));
-      e.style.left = (g.x - 105 * lmScale + f.x / 100 * 210 * lmScale).toFixed(0) + 'px';
-      e.style.top = (bandTop + 6 - (1 - f.y / 100) * 22 * lmScale).toFixed(0) + 'px';
+      e.style.left = (g.x - 190 * lmScale + f.x / 100 * 380 * lmScale).toFixed(0) + 'px';
+      e.style.top = (bandTop + 8 - (1 - f.y / 100) * 30 * lmScale).toFixed(0) + 'px';
       e.style.zIndex = String(3 + Math.round(f.y / 10));
       e.style.animationDelay = (-(i % 7) * 0.5) + 's, 0s';
       bed.appendChild(e);
     });
+  }
+
+  /* ===================== 산타 ===================== */
+  let santaTimer = null;
+  function flySanta() {
+    const layer = $('santaLayer');
+    if (!layer) return;
+    const e = el('div', 'santa', A.SANTA);
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    e.classList.add(dir > 0 ? 'to-right' : 'to-left');
+    e.style.top = rand(6, 24) + '%';
+    e.style.setProperty('--sdur', rand(12, 18).toFixed(1) + 's');
+    layer.appendChild(e);
+    e.addEventListener('animationend', () => e.remove());
+    if (!document.hidden && Math.random() < 0.7) toast('🎅 산타가 숲 위를 지나가요!', 2600);
+  }
+  function startSanta() {
+    const loop = () => { santaTimer = setTimeout(() => { if (!document.hidden) flySanta(); loop(); }, rand(35000, 70000)); };
+    setTimeout(flySanta, 4000);
+    loop();
   }
 
   /* ===================== 등불 · 반짝 · 알림 ===================== */
@@ -627,8 +803,8 @@
   }
 
   /* ===================== 모달 ===================== */
-  const MODALS = ['introModal', 'guideModal', 'breathModal', 'beadsModal', 'boardModal', 'wishModal', 'starsModal', 'shopModal', 'gardenModal', 'pondModal', 'rainModal', 'walletModal', 'bookModal', 'mapModal'];
-  const ZONE_OF_MODAL = { guideModal: 'plaza', breathModal: 'tree', beadsModal: 'spring', boardModal: 'lantern', starsModal: 'hill', shopModal: 'shop', gardenModal: 'garden', pondModal: 'pond', rainModal: 'rain' };
+  const MODALS = ['introModal', 'guideModal', 'breathModal', 'beadsModal', 'boardModal', 'wishModal', 'starsModal', 'shopModal', 'gardenModal', 'pondModal', 'rainModal', 'walletModal', 'bookModal', 'mapModal', 'linksModal', 'linkFormModal', 'musicModal'];
+  const ZONE_OF_MODAL = { guideModal: 'plaza', breathModal: 'tree', beadsModal: 'spring', boardModal: 'lantern', starsModal: 'hill', shopModal: 'shop', gardenModal: 'garden', pondModal: 'pond', rainModal: 'rain', linksModal: 'links' };
   const modalOpen = () => MODALS.some((id) => !$(id).hidden) || !$('ritual').hidden || !$('loading').hidden || !$('stairGame').hidden;
   const isTyping = () => { const a = document.activeElement; return !!a && (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT'); };
   function openModal(id) { $(id).hidden = false; }
@@ -674,6 +850,7 @@
     else if (id === 'pond') openPond();
     else if (id === 'rain') openModal('rainModal');
     else if (id === 'stair') openStair();
+    else if (id === 'links') openLinks();
   }
   function goTo(id, enter) {
     const z = zoneById(id); if (!z) return;
@@ -743,8 +920,10 @@
     const on = Sound.toggle();
     $('soundBtn').classList.toggle('on', on);
     $('soundIcon').textContent = on ? '🔊' : '🔈';
-    $('soundBtn').title = on ? '소리 끄기' : '소리 켜기';
+    $('soundBtn').title = on ? '숲 소리 끄기' : '숲 소리 켜기';
   });
+  $('musicBtn').addEventListener('click', (e) => { e.currentTarget.blur(); openMusic(); });
+  $('enterBtn').addEventListener('click', (e) => { e.currentTarget.blur(); const z = e.currentTarget.dataset.zone; if (z) enterZone(z); });
 
   /* ===================== 숲의 시간 ===================== */
   const TIMES = [['t-morning', '🌅', '아침'], ['t-day', '☀️', '낮'], ['t-dusk', '🌇', '노을'], ['t-night', '🌙', '밤']];
@@ -815,6 +994,8 @@
         b.classList.toggle('here', here);
         if (here && b.scrollIntoView) b.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
       });
+      const eb = $('enterBtn');
+      if (nz) { eb.innerHTML = `<span class="eb-ico">${nz.icon}</span>${nz.name} <b>들어가기</b>`; eb.dataset.zone = nz.id; }
     }
     // 가까운 사람(또는 숲지기)
     let best = null, bd = 1e9;
@@ -834,6 +1015,8 @@
       if (best) { best.el.classList.add('near-me'); $('iaName').textContent = best.name + '님과'; }
       $('interact').hidden = !best;
     }
+    // 들어가기 버튼: 쉼터 근처 + 모달 없음 + 인사 바가 안 떠 있을 때만 (버튼 겹침 방지)
+    $('enterBtn').hidden = !(nearZone && !open && $('interact').hidden);
   }
 
   /* ===================== 인사 · 하이파이브 ===================== */
@@ -1224,7 +1407,7 @@
       const mine = getMine();
       mine.unshift({ id: r.id || '', text, kind, at: Date.now(), status: r.pending ? 'pending' : 'public' });
       store.set('ms_mine', mine.slice(0, 50));
-      if (sheetMode && !r.pending && r.id) { state.wishes.unshift({ id: r.id, text, kind, empathy: 0, at: Date.now() }); seen.add(r.id); }
+      if (sheetMode && !r.pending && r.id) { const nw = { id: r.id, text, kind, empathy: 0, at: Date.now() }; state.wishes.unshift(nw); seen.add(r.id); rememberMine(nw); }
       closeModal('wishModal');
       afterState(); renderBoard();
       earn('wish');
@@ -1330,28 +1513,49 @@
       row.appendChild(b);
     });
   })();
-  function renderGarden() {
+  const GARDEN_PAGE = 40; // 한 밭에 담기는 꽃 수 (차면 새 밭이 열려요)
+  let gardenPage = 0;
+  const gardenPages = () => Math.max(1, Math.ceil(state.flowers.length / GARDEN_PAGE));
+  function renderGarden(keepPage) {
     renderCoins();
+    if (!keepPage) gardenPage = gardenPages() - 1; // 기본은 지금 자라는 밭
+    gardenPage = clamp(gardenPage, 0, gardenPages() - 1);
     const plot = $('gardenPlot'); plot.textContent = '';
-    state.flowers.forEach((f, i) => plot.appendChild(gardenFlower(f, i)));
-    if (!state.flowers.length) plot.appendChild(el('div', 'ghint', '아직 빈 꽃밭이에요. 첫 꽃을 심어 볼까요?'));
+    const start = gardenPage * GARDEN_PAGE;
+    const page = state.flowers.slice(start, start + GARDEN_PAGE);
+    page.forEach((f, i) => plot.appendChild(gardenFlower(f, i)));
+    const full = page.length >= GARDEN_PAGE;
+    if (!page.length) plot.appendChild(el('div', 'ghint', '아직 빈 꽃밭이에요. 첫 꽃을 심어 볼까요?'));
+    else if (full && gardenPage === gardenPages() - 1) plot.appendChild(el('div', 'ghint full', '이 밭이 가득 찼어요! 한 송이 더 심으면 새 꽃밭이 열려요 🌱'));
     $('gardenCount').textContent = '함께 심은 꽃 ' + state.flowers.length + '송이';
+    const multi = gardenPages() > 1;
+    $('gardenPager').hidden = !multi;
+    if (multi) {
+      $('gardenPageLabel').textContent = (gardenPage + 1) + ' / ' + gardenPages() + '번 꽃밭';
+      $('gardenPrev').disabled = gardenPage <= 0;
+      $('gardenNext').disabled = gardenPage >= gardenPages() - 1;
+    }
   }
   function gardenFlower(f, i) {
     const e = el('div', 'gflower', A.flower(f.f));
-    e.style.left = (4 + f.x * 0.92) + '%'; e.style.top = (14 + f.y * 0.84) + '%';
+    e.style.left = (3 + f.x * 0.94) + '%'; e.style.top = (12 + f.y * 0.84) + '%';
     e.style.zIndex = String(f.y | 0);
     e.style.animationDelay = (-(i % 7) * 0.5) + 's, 0s';
     return e;
   }
+  $('gardenPrev').addEventListener('click', () => { gardenPage--; renderGarden(true); });
+  $('gardenNext').addEventListener('click', () => { gardenPage++; renderGarden(true); });
   $('gardenPlot').addEventListener('click', async (e) => {
+    if (e.target.closest('.ghint')) return;
     const r = $('gardenPlot').getBoundingClientRect();
-    const x = clamp(Math.round(((e.clientX - r.left) / r.width * 100 - 4) / 0.92), 0, 100);
-    const y = clamp(Math.round(((e.clientY - r.top) / r.height * 100 - 14) / 0.84), 0, 100);
+    const x = clamp(Math.round(((e.clientX - r.left) / r.width * 100 - 3) / 0.94), 0, 100);
+    const y = clamp(Math.round(((e.clientY - r.top) / r.height * 100 - 12) / 0.84), 0, 100);
     if (!spend(FLOWER_COST)) { toast('꽃 한 송이에 🪙' + FLOWER_COST + '이 필요해요. 쉼터를 돌며 모아 와요.'); return; }
+    const wasFull = state.flowers.length % GARDEN_PAGE === 0 && state.flowers.length > 0;
     const f = { f: seedPick, x, y };
     state.flowers.push(f);
     renderGarden(); renderGardenBed(); renderDockSubs(); Sound.chime(true);
+    if (wasFull) toast('새 꽃밭이 열렸어요! 여기서 이어서 가꿔요 🌷', 3000);
     if (!sheetMode) { saveLocal(); return; }
     try {
       const res = await sheetPost({ type: 'flower', sessionId: sid, f: f.f, x, y });
@@ -1363,6 +1567,159 @@
       toast((err && err.message) || '꽃을 심지 못했어요. 동전은 돌려드렸어요.');
     }
   });
+
+  /* ===================== 배경음악 고르기 ===================== */
+  function openMusic() {
+    const list = $('musicList'); list.textContent = '';
+    const opts = [['off', '🔕', '끄기', '조용히'], ['forest', '🌲', '숲 소리', '새소리와 바람']];
+    Object.keys(Music.TRACKS).forEach((k) => {
+      const icons = { jingle: '🔔', silent: '🌙', ode: '🎼', canon: '🎻', gymnopedie: '🎹' };
+      opts.push([k, icons[k] || '🎵', Music.TRACKS[k].name, k === 'jingle' || k === 'silent' ? '크리스마스 캐럴' : '클래식']);
+    });
+    const cur = musicChoice;
+    opts.forEach(([key, ico, name, sub]) => {
+      const b = el('button', 'music-opt' + (key === cur ? ' on' : ''),
+        `<span class="mo-ico">${ico}</span><span class="mo-name">${name}</span><span class="mo-sub">${sub}</span>` + (key === cur ? '<span class="mo-play">▶ 재생 중</span>' : ''));
+      b.type = 'button';
+      b.addEventListener('click', () => chooseMusic(key));
+      list.appendChild(b);
+    });
+    openModal('musicModal');
+  }
+  let musicChoice = store.get('ms_music', 'off') || 'off';
+  function chooseMusic(key) {
+    musicChoice = key; store.set('ms_music', key);
+    if (key === 'forest') {
+      Music.play('off');
+      if (!soundOn()) toggleForest(true);
+    } else {
+      if (soundOn()) toggleForest(false);
+      Music.play(key);
+    }
+    $('musicBtn').classList.toggle('on', key !== 'off');
+    openMusic();
+  }
+  const soundOn = () => $('soundBtn').classList.contains('on');
+  function toggleForest(want) {
+    if (soundOn() === want) return;
+    const on = Sound.toggle();
+    $('soundBtn').classList.toggle('on', on);
+    $('soundIcon').textContent = on ? '🔊' : '🔈';
+  }
+
+  /* ===================== 링크 나눔터 ===================== */
+  let linkFilter = -1; // -1 전체, 0~3 목적
+  let linkForm = { purpose: 0, level: 1, subject: 0 };
+  function openLinks() { linkFilter = -1; renderLinks(); openModal('linksModal'); if (sheetMode) refreshState(false); }
+  function purposeTag(l) {
+    let t = PURPOSE_ICON[l.purpose] + ' ' + PURPOSES[l.purpose];
+    if (l.purpose === 0 && l.level >= 0) t += ' · ' + LEVEL_NAME[l.level] + (l.subject >= 0 ? ' ' + SUBJECT_NAME[l.subject] : '');
+    return t;
+  }
+  function hostOf(url) { try { return new URL(url).hostname.replace(/^www\./, ''); } catch (e) { return url.replace(/^https?:\/\//, '').split('/')[0]; } }
+  function renderLinks() {
+    const tabs = $('linkTabs'); tabs.textContent = '';
+    [['전체', -1]].concat(PURPOSES.map((p, i) => [PURPOSE_ICON[i] + p, i])).forEach(([label, v]) => {
+      const b = el('button', 'ltab' + (v === linkFilter ? ' on' : ''), label); b.type = 'button';
+      b.addEventListener('click', () => { linkFilter = v; renderLinks(); });
+      tabs.appendChild(b);
+    });
+    const list = $('linkList'); list.textContent = '';
+    const items = state.links.filter((l) => linkFilter < 0 || l.purpose === linkFilter);
+    if (!items.length) { list.appendChild(emptyEl('아직 나눈 링크가 없어요.<br>[＋ 링크 올리기]로 좋은 자료를 나눠 주세요.')); }
+    const myLinks = store.get('ms_mylinks', []) || [];
+    const repd = reported();
+    items.forEach((l) => {
+      const c = el('div', 'lcard p' + l.purpose);
+      const head = el('div', 'lc-head');
+      head.innerHTML = `<span class="lc-tag">${purposeTag(l)}</span>`;
+      const topic = el('a', 'lc-topic'); topic.href = l.url; topic.target = '_blank'; topic.rel = 'noopener noreferrer';
+      topic.textContent = l.topic || hostOf(l.url);
+      const host = el('div', 'lc-host'); host.textContent = '🔗 ' + hostOf(l.url);
+      const foot = el('div', 'lc-foot');
+      const go = el('a', 'lc-go'); go.href = l.url; go.target = '_blank'; go.rel = 'noopener noreferrer'; go.textContent = '열어 보기 ↗';
+      foot.appendChild(go);
+      if (l.id && sheetMode && myLinks.indexOf(l.id) < 0 && !repd[l.id]) {
+        const flag = el('button', 'lc-flag', '🚩'); flag.type = 'button'; flag.title = '부적절한 링크 알리기';
+        flag.addEventListener('click', () => reportLink(l, c)); foot.appendChild(flag);
+      }
+      c.append(head, topic, host, foot);
+      list.appendChild(c);
+    });
+    $('linksCount').textContent = state.links.length ? '함께 나눈 링크 ' + state.links.length + '개' : '';
+  }
+  async function reportLink(l, card) {
+    const rep = reported(); rep[l.id] = Date.now(); store.set('ms_reported', rep);
+    state.links = state.links.filter((x) => x.id !== l.id);
+    renderLinks(); renderDockSubs();
+    toast('알려 줘서 고마워요. 세 명이 알리면 그 링크는 가려져요.', 3200);
+    try { await sheetPost({ type: 'linkreport', id: l.id, sessionId: sid }); } catch (e) { /* 다음에 */ }
+  }
+  function openLinkForm() {
+    linkForm = { purpose: 0, level: 1, subject: 0 };
+    $('linkUrl').value = ''; $('linkTopic').value = '';
+    $('linkMsg').textContent = ''; $('linkMsg').className = 'modal-msg';
+    renderLinkForm();
+    openModal('linkFormModal');
+  }
+  function renderLinkForm() {
+    const pr = $('linkPurpose'); pr.textContent = '';
+    PURPOSES.forEach((p, i) => {
+      const b = el('button', 'chip-opt' + (linkForm.purpose === i ? ' on' : ''), PURPOSE_ICON[i] + ' ' + p); b.type = 'button';
+      b.addEventListener('click', () => { linkForm.purpose = i; renderLinkForm(); });
+      pr.appendChild(b);
+    });
+    const show = linkForm.purpose === 0;
+    $('linkClassRow').hidden = !show;
+    if (show) {
+      const lv = $('linkLevel'); lv.textContent = '';
+      LEVEL_NAME.forEach((n, i) => {
+        const b = el('button', 'chip-opt sm' + (linkForm.level === i ? ' on' : ''), n); b.type = 'button';
+        b.addEventListener('click', () => { linkForm.level = i; renderLinkForm(); });
+        lv.appendChild(b);
+      });
+      const sj = $('linkSubject'); sj.textContent = '';
+      SUBJECT_NAME.forEach((n, i) => {
+        const b = el('button', 'chip-opt sm' + (linkForm.subject === i ? ' on' : ''), n); b.type = 'button';
+        b.addEventListener('click', () => { linkForm.subject = i; renderLinkForm(); });
+        sj.appendChild(b);
+      });
+    }
+  }
+  async function submitLink() {
+    const url = $('linkUrl').value.trim();
+    const topic = $('linkTopic').value.trim();
+    const setMsg = (t, k) => { $('linkMsg').textContent = t; $('linkMsg').className = 'modal-msg ' + (k || ''); };
+    if (!/^https?:\/\/[^\s]+\.[^\s]+$/i.test(url)) return setMsg('http 로 시작하는 올바른 주소를 넣어 주세요.', 'err');
+    if (!topic) return setMsg('어떤 링크인지 주제를 적어 주세요.', 'err');
+    if (topic.length > 40) return setMsg('주제는 40자 이내로 적어 주세요.', 'err');
+    const chk = window.Filter ? window.Filter.check(topic) : { ok: true };
+    if (!chk.ok) return setMsg(/따뜻한/.test(chk.reason) ? '주제에 쓸 수 없는 말이 있어요.' : chk.reason, 'err');
+    $('linkSubmit').disabled = true;
+    const payload = { url, purpose: linkForm.purpose, topic, level: linkForm.level, subject: linkForm.subject };
+    try {
+      let r;
+      if (sheetMode) {
+        try { r = await sheetPost(Object.assign({ type: 'link', sessionId: sid }, payload)); }
+        catch (e) { r = { ok: false, reason: '연결이 원활하지 않아요. 잠시 뒤 다시 시도해 주세요.' }; }
+      } else {
+        r = { ok: true, id: 'L' + Date.now() };
+      }
+      if (!r || !r.ok) return setMsg(r && r.reason || '올리지 못했어요.', 'err');
+      const link = normLink({ id: r.id || ('L' + Date.now()), url, purpose: linkForm.purpose, topic,
+        level: linkForm.purpose === 0 ? linkForm.level : -1, subject: linkForm.purpose === 0 ? linkForm.subject : -1, at: Date.now() });
+      if (!r.pending) state.links.unshift(link);
+      const mine = store.get('ms_mylinks', []) || []; mine.unshift(link.id); store.set('ms_mylinks', mine.slice(0, 50));
+      if (!sheetMode) saveLocal();
+      closeModal('linkFormModal');
+      renderLinks(); renderDockSubs();
+      earn('wish'); // 링크 나눔도 염원과 같은 동전 항목으로 북돋워요
+      toast(r.pending ? '올렸어요. 선생님이 확인하면 보여요.' : '🎁 링크를 나눔터에 올렸어요. 고마워요!');
+    } finally { $('linkSubmit').disabled = false; }
+  }
+  $('openLinkWrite').addEventListener('click', openLinkForm);
+  $('linkCancel').addEventListener('click', () => closeModal('linkFormModal'));
+  $('linkSubmit').addEventListener('click', submitLink);
 
   /* ===================== 마음 날씨 연못 ===================== */
   const MOODS = [
@@ -1621,7 +1978,7 @@
   }
 
   /* ===================== 숲 지도 ===================== */
-  const MAP_PTS = { plaza: [62, 284], shop: [70, 196], tree: [122, 120], spring: [200, 74], lantern: [240, 158], garden: [180, 236], pond: [268, 290], rain: [342, 236], stair: [318, 140], hill: [388, 70] };
+  const MAP_PTS = { plaza: [50, 302], shop: [60, 240], links: [120, 198], tree: [104, 128], spring: [184, 100], lantern: [258, 120], garden: [300, 182], pond: [230, 244], rain: [330, 266], stair: [376, 182], hill: [404, 92] };
   function mapXY(x) {
     if (x <= ZONES[0].x) return MAP_PTS[ZONES[0].id];
     for (let i = 0; i < ZONES.length - 1; i++) {
@@ -1741,6 +2098,7 @@
   /* ===================== 시작 ===================== */
   function start() {
     rollDay();
+    document.body.classList.add('xmas');
     applyTime(autoTime());
     setInterval(() => { if (timeAuto) { const t = autoTime(); if (t !== timeIdx) applyTime(t); } }, 300000);
     measure();
@@ -1757,6 +2115,9 @@
     renderDockSubs();
     cam = clamp(me.x - vw / 2, 0, Math.max(0, W - vw));
     requestAnimationFrame(frame);
+    startSanta();
+    renderSkyStars();
+    if (musicChoice && musicChoice !== 'off') { $('musicBtn').classList.add('on'); }
     window.addEventListener('resize', () => { measure(); layout(); if (!$('stairGame').hidden) stairCamera(); });
     document.addEventListener('visibilitychange', () => { if (document.hidden) for (const k in keys) keys[k] = false; });
 
@@ -1779,7 +2140,7 @@
     setInterval(() => { if (!document.hidden) refreshState(false); }, 20000);
 
     // 시험용 창(개발자가 확인할 때만 사용)
-    window.__ms = { me, others, state, wallet, critters, sg, goTo, enterZone, keys, earn, climb, sendEmote, applyTime, get cam() { return cam; }, get myKey() { return myKey; }, get nearPerson() { return nearPerson; } };
+    window.__ms = { me, others, state, wallet, critters, sg, goTo, enterZone, keys, earn, climb, sendEmote, applyTime, openLinks, openMusic, chooseMusic, flySanta, submitLink, linkForm, refreshState, renderBoard, get musicChoice() { return musicChoice; }, get cam() { return cam; }, get myKey() { return myKey; }, get nearPerson() { return nearPerson; } };
   }
   start();
 })();
