@@ -199,6 +199,18 @@
   const worldEl = $('world'), peopleEl = $('people'), lmLayer = $('landmarks'), decorEl = $('decor'), starfieldEl = $('starfield');
   const lmEls = {};
   const decor = [];
+  function startShooting() {
+    const host = $('shooting');
+    const fire = () => {
+      if (document.hidden || !document.body.classList.contains('t-night')) return;
+      const sh = el('div', 'shoot');
+      sh.style.left = rand(40, 90) + '%'; sh.style.top = rand(4, 34) + '%';
+      host.appendChild(sh); void sh.offsetWidth; sh.classList.add('go');
+      setTimeout(() => sh.remove(), 1300);
+    };
+    const tick = () => { setTimeout(() => { fire(); tick(); }, rand(9000, 22000)); };
+    tick();
+  }
   function buildScene() {
     worldEl.style.width = W + 'px';
     const tl = $('treeline');
@@ -223,7 +235,8 @@
       const s = el('i');
       s.style.left = rand(0, 100) + '%'; s.style.top = rand(0, 100) + '%';
       s.style.animationDelay = (-rand(0, 3)) + 's';
-      if (Math.random() < 0.2) { s.style.width = s.style.height = '3px'; }
+      const rr = Math.random();
+      if (rr < 0.14) s.className = 'gold'; else if (rr < 0.4) s.className = 'big';
       ns.appendChild(s);
     }
     const ff = $('fireflies');
@@ -235,7 +248,29 @@
       f.style.animationDelay = (-rand(0, 4)) + 's';
       ff.appendChild(f);
     }
+    // 빛 입자(bokeh)
+    const mo = $('motes');
+    for (let i = 0; i < 10; i++) {
+      const m = el('div', 'mote');
+      const sz = rand(3, 9);
+      m.style.width = m.style.height = sz.toFixed(1) + 'px';
+      m.style.left = rand(0, 100) + '%'; m.style.top = rand(20, 92) + '%';
+      m.style.setProperty('--mx', rand(-40, 40).toFixed(0) + 'px');
+      m.style.setProperty('--my', rand(-110, -50).toFixed(0) + 'px');
+      m.style.animationDuration = rand(13, 26).toFixed(1) + 's, ' + rand(3, 6).toFixed(1) + 's';
+      m.style.animationDelay = (-rand(0, 20)).toFixed(1) + 's, ' + (-rand(0, 4)).toFixed(1) + 's';
+      mo.appendChild(m);
+    }
+    // 땅 반짝임(눈·이슬)
+    const gl = el('div', 'ground-glints'); $('scene').insertBefore(gl, $('world'));
+    for (let i = 0; i < 14; i++) {
+      const g = el('div', 'glint');
+      g.style.left = rand(1, 99) + '%'; g.style.bottom = rand(2, 38) + '%';
+      g.style.animationDelay = (-rand(0, 3.2)).toFixed(2) + 's';
+      gl.appendChild(g);
+    }
     const path = el('div', 'path'); decorEl.appendChild(path); decor.push({ el: path, kind: 'path' });
+    startShooting();
     const colors = ['#f5b3b8', '#fbe08a', '#c9b6ef', '#ffffff', '#f7c59f'];
     for (let i = 0; i < 120; i++) {
       const r = Math.random();
@@ -1095,7 +1130,7 @@
   /* ===================== 매 프레임 ===================== */
   let nearZone = null, nearPerson = null, lastT = performance.now();
   function frame(now) {
-    const dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
+    const dt = Math.min(0.08, (now - lastT) / 1000); lastT = now;
     updateMe(dt, now);
     updateOthers(dt, now);
     updateCritters(dt, now);
@@ -1128,6 +1163,7 @@
     const target = clamp(me.x - vw / 2, 0, Math.max(0, W - vw));
     cam += (target - cam) * Math.min(1, dt * 5);
     worldEl.style.transform = `translate3d(${(-cam).toFixed(1)}px,0,0)`;
+    $('farMtn').style.transform = `translate3d(${(-cam * 0.12).toFixed(1)}px,0,0)`;
     $('hills').style.transform = `translate3d(${(-cam * 0.25).toFixed(1)}px,0,0)`;
     $('treeline').style.transform = `translate3d(${(-cam * 0.5).toFixed(1)}px,0,0)`;
   }
@@ -2752,7 +2788,7 @@
   function tapLoop(now) {
     tp.raf = 0;
     if ($('templeModal').hidden || tp.tab !== 'tap') return;
-    const dt = Math.min(64, now - (tp.last || now)); tp.last = now;
+    const dt = Math.min(120, now - (tp.last || now)); tp.last = now;
     if (tp.holding) {
       tp.held += dt;
       tp.ang += dt / TAP_ROUND_MS * Math.PI * 2;
