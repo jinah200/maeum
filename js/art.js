@@ -277,6 +277,8 @@
     { name: '수국', color: '#9fb3f2' },
     { name: '코스모스', color: '#f7a8d8' },
     { name: '민들레', color: '#ffe066' },
+    { name: '벚꽃', color: '#ffc4d6' },
+    { name: '동백', color: '#e2445c' },
   ];
   function flower(f) {
     const stem = '<path d="M12 32 Q11 24 12 16" stroke="#62a54f" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M12 26 Q5 22 4 27 Q8 30 12 27 Z" fill="#7cc062"/>';
@@ -286,9 +288,23 @@
     else if (f === 2) head = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((a) => `<ellipse rx="2.2" ry="5" transform="translate(12 10) rotate(${a}) translate(0 -6)" fill="#ffc93c"/>`).join('') + '<circle cx="12" cy="10" r="4.6" fill="#8a5a2b"/>';
     else if (f === 3) head = [[8, 9], [12, 6], [16, 9], [10, 13], [14, 13], [12, 10]].map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="3.4" fill="${i % 2 ? '#9fb3f2' : '#c3a6ee'}"/>`).join('');
     else if (f === 4) head = [0, 72, 144, 216, 288].map((a) => `<ellipse rx="3.3" ry="5.4" transform="translate(12 10) rotate(${a}) translate(0 -5)" fill="#f7a8d8"/>`).join('') + '<circle cx="12" cy="10" r="2.4" fill="#ffd34e"/>';
+    else if (f === 6) head = [0, 72, 144, 216, 288].map((a) => `<path d="M0 0 Q-3.6 -3 -2.4 -6.6 L0 -5.6 L2.4 -6.6 Q3.6 -3 0 0 Z" transform="translate(12 10) rotate(${a}) scale(1.05)" fill="#ffc4d6" stroke="#f7a3bd" stroke-width=".4"/>`).join('') + '<circle cx="12" cy="10" r="1.8" fill="#f27a9a"/>' + [0, 72, 144, 216, 288].map((a) => `<circle r=".7" transform="translate(12 10) rotate(${a + 36}) translate(0 -2.8)" fill="#e2557c"/>`).join('');
+    else if (f === 7) head = [0, 72, 144, 216, 288].map((a) => `<ellipse rx="3.6" ry="4.6" transform="translate(12 10) rotate(${a}) translate(0 -3.6)" fill="#e2445c"/>`).join('') + [36, 108, 180, 252, 324].map((a) => `<ellipse rx="2.4" ry="3.2" transform="translate(12 10) rotate(${a}) translate(0 -2.2)" fill="#c8324b"/>`).join('') + '<circle cx="12" cy="10" r="2.6" fill="#ffd34e"/>';
     else head = '<circle cx="12" cy="10" r="6.5" fill="#ffe066"/><circle cx="12" cy="10" r="4" fill="#ffd23f"/>';
     return `<svg viewBox="0 0 24 34" aria-hidden="true">${stem}${head}</svg>`;
   }
+
+
+  // 마음 정원 — 씨앗(0) · 새싹(1) · 꽃봉오리(2) · 꽃(3)
+  function plant(f, stage) {
+    const col = (FLOWERS[f] || FLOWERS[0]).color;
+    const soil = '<ellipse cx="12" cy="33" rx="9" ry="2.6" fill="#8a6446"/><ellipse cx="12" cy="32.4" rx="7" ry="1.8" fill="#a07650"/>';
+    if (stage <= 0) return `<svg viewBox="0 0 24 36" aria-hidden="true">${soil}<ellipse cx="12" cy="31" rx="2.4" ry="1.7" fill="#6e4a2e"/><path d="M11 30.2 Q12 29.4 13 30.2" stroke="#c99a68" stroke-width=".7" fill="none"/></svg>`;
+    if (stage === 1) return `<svg viewBox="0 0 24 36" aria-hidden="true">${soil}<path d="M12 32 Q12 27 12 24" stroke="#62a54f" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M12 25 Q6 21 5 25 Q8 28 12 25 Z" fill="#8fd06f"/><path d="M12 24.5 Q18 20 19 24 Q16 27.4 12 24.5 Z" fill="#7cc062"/></svg>`;
+    if (stage === 2) return `<svg viewBox="0 0 24 36" aria-hidden="true">${soil}<path d="M12 32 Q11 24 12 14" stroke="#62a54f" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M12 26 Q5 22 4 27 Q8 30 12 27 Z" fill="#7cc062"/><path d="M12 22 Q19 18 20 23 Q16 26 12 23 Z" fill="#8fd06f"/><path d="M12 15 Q8 11 12 6 Q16 11 12 15 Z" fill="${col}" stroke="rgba(0,0,0,.08)" stroke-width=".6"/><path d="M12 15 Q9.5 13 10 10 M12 15 Q14.5 13 14 10" stroke="#62a54f" stroke-width="1.1" fill="none"/></svg>`;
+    return flower(f).replace('viewBox="0 0 24 34"', 'viewBox="0 0 24 36"').replace('</svg>', soil + '</svg>');
+  }
+  const BUTTERFLY = `<svg viewBox="0 0 24 18" aria-hidden="true"><g class="bf-wing"><path d="M12 9 Q4 -2 1 4 Q0 10 12 9 Z" fill="#ffb3c8"/><path d="M12 9 Q20 -2 23 4 Q24 10 12 9 Z" fill="#ffb3c8"/><path d="M12 10 Q5 16 4 13 Q5 9 12 10 Z" fill="#ffd3e0"/><path d="M12 10 Q19 16 20 13 Q19 9 12 10 Z" fill="#ffd3e0"/></g><rect x="11.3" y="4" width="1.4" height="10" rx=".7" fill="#6b4a3a"/></svg>`;
 
   /* ---------- 쉼터 그림 ---------- */
   const LM = {
@@ -418,7 +434,7 @@
       <path d="M18 102 Q120 92 222 102" stroke="#d8b78a" stroke-width="4" fill="none"/>
       <rect x="92" y="40" width="56" height="26" rx="7" fill="#fff5e4" stroke="#a37a52" stroke-width="2"/>
       <rect x="117" y="66" width="6" height="30" fill="#a37a52"/>
-      <text x="120" y="58" text-anchor="middle" font-size="12" font-family="Jua, sans-serif" fill="#6b4a2c">함께 꽃밭</text>
+      <text x="120" y="58" text-anchor="middle" font-size="12" font-family="Jua, sans-serif" fill="#6b4a2c">마음 꽃밭</text>
       <g transform="translate(196 74)"><path d="M0 14 H18 L15 30 H3 Z" fill="#7fb4d9"/><path d="M18 18 L30 10" stroke="#7fb4d9" stroke-width="3" stroke-linecap="round"/><path d="M2 14 Q9 2 16 14" stroke="#5e95bf" stroke-width="2" fill="none"/></g>` },
     pond: { w: 240, vb: [240, 130], svg: `
       <ellipse cx="120" cy="120" rx="110" ry="9" fill="rgba(60,90,60,.16)"/>
@@ -450,6 +466,48 @@
       <text x="125" y="58" text-anchor="middle" font-size="12" font-family="Jua, sans-serif" fill="#6b4a2c">명언 계단</text>
       <g class="lglow"><ellipse cx="66" cy="120" rx="7" ry="9" fill="#ffd99a"/><ellipse cx="184" cy="120" rx="7" ry="9" fill="#ffd99a"/></g>
       <g stroke="#7a5a44" stroke-width="2"><line x1="66" y1="129" x2="66" y2="160"/><line x1="184" y1="129" x2="184" y2="160"/></g>` },
+    temple: { w: 290, vb: [290, 220], svg: `
+      <ellipse cx="145" cy="212" rx="128" ry="8" fill="rgba(60,90,60,.18)"/>
+      <path d="M0 150 Q40 86 92 120 Q130 64 182 108 Q232 70 290 136 L290 160 L0 160 Z" fill="#a9c79a" opacity=".55"/>
+      <g transform="translate(86 0)">
+        <rect x="18" y="126" width="112" height="10" rx="2" fill="#c9b49a"/>
+        <rect x="10" y="194" width="128" height="14" rx="3" fill="#d8c8b0"/><rect x="18" y="186" width="112" height="10" rx="2" fill="#e6d8c2"/>
+        <rect x="26" y="134" width="96" height="54" fill="#f3e6cf"/>
+        <g fill="#b4433b"><rect x="26" y="134" width="7" height="54"/><rect x="58" y="134" width="7" height="54"/><rect x="83" y="134" width="7" height="54"/><rect x="115" y="134" width="7" height="54"/></g>
+        <g fill="#5f8a6c"><rect x="36" y="140" width="18" height="44" rx="2"/><rect x="94" y="140" width="18" height="44" rx="2"/></g>
+        <g stroke="#e9d9bd" stroke-width="1.4"><line x1="45" y1="140" x2="45" y2="184"/><line x1="36" y1="162" x2="54" y2="162"/><line x1="103" y1="140" x2="103" y2="184"/><line x1="94" y1="162" x2="112" y2="162"/></g>
+        <rect x="66" y="146" width="16" height="42" fill="#6f4b33"/>
+        <path d="M22 128 L126 128 L132 120 L16 120 Z" fill="#3fa38a"/>
+        <path d="M-10 118 Q20 108 40 98 L108 98 Q128 108 158 118 Q160 112 150 108 Q130 102 116 88 L32 88 Q18 102 -2 108 Q-12 112 -10 118 Z" fill="#4c5a63"/>
+        <path d="M32 88 Q74 78 116 88" fill="none" stroke="#5f6d76" stroke-width="3"/>
+        <g stroke="#3b474f" stroke-width="1.6" opacity=".7"><line x1="40" y1="92" x2="34" y2="112"/><line x1="56" y1="90" x2="54" y2="112"/><line x1="74" y1="89" x2="74" y2="112"/><line x1="92" y1="90" x2="94" y2="112"/><line x1="108" y1="92" x2="114" y2="112"/></g>
+        <path d="M30 88 Q74 70 118 88 L112 84 Q74 64 36 84 Z" fill="#5d6b74"/>
+        <rect x="56" y="100" width="36" height="14" rx="2" fill="#2f5a4b" stroke="#d8b25a" stroke-width="1.5"/>
+        <text x="74" y="111" text-anchor="middle" font-size="9" font-family="Jua, sans-serif" fill="#f3d58a">고요당</text>
+      </g>
+      <g transform="translate(232 0)">
+        <rect x="2" y="190" width="40" height="10" fill="#cfc6b6"/>
+        <rect x="8" y="170" width="28" height="20" fill="#ddd5c6"/><path d="M0 172 L44 172 L40 166 L4 166 Z" fill="#bfb6a6"/>
+        <rect x="11" y="150" width="22" height="16" fill="#ddd5c6"/><path d="M3 152 L41 152 L37 146 L7 146 Z" fill="#bfb6a6"/>
+        <rect x="14" y="132" width="16" height="14" fill="#ddd5c6"/><path d="M6 134 L38 134 L34 128 L10 128 Z" fill="#bfb6a6"/>
+        <rect x="20" y="114" width="4" height="14" fill="#a39a8a"/><circle cx="22" cy="114" r="3" fill="#a39a8a"/>
+      </g>
+      <g transform="translate(6 0)">
+        <rect x="14" y="128" width="6" height="74" fill="#8b5a3a"/><rect x="62" y="128" width="6" height="74" fill="#8b5a3a"/>
+        <path d="M2 128 Q20 120 30 112 L52 112 Q62 120 80 128 Q70 130 62 128 L20 128 Q10 130 2 128 Z" fill="#4c5a63"/>
+        <path d="M24 112 Q41 104 58 112" fill="none" stroke="#5f6d76" stroke-width="3"/>
+        <rect x="38" y="128" width="4" height="10" fill="#6f4b33"/>
+        <path d="M30 138 Q30 160 26 168 L56 168 Q52 160 52 138 Q41 132 30 138 Z" fill="#9a7a3e"/>
+        <path d="M26 168 L56 168 L57 172 L25 172 Z" fill="#7d6230"/>
+        <g stroke="#c9a85a" stroke-width="1.2" fill="none"><path d="M30 148 H52"/><path d="M28 160 H54"/></g>
+        <rect x="8" y="198" width="66" height="8" rx="2" fill="#d8c8b0"/>
+      </g>
+      <g class="lglow">
+        <path d="M60 64 Q145 40 236 66" fill="none" stroke="#7d6a52" stroke-width="1.4"/>
+        <g><ellipse cx="88" cy="58" rx="7" ry="9" fill="#ff9aa8"/><ellipse cx="116" cy="52" rx="7" ry="9" fill="#ffd98a"/><ellipse cx="145" cy="50" rx="7" ry="9" fill="#a8d8a0"/><ellipse cx="174" cy="52" rx="7" ry="9" fill="#ffb3c8"/><ellipse cx="204" cy="58" rx="7" ry="9" fill="#ffd98a"/></g>
+      </g>
+      <rect x="95" y="4" width="100" height="24" rx="9" fill="#fff6e9" stroke="#8a7a62" stroke-width="2" opacity=".96"/>
+      <text x="145" y="21" text-anchor="middle" font-size="14" font-family="Jua, sans-serif" fill="#5b4c38">고요한 산사</text>` },
     hill: { w: 280, vb: [270, 150], svg: `
       <path d="M0 150 Q135 34 270 150 Z" fill="#7cae72"/>
       <path d="M36 150 Q135 66 234 150 Z" fill="#94c387"/>
@@ -531,5 +589,67 @@
     <path d="M60 58 L60 36" stroke="#8aa06a" stroke-width="3.4" stroke-linecap="round"/>
     <path d="M60 40 Q78 30 77 48 Q65 53 60 40 Z" fill="#8fc46e"/><path d="M60 46 Q42 36 43 54 Q55 59 60 46 Z" fill="#a5d585"/></svg>`;
 
-  window.ART = { SKIN, HAIR, OUTFIT, STYLE_NAMES, TYPE_NAMES, ACC, ACC_SLOT, PET, PET_ART, PET_SCALE, ANIMAL, FLOWERS, LM, SPROUT, SANTA, XTREE, GIFT, SNOWMAN, person, flower, shade };
+
+  /* ---------- 산사 쉼터 그림 ---------- */
+  const PAGODA = `<svg viewBox="0 0 120 200" aria-hidden="true">
+    <rect x="10" y="182" width="100" height="14" rx="2" fill="#bdb3a2"/><rect x="18" y="170" width="84" height="14" fill="#cfc6b6"/>
+    <g fill="#ddd5c6"><rect x="30" y="138" width="60" height="32"/><rect x="36" y="104" width="48" height="26"/><rect x="41" y="74" width="38" height="22"/></g>
+    <g fill="#c3baa9"><path d="M18 140 L102 140 L94 130 L26 130 Z"/><path d="M24 106 L96 106 L89 97 L31 97 Z"/><path d="M30 76 L90 76 L84 68 L36 68 Z"/></g>
+    <g stroke="#b8ae9c" stroke-width="1.4"><line x1="45" y1="138" x2="45" y2="170"/><line x1="75" y1="138" x2="75" y2="170"/><line x1="60" y1="104" x2="60" y2="130"/></g>
+    <rect x="57" y="36" width="6" height="32" fill="#a39a8a"/><circle cx="60" cy="50" r="5" fill="#b0a796"/><circle cx="60" cy="38" r="4" fill="#b0a796"/><circle cx="60" cy="30" r="3" fill="#c9a85a"/>
+  </svg>`;
+  const GONG = `<svg viewBox="0 0 200 190" aria-hidden="true">
+    <rect x="22" y="40" width="10" height="146" fill="#8b5a3a"/><rect x="168" y="40" width="10" height="146" fill="#8b5a3a"/>
+    <path d="M0 44 Q40 30 60 18 L140 18 Q160 30 200 44 Q186 48 168 44 L32 44 Q14 48 0 44 Z" fill="#4c5a63"/>
+    <path d="M56 18 Q100 4 144 18" fill="none" stroke="#5f6d76" stroke-width="4"/>
+    <rect x="30" y="44" width="140" height="8" fill="#3fa38a"/>
+    <g class="gong-bell">
+      <rect x="96" y="52" width="8" height="12" fill="#6f4b33"/>
+      <path d="M72 70 Q72 64 100 62 Q128 64 128 70 Q130 120 136 134 L64 134 Q70 120 72 70 Z" fill="#a8873f"/>
+      <path d="M62 134 L138 134 L140 142 L60 142 Z" fill="#8a6c2c"/>
+      <g fill="none" stroke="#d8b862" stroke-width="1.5" opacity=".8"><path d="M73 84 H127"/><path d="M71 118 H129"/></g>
+      <circle cx="100" cy="102" r="9" fill="none" stroke="#d8b862" stroke-width="1.5" opacity=".8"/>
+      <g fill="#c9a85a" opacity=".85"><circle cx="80" cy="76" r="2"/><circle cx="90" cy="76" r="2"/><circle cx="110" cy="76" r="2"/><circle cx="120" cy="76" r="2"/></g>
+    </g>
+    <g class="gong-log"><rect x="140" y="96" width="56" height="12" rx="6" fill="#b88a5c"/><line x1="168" y1="52" x2="168" y2="96" stroke="#7d6a52" stroke-width="1.5"/></g>
+    <rect x="10" y="180" width="180" height="8" rx="2" fill="#d8c8b0"/>
+  </svg>`;
+  // 오늘의 산사 풍경 (사진 대신 그림으로)
+  function templeScene(scene) {
+    const SKY = { forest: ['#cfe8d6', '#f4f8ec'], sea: ['#bfe1f2', '#eef8fb'], autumn: ['#f8dcc0', '#fdf3e4'], pine: ['#d3e6cf', '#f3f7ea'],
+      sunset: ['#f6b98f', '#fde6c8'], stream: ['#cde7e6', '#f1f8f4'], blossom: ['#fbdbe5', '#fdf3f2'], snow: ['#c9d6e6', '#eef2f7'] };
+    const [s1, s2] = SKY[scene] || SKY.forest;
+    const M = { forest: ['#8fbf8a', '#6fa576'], sea: ['#9fc4a8', '#7fae8f'], autumn: ['#e2a06a', '#c9784f'], pine: ['#86b07e', '#5f9367'],
+      sunset: ['#b98a8a', '#8e6b7c'], stream: ['#94c2a0', '#6ea583'], blossom: ['#b9cf9c', '#93b585'], snow: ['#e9eef4', '#cbd6e2'] }[scene] || ['#8fbf8a', '#6fa576'];
+    let deco = '';
+    const rnd = (i) => { const x = Math.sin(i * 77.7 + scene.length * 3.1) * 10000; return x - Math.floor(x); };
+    if (scene === 'sea') deco = `<rect x="0" y="112" width="300" height="38" fill="#7fbcd8"/><g fill="none" stroke="#e8f6fb" stroke-width="2" opacity=".8"><path d="M10 124 q10 -5 20 0 t20 0"/><path d="M90 136 q10 -5 20 0 t20 0"/><path d="M190 128 q10 -5 20 0 t20 0"/></g><circle cx="248" cy="40" r="14" fill="#ffe6a0"/>`;
+    else if (scene === 'sunset') deco = `<circle cx="230" cy="72" r="22" fill="#ffd28a" opacity=".9"/>`;
+    else if (scene === 'stream') deco = `<path d="M110 150 Q140 128 120 116 Q104 106 150 100 L170 100 Q132 108 150 118 Q172 132 150 150 Z" fill="#8fcbe0" opacity=".85"/>`;
+    else if (scene === 'snow') deco = Array.from({ length: 34 }, (_, i) => `<circle cx="${(rnd(i) * 300).toFixed(0)}" cy="${(rnd(i + 50) * 140).toFixed(0)}" r="${(1 + rnd(i + 9) * 1.8).toFixed(1)}" fill="#fff"/>`).join('');
+    if (scene === 'blossom') deco += Array.from({ length: 22 }, (_, i) => `<ellipse cx="${(rnd(i) * 300).toFixed(0)}" cy="${(rnd(i + 30) * 130).toFixed(0)}" rx="2.6" ry="1.6" fill="#f7a8c4" opacity=".85"/>`).join('');
+    const treeCol = { autumn: ['#e46a4a', '#f2a043'], blossom: ['#f6b7cb', '#fbd1de'], snow: ['#dfe7ef', '#f4f7fa'], pine: ['#4f8a5c', '#4f8a5c'] }[scene] || ['#6aa35a', '#82bb6d'];
+    const trees = [18, 52, 250, 284].map((x, i) => scene === 'pine' || scene === 'snow' && i % 2
+      ? `<path d="M${x} 92 L${x - 12} 128 L${x + 12} 128 Z" fill="${treeCol[0]}"/><rect x="${x - 2}" y="128" width="4" height="10" fill="#7b5a3e"/>`
+      : `<rect x="${x - 2}" y="116" width="4" height="22" fill="#7b5a3e"/><circle cx="${x}" cy="108" r="14" fill="${treeCol[i % 2]}"/>`).join('');
+    return `<svg viewBox="0 0 300 150" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+      <defs><linearGradient id="tsky-${scene}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${s1}"/><stop offset="1" stop-color="${s2}"/></linearGradient></defs>
+      <rect width="300" height="150" fill="url(#tsky-${scene})"/>
+      ${scene === 'sunset' ? deco : ''}
+      <path d="M0 96 Q50 46 110 80 Q160 36 220 74 Q262 50 300 70 L300 150 L0 150 Z" fill="${M[0]}" opacity=".75"/>
+      <path d="M0 116 Q70 80 140 104 Q210 84 300 108 L300 150 L0 150 Z" fill="${M[1]}"/>
+      ${scene !== 'sunset' ? deco : ''}
+      <g transform="translate(108 84)">
+        <rect x="8" y="30" width="68" height="28" fill="#f3e6cf"/>
+        <g fill="#b4433b"><rect x="8" y="30" width="4" height="28"/><rect x="40" y="30" width="4" height="28"/><rect x="72" y="30" width="4" height="28"/></g>
+        <rect x="36" y="38" width="12" height="20" fill="#6f4b33"/>
+        <path d="M-8 30 Q10 24 20 16 L64 16 Q74 24 92 30 Q82 32 76 30 L8 30 Q2 32 -8 30 Z" fill="#4c5a63"/>
+        <path d="M18 16 Q42 8 66 16" fill="none" stroke="#5f6d76" stroke-width="2.5"/>
+        <rect x="2" y="56" width="80" height="6" fill="#d8c8b0"/>
+      </g>
+      ${trees}
+    </svg>`;
+  }
+
+  window.ART = { SKIN, HAIR, OUTFIT, STYLE_NAMES, TYPE_NAMES, ACC, ACC_SLOT, PET, PET_ART, PET_SCALE, ANIMAL, FLOWERS, LM, SPROUT, SANTA, XTREE, GIFT, SNOWMAN, PAGODA, GONG, templeScene, plant, BUTTERFLY, person, flower, shade };
 })();

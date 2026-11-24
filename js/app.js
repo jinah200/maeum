@@ -1,7 +1,7 @@
 /* ============================================================
  *  온라인 마음쉼터 — v6
  *  숲길 · 쉼터 10곳 · 예쁜 아바타 · 동물 친구들 · 하이파이브
- *  마음 동전 · 숲속 가게 · 함께 꽃밭 · 마음 날씨 · 빗소리 · 명언 계단
+ *  마음 동전 · 숲속 가게 · 마음 꽃밭 · 마음 날씨 · 빗소리 · 명언 계단
  *  서버: Google Apps Script(시트 모드) / 없으면 로컬 모드(혼자 보기)
  * ============================================================ */
 (function () {
@@ -23,10 +23,12 @@
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* 저장 공간 없음 */ } },
   };
   const today = () => { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); };
+  const ymd = (d) => d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+  const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
 
   /* ===================== 상수 ===================== */
-  const W = 5900, SPEED = 250, DSPEED = 0.85, NEAR = 130, STAR_AT = 5;
+  const W = 6380, SPEED = 250, DSPEED = 0.85, NEAR = 130, STAR_AT = 5;
   const KIND_HOPE = '바람', KIND_LETGO = '내려놓기';
   const ADJ = ['느린', '따뜻한', '조용한', '포근한', '맑은', '다정한', '싱그러운', '잔잔한', '반짝이는', '수줍은', '너그러운', '차분한', '말랑한', '산뜻한', '고요한', '부드러운'];
   const NOUN = ['걸음', '바람', '새벽', '구름', '오솔길', '햇살', '이슬', '나뭇잎', '달빛', '시냇물', '솔방울', '민들레', '별빛', '도토리', '꽃잎', '숲길'];
@@ -39,11 +41,12 @@
     { id: 'tree', x: 2280, name: '숨 쉬는 나무', short: '숨 고르기', icon: '🌳', tint: '#ddeed0' },
     { id: 'spring', x: 2740, name: '마음 구슬 샘', short: '마음 구슬', icon: '🫧', tint: '#dbecf5' },
     { id: 'lantern', x: 3220, name: '염원 등불터', short: '염원', icon: '🏮', tint: '#fbe6c4', big: true },
-    { id: 'garden', x: 3720, name: '함께 꽃밭', short: '꽃밭', icon: '🌷', tint: '#fadde4' },
+    { id: 'garden', x: 3720, name: '마음 꽃밭', short: '꽃밭', icon: '🌷', tint: '#fadde4', big: true },
     { id: 'pond', x: 4200, name: '마음 날씨 연못', short: '마음 날씨', icon: '🪷', tint: '#d6edf2' },
     { id: 'rain', x: 4680, name: '빗소리 정자', short: '빗소리', icon: '☔', tint: '#dfe7ec' },
     { id: 'stair', x: 5160, name: '명언 계단', short: '명언 계단', icon: '🪜', tint: '#f1e4cc' },
-    { id: 'hill', x: 5600, name: '별빛 언덕', short: '별빛 언덕', icon: '⭐', tint: '#e6def5' },
+    { id: 'temple', x: 5620, name: '고요한 산사', short: '산사', icon: '🏔️', tint: '#e8e2d4', big: true },
+    { id: 'hill', x: 6080, name: '별빛 언덕', short: '별빛 언덕', icon: '⭐', tint: '#e6def5' },
   ];
   const zoneById = (id) => ZONES.find((z) => z.id === id);
   const PURPOSES = ['수업용', '일상 상식', '음악', '기타'];
@@ -90,6 +93,10 @@
     stairDone: { name: '108계단 완주', ico: '🎉', each: 10, max: 10 },
     pet: { name: '동물 쓰다듬기', ico: '🐑', each: 1, max: 5 },
     bell: { name: '소원 종 울리기', ico: '🔔', each: 1, max: 3 },
+    tap: { name: '탑돌이 한 바퀴', ico: '🗼', each: 1, max: 3 },
+    gong: { name: '범종 소리 끝까지 듣기', ico: '🔔', each: 1, max: 3 },
+    thanks: { name: '좋은 일 씨앗 심기', ico: '🌰', each: 2, max: 6 },
+    water: { name: '마음 정원 물 주기', ico: '💧', each: 2, max: 2 },
   };
   // 염원 분류 (서버 N.CAT 과 같은 순서·개수)
   const WISH_CATS = [
@@ -109,6 +116,9 @@
   function wornArr() { return Object.keys(wallet.wornSlots).map((k) => wallet.wornSlots[k] | 0).filter((x) => x >= 1 && x <= 13); }
   function isWorn(id) { return wallet.wornSlots[A.ACC_SLOT[id]] === id; }
   function saveWallet() { store.set('ms_wallet', wallet); }
+  // 나의 마음 정원 (이 기기에만 저장 — 서버로 보내지 않아요)
+  const mg = Object.assign({ plants: [], lastWater: '', streak: 0 }, store.get('ms_garden', {}) || {});
+  if (!Array.isArray(mg.plants)) mg.plants = [];
   function rollDay() { if (wallet.day !== today()) { wallet.day = today(); wallet.earn = {}; saveWallet(); } }
   function renderCoins(bump) {
     $('coinCount').textContent = wallet.coins;
@@ -573,6 +583,27 @@
         g2.gain.setValueAtTime(0.0001, t); g2.gain.linearRampToValueAtTime(0.05, t + 0.03); g2.gain.exponentialRampToValueAtTime(0.0008, t + 3.6);
         o2.connect(g2); g2.connect(sfx); o2.start(t); o2.stop(t + 3.8);
       },
+      // 범종 — 낮게 웅 울리며 맥놀이(소리가 커졌다 작아졌다)가 길게 이어져요
+      gong() {
+        ensure(); if (!ctx) return;
+        if (ctx.state === 'suspended') ctx.resume();
+        const t = ctx.currentTime, base = 128, len = 9.5;
+        // 당목이 종에 닿는 둔탁한 소리
+        const th = ctx.createBufferSource(); th.buffer = noiseBuf('brown');
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 260;
+        const tg = ctx.createGain(); tg.gain.setValueAtTime(0.0001, t); tg.gain.linearRampToValueAtTime(0.5, t + 0.01); tg.gain.exponentialRampToValueAtTime(0.0005, t + 0.35);
+        th.connect(lp); lp.connect(tg); tg.connect(sfx); th.start(t); th.stop(t + 0.4);
+        // [배수, 세기, 지속]
+        [[0.5, 0.20, len], [0.506, 0.16, len], [1, 0.16, len * 0.8], [1.19, 0.07, len * 0.55], [1.5, 0.05, len * 0.5],
+          [2, 0.06, len * 0.45], [2.63, 0.035, len * 0.3], [3.31, 0.02, len * 0.22]].forEach(([m, v, d]) => {
+          const o = ctx.createOscillator(), g = ctx.createGain();
+          o.type = 'sine'; o.frequency.value = base * m;
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.linearRampToValueAtTime(v, t + 0.04);
+          g.gain.exponentialRampToValueAtTime(0.0006, t + d);
+          o.connect(g); g.connect(sfx); o.start(t); o.stop(t + d + 0.1);
+        });
+      },
     };
   })();
 
@@ -695,14 +726,14 @@
   }
 
   /* ===================== 상태 ===================== */
-  const state = { wishes: [], stars: { count: 0, recent: [] }, flowers: [], mood: [0, 0, 0, 0, 0, 0], links: [], thoughts: [] };
+  const state = { wishes: [], stars: { count: 0, recent: [] }, flowers: [], mood: [0, 0, 0, 0, 0, 0], links: [], thoughts: [], thanks: [] };
   const seen = new Set();
   // 방금 내가 올렸는데 아직 서버 목록에 안 뜬 염원 (사라짐 방지)
   const myRecent = new Map();
   const seenByServer = new Set(); // 서버가 한 번이라도 돌려준 염원 id
   // 링크·생각도 올린 직후 사라지지 않도록 잠깐 붙잡아 둬요
-  const recentPost = { links: new Map(), thoughts: new Map() };
-  const seenPost = { links: new Set(), thoughts: new Set() };
+  const recentPost = { links: new Map(), thoughts: new Map(), thanks: new Map() };
+  const seenPost = { links: new Set(), thoughts: new Set(), thanks: new Set() };
   function rememberPost(kind, item) { if (item && item.id) recentPost[kind].set(item.id, { it: item, t: Date.now() }); }
   function mergeRecentPost(kind) {
     const now = Date.now(), rep = reported(), arr = state[kind], seen2 = seenPost[kind];
@@ -741,6 +772,10 @@
     if (!tt || !tt.text) return null;
     return { id: String(tt.id || ''), text: String(tt.text), url: String(tt.url || ''), nick: String(tt.nick || ''), at: Number(tt.at) || 0 };
   }
+  function normThanks(x) {
+    if (!x || !x.text) return null;
+    return { id: String(x.id || ''), text: String(x.text), nick: String(x.nick || ''), k: clamp(x.k | 0, 0, 2), f: clamp(x.f | 0, 0, 7), emp: Number(x.emp) || 0, at: Number(x.at) || 0 };
+  }
   function loadLocal() {
     let L = store.get('ms_local', null);
     if (!L) {
@@ -754,9 +789,10 @@
     state.mood = L.mood && L.mood.day === today() ? L.mood.c : [0, 0, 0, 0, 0, 0];
     state.links = (L.links || []).map(normLink).filter(Boolean);
     state.thoughts = (L.thoughts || []).map(normThought).filter(Boolean);
+    state.thanks = (L.thanks || []).map(normThanks).filter(Boolean);
   }
   function saveLocal() {
-    store.set('ms_local', { wishes: state.wishes.slice(0, 60), stars: state.stars, flowers: state.flowers.slice(-220), mood: { day: today(), c: state.mood }, links: state.links.slice(0, 60), thoughts: state.thoughts.slice(0, 60) });
+    store.set('ms_local', { wishes: state.wishes.slice(0, 60), stars: state.stars, flowers: state.flowers.slice(-220), mood: { day: today(), c: state.mood }, links: state.links.slice(0, 60), thoughts: state.thoughts.slice(0, 60), thanks: state.thanks.slice(0, 80) });
   }
   const reported = () => store.get('ms_reported', {}) || {};
   async function refreshState(first) {
@@ -780,9 +816,10 @@
       if (Array.isArray(d.mood)) state.mood = d.mood.slice(0, 6).map((n) => Number(n) || 0);
       if (Array.isArray(d.links)) state.links = d.links.map(normLink).filter((x) => x && !rep[x.id]);
       if (Array.isArray(d.thoughts)) state.thoughts = d.thoughts.map(normThought).filter((x) => x && !rep[x.id]);
+      if (Array.isArray(d.thanks)) state.thanks = d.thanks.map(normThanks).filter((x) => x && !rep[x.id]);
       visitsToday = Number(d.visitsToday) || visitsToday;
       mergeMyRecent();
-      mergeRecentPost('links'); mergeRecentPost('thoughts');
+      mergeRecentPost('links'); mergeRecentPost('thoughts'); mergeRecentPost('thanks');
       if (first) ws.slice(0, 8).reverse().forEach((w, i) => setTimeout(() => floatLantern(w.text, w.kind), 600 + i * 1300));
       else fresh.slice(0, 3).forEach((w, i) => setTimeout(() => floatLantern(w.text, w.kind), i * 900));
       afterState();
@@ -795,7 +832,7 @@
     renderBadge(); renderStarfield(); renderGardenBed(); renderDockSubs(); renderSkyStars();
     if (!$('boardModal').hidden) renderBoard();
     if (!$('starsModal').hidden) renderStars();
-    if (!$('gardenModal').hidden) renderGarden();
+    if (!$('gardenModal').hidden) { renderGarden(); if (gardenTab === 'all') renderAll(); }
     if (!$('pondModal').hidden) renderMoodToday();
     if (!$('linksModal').hidden) renderLinks();
   }
@@ -811,8 +848,9 @@
     set('links', state.links.length ? state.links.length + '개 링크' : '링크 나눔');
     set('tree', breaths + '번 숨'); set('spring', beadTotal + '알');
     set('lantern', state.wishes.length ? state.wishes.length + '개 마음' : '함께 보기');
-    set('garden', state.flowers.length + '송이'); set('pond', moodPicked() !== null ? MOODS[moodPicked()].ico + ' 오늘' : '오늘 날씨');
+    set('garden', mgBloomed() ? '🌸 ' + mgBloomed() + '송이' : mg.plants.length ? '🌱 자라는 중' : '좋은 일 심기'); set('pond', moodPicked() !== null ? MOODS[moodPicked()].ico + ' 오늘' : '오늘 날씨');
     set('rain', '가만히 듣기'); set('stair', '최고 ' + (store.get('ms_stair_best', 0) || 0) + '칸'); set('hill', '별 ' + state.stars.count + '개');
+    set('temple', tapToday() ? '탑돌이 ' + tapToday() + '바퀴' : '고요히 쉬기');
   }
   function renderStarfield() {
     const hill = zoneById('hill');
@@ -918,8 +956,8 @@
   }
 
   /* ===================== 모달 ===================== */
-  const MODALS = ['introModal', 'guideModal', 'breathModal', 'beadsModal', 'boardModal', 'wishModal', 'starsModal', 'shopModal', 'gardenModal', 'pondModal', 'rainModal', 'walletModal', 'bookModal', 'mapModal', 'linksModal', 'linkFormModal', 'musicModal', 'seasonModal', 'readingModal'];
-  const ZONE_OF_MODAL = { guideModal: 'plaza', breathModal: 'tree', beadsModal: 'spring', boardModal: 'lantern', starsModal: 'hill', shopModal: 'shop', gardenModal: 'garden', pondModal: 'pond', rainModal: 'rain', linksModal: 'links', readingModal: 'reading' };
+  const MODALS = ['introModal', 'guideModal', 'breathModal', 'beadsModal', 'boardModal', 'wishModal', 'starsModal', 'shopModal', 'gardenModal', 'pondModal', 'rainModal', 'walletModal', 'bookModal', 'mapModal', 'linksModal', 'linkFormModal', 'musicModal', 'seasonModal', 'readingModal', 'templeModal'];
+  const ZONE_OF_MODAL = { guideModal: 'plaza', breathModal: 'tree', beadsModal: 'spring', boardModal: 'lantern', starsModal: 'hill', shopModal: 'shop', gardenModal: 'garden', pondModal: 'pond', rainModal: 'rain', linksModal: 'links', readingModal: 'reading', templeModal: 'temple' };
   const modalOpen = () => MODALS.some((id) => !$(id).hidden) || !$('ritual').hidden || !$('loading').hidden || !$('stairGame').hidden;
   const isTyping = () => { const a = document.activeElement; return !!a && (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT'); };
   function openModal(id) { $(id).hidden = false; }
@@ -930,6 +968,8 @@
     if (id === 'breathModal') stopBreath();
     if (id === 'mapModal') stopMapLive();
     if (id === 'rainModal') stopRain(false);
+    if (id === 'templeModal') stopTemple();
+    if (id === 'gardenModal') stopSavor();
     if (ZONE_OF_MODAL[id] && !Object.keys(ZONE_OF_MODAL).some((m) => !$(m).hidden)) { me.zone = ''; setZoneIcon(me.el, ''); }
   }
   function closeTop() {
@@ -961,12 +1001,13 @@
     else if (id === 'lantern') { renderBoard(); openModal('boardModal'); refreshState(false); }
     else if (id === 'hill') { renderStars(); openModal('starsModal'); }
     else if (id === 'shop') openShop();
-    else if (id === 'garden') { renderGarden(); openModal('gardenModal'); }
+    else if (id === 'garden') openGarden();
     else if (id === 'pond') openPond();
     else if (id === 'rain') openModal('rainModal');
     else if (id === 'stair') openStair();
     else if (id === 'links') openLinks();
     else if (id === 'reading') openReading();
+    else if (id === 'temple') openTemple();
   }
   function goTo(id, enter) {
     const z = zoneById(id); if (!z) return;
@@ -1257,29 +1298,86 @@
   function pushPresence() { if (sheetMode && profile) presenceOnce().then(scheduleNext); }
 
   /* ===================== 숨 쉬는 나무 ===================== */
-  let breaths = Number(store.get('ms_breaths', 0)) || 0, breathTimer = null, breathRun = 0;
+  // 느린 날숨은 몸의 긴장을 낮춰요. 세 가지 호흡법 중에서 골라요.
+  const BREATH_PATS = {
+    calm: { desc: '원이 커질 때 들이쉬고, 작아질 때 천천히 내쉬어요.',
+      steps: [['들이쉬어요', 'in', 4], ['잠시 멈춰요', 'hold', 2], ['천천히 내쉬어요', 'out', 6]] },
+    box: { desc: '네모를 그리듯 넷을 세며 들이쉬고, 멈추고, 내쉬고, 멈춰요.',
+      steps: [['들이쉬어요', 'in', 4], ['멈춰요', 'hold', 4], ['내쉬어요', 'out', 4], ['멈춰요', 'rest', 4]] },
+    sleep: { desc: '넷 동안 들이쉬고, 일곱 동안 멈추고, 여덟 동안 후— 길게 내쉬어요.',
+      steps: [['들이쉬어요', 'in', 4], ['멈춰요', 'hold', 7], ['후— 길게 내쉬어요', 'out', 8]] },
+  };
+  const BREATH_REPLY = [
+    '좋아요. 그 편안함을 기억해 두었다가, 필요할 때 또 와서 숨을 골라요.',
+    '괜찮아요. 숨 고르기는 할수록 쉬워져요. 한 번 더 해도 좋고, 빗소리를 들으러 가도 좋아요.',
+    '마음이 무거운 날도 있어요. 한 번 더 천천히 쉬어 보고, 그래도 무거우면 믿을 수 있는 어른이나 선생님께 꼭 이야기해요.',
+  ];
+  let breaths = Number(store.get('ms_breaths', 0)) || 0, breathTimer = null, tickTimer = null, breathRun = 0;
+  let breathPat = 'calm', breathGoal = 3;
   function updateBreathUI() { $('breathTotal').textContent = '함께 쉰 숨 ' + breaths + '번'; renderDockSubs(); }
+  function renderBreathDots() {
+    const box = $('breathDots'); box.textContent = '';
+    if (!breathGoal) { box.textContent = breathRun ? breathRun + '번 쉬었어요' : ''; return; }
+    for (let i = 0; i < breathGoal; i++) box.appendChild(el('span', 'bdot' + (i < breathRun ? ' on' : '')));
+  }
   function startBreath() {
     stopBreath(); breathRun = 0;
-    const c = $('breathCircle'), w = $('breathWord');
-    const steps = [['들이쉬어요', 'in', 4000], ['잠시 멈추고', 'hold', 2000], ['천천히 내쉬어요', 'out', 6000]];
+    const pat = BREATH_PATS[breathPat];
+    $('breathDesc').textContent = pat.desc;
+    $('breathDone').hidden = true; $('breathAnswer').hidden = true;
+    $('breathDone').querySelectorAll('.bd-pick button').forEach((x) => x.classList.remove('on'));
+    const c = $('breathCircle'), w = $('breathWord'), cnt = $('breathCount'), prog = $('breathProg');
+    const L = 2 * Math.PI * 92;
+    prog.style.strokeDasharray = L.toFixed(1);
+    const setProg = (frac, ms) => { prog.style.transition = ms ? `stroke-dashoffset ${ms}ms linear` : 'none'; prog.style.strokeDashoffset = (L * (1 - frac)).toFixed(1); };
+    c.style.transitionDuration = '0ms'; c.className = 'breath-circle'; w.textContent = '준비'; cnt.textContent = ''; setProg(0, 0);
+    renderBreathDots();
     let i = 0;
-    c.style.transitionDuration = '0ms'; c.className = 'breath-circle'; w.textContent = '준비';
     const step = () => {
-      const [txt, cls, ms] = steps[i];
-      c.style.transitionDuration = ms + 'ms'; c.className = 'breath-circle ' + cls; w.textContent = txt;
+      const [txt, cls, sec] = pat.steps[i], ms = sec * 1000;
+      c.style.transitionDuration = (cls === 'hold' || cls === 'rest' ? 300 : ms) + 'ms';
+      c.className = 'breath-circle ' + cls; w.textContent = txt;
+      setProg(0, 0); void prog.getBoundingClientRect(); setProg(1, ms);
+      let left = sec; cnt.textContent = left;
+      clearInterval(tickTimer);
+      tickTimer = setInterval(() => { left--; cnt.textContent = left > 0 ? left : ''; }, 1000);
       breathTimer = setTimeout(() => {
-        i = (i + 1) % steps.length;
+        clearInterval(tickTimer);
+        i = (i + 1) % pat.steps.length;
         if (i === 0) {
           breaths++; breathRun++; store.set('ms_breaths', breaths); updateBreathUI(); Sound.chime(true);
           if (breathRun % 3 === 0) earn('breath');
+          renderBreathDots();
+          if (breathGoal && breathRun >= breathGoal) { finishBreath(); return; }
         }
         step();
       }, ms);
     };
-    breathTimer = setTimeout(step, 700);
+    breathTimer = setTimeout(step, 900);
   }
-  function stopBreath() { clearTimeout(breathTimer); breathTimer = null; }
+  function finishBreath() {
+    stopBreath();
+    const c = $('breathCircle');
+    c.style.transitionDuration = '1200ms'; c.className = 'breath-circle';
+    $('breathWord').textContent = '다 쉬었어요'; $('breathCount').textContent = '';
+    $('breathDone').hidden = false;
+  }
+  function stopBreath() { clearTimeout(breathTimer); clearInterval(tickTimer); breathTimer = null; tickTimer = null; }
+  document.querySelectorAll('#breathPat button').forEach((b) => b.addEventListener('click', () => {
+    breathPat = b.dataset.p;
+    document.querySelectorAll('#breathPat button').forEach((x) => x.classList.toggle('on', x === b));
+    startBreath();
+  }));
+  document.querySelectorAll('#breathLen button').forEach((b) => b.addEventListener('click', () => {
+    breathGoal = Number(b.dataset.n) || 0;
+    document.querySelectorAll('#breathLen button').forEach((x) => x.classList.toggle('on', x === b));
+    startBreath();
+  }));
+  $('breathDone').querySelectorAll('.bd-pick button').forEach((b) => b.addEventListener('click', () => {
+    $('breathDone').querySelectorAll('.bd-pick button').forEach((x) => x.classList.toggle('on', x === b));
+    const a = $('breathAnswer'); a.textContent = BREATH_REPLY[Number(b.dataset.f)]; a.hidden = false;
+  }));
+  $('breathAgain').addEventListener('click', startBreath);
 
   /* ===================== 마음 구슬 ===================== */
   let beadTotal = Number(store.get('ms_beads', 0)) || 0;
@@ -1674,7 +1772,7 @@
   const FLOWER_COST = 3;
   (function buildSeeds() {
     const row = $('seedRow');
-    A.FLOWERS.forEach((f, i) => {
+    A.FLOWERS.slice(0, 6).forEach((f, i) => {
       const b = el('button', 'seed' + (i === 0 ? ' on' : ''), A.flower(i) + f.name);
       b.type = 'button';
       b.addEventListener('click', () => { seedPick = i; row.querySelectorAll('.seed').forEach((x, j) => x.classList.toggle('on', j === i)); });
@@ -1695,7 +1793,7 @@
     const full = page.length >= GARDEN_PAGE;
     if (!page.length) plot.appendChild(el('div', 'ghint', '아직 빈 꽃밭이에요. 첫 꽃을 심어 볼까요?'));
     else if (full && gardenPage === gardenPages() - 1) plot.appendChild(el('div', 'ghint full', '이 밭이 가득 찼어요! 한 송이 더 심으면 새 꽃밭이 열려요 🌱'));
-    $('gardenCount').textContent = '함께 심은 꽃 ' + state.flowers.length + '송이';
+    if (gardenTab === 'shared') $('gardenCount').textContent = '함께 심은 꽃 ' + state.flowers.length + '송이';
     const multi = gardenPages() > 1;
     $('gardenPager').hidden = !multi;
     if (multi) {
@@ -1735,6 +1833,373 @@
       toast((err && err.message) || '꽃을 심지 못했어요. 동전은 돌려드렸어요.');
     }
   });
+
+  /* ===================== 나의 마음 정원 ===================== */
+  // 세 가지 좋은 일(감사·음미·스스로 칭찬)을 씨앗으로 심고, 날마다 물을 주며 키워요.
+  const MG_KINDS = [
+    { ico: '🙏', name: '고마운 일', ph: '예) 친구가 지우개를 빌려줘서 고마웠어요.' },
+    { ico: '✨', name: '좋았던 순간', ph: '예) 점심시간에 하늘이 정말 파랬어요.' },
+    { ico: '💪', name: '내가 잘한 일', ph: '예) 어려운 문제를 포기하지 않고 끝까지 풀었어요.' },
+  ];
+  const MG_DAILY = 3, MG_PAGE = 12, MG_MAX = 240;
+  const STAGE_NAME = ['🌰 씨앗', '🌱 새싹', '🌷 꽃봉오리', '🌸 활짝 핀 꽃'];
+  const STAGE_NEXT = ['싹이 터요', '꽃봉오리가 맺혀요', '꽃이 피어요'];
+  let gardenTab = 'mine', mgPage = 0, mgKind = 0, mgSeed = 0, mgSel = null, savorTimer = null, mgDiaryKind = -1;
+  function saveMg() { store.set('ms_garden', mg); }
+  const mgYesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return ymd(d); };
+  function mgTodayCount() { return mg.plants.filter((p) => p.day === today()).length; }
+  function mgBloomed() { return mg.plants.filter((p) => p.g >= 3).length; }
+  function mgStreak() { return mg.lastWater === today() || mg.lastWater === mgYesterday() ? mg.streak | 0 : 0; }
+  function mgPages() { return Math.max(1, Math.ceil((mg.plants.length + 1) / MG_PAGE)); }
+  function fmtDay(d) { const [, m, dd] = String(d).split('-'); const t = new Date(+String(d).split('-')[0], m - 1, +dd); return m + '월 ' + dd + '일 (' + DAY_NAMES[t.getDay()] + ')'; }
+  function stageLine(p) {
+    if (p.g >= 3) return STAGE_NAME[3] + ' — 좋은 기억이 꽃이 되었어요.';
+    return STAGE_NAME[p.g] + ' — ' + (mg.lastWater === today() ? '내일' : '오늘') + ' 물을 주면 ' + STAGE_NEXT[p.g] + '.';
+  }
+
+  function renderMine(fresh) {
+    fresh = fresh || [];
+    mgPage = clamp(mgPage, 0, mgPages() - 1);
+    const grid = $('mgGrid'); grid.textContent = '';
+    const start = mgPage * MG_PAGE, page = mg.plants.slice(start, start + MG_PAGE);
+    const isLast = mgPage === mgPages() - 1;
+    for (let i = 0; i < MG_PAGE; i++) {
+      const p = page[i];
+      if (p) {
+        const b = el('button', 'gpatch st' + p.g + (fresh.includes(p.id) ? ' fresh' : ''), A.plant(p.f, p.g) + (p.g >= 3 ? '<span class="gp-glow"></span>' : ''));
+        b.type = 'button'; b.style.setProperty('--d', (-(i % 5) * 0.7) + 's');
+        b.setAttribute('aria-label', STAGE_NAME[p.g] + ': ' + p.note);
+        b.addEventListener('click', () => openView(p.id));
+        grid.appendChild(b);
+      } else if (isLast) {
+        const left = MG_DAILY - mgTodayCount(), k = i - page.length; // k: 빈 칸 순서
+        let b;
+        if (left <= 0 && k === 0) b = el('button', 'gpatch empty rest', '<span class="gp-lbl">내일<br>또 심어요</span>');
+        else if (k < left) { b = el('button', 'gpatch empty', '<span class="gp-plus">＋</span><span class="gp-lbl">심기</span>'); b.addEventListener('click', () => openForm()); }
+        else { b = el('div', 'gpatch blank'); b.setAttribute('aria-hidden', 'true'); }
+        if (b.tagName === 'BUTTON') b.type = 'button';
+        grid.appendChild(b);
+      }
+    }
+    // 핀 꽃이 있으면 나비가 놀러 와요
+    const blooms = page.filter((p) => p.g >= 3).length, flies = $('mgFlies');
+    flies.textContent = '';
+    for (let i = 0; i < Math.min(3, Math.ceil(blooms / 3)); i++) {
+      const f = el('div', 'mg-fly', A.BUTTERFLY); f.style.animationDelay = (-i * 3.3) + 's'; f.style.top = (12 + i * 26) + '%'; flies.appendChild(f);
+    }
+    $('mgBox').dataset.season = season;
+    const watered = mg.lastWater === today();
+    const w = $('mgWater'); w.disabled = watered; w.textContent = watered ? '💧 오늘 물을 줬어요' : '💧 오늘 물 주기';
+    $('mgToday').textContent = '오늘 심은 좋은 일 ' + mgTodayCount() + '/' + MG_DAILY;
+    const st = mgStreak(); $('mgStreak').textContent = st >= 2 ? '🌿 ' + st + '일째 돌보는 중' : '';
+    const multi = mgPages() > 1;
+    $('mgPager').hidden = !multi;
+    if (multi) { $('mgPageLabel').textContent = (mgPage + 1) + ' / ' + mgPages() + ' 정원'; $('mgPrev').disabled = mgPage <= 0; $('mgNext').disabled = isLast; }
+    if (gardenTab === 'mine') $('gardenCount').textContent = '피운 꽃 ' + mgBloomed() + '송이 · 자라는 중 ' + (mg.plants.length - mgBloomed());
+  }
+  $('mgPrev').addEventListener('click', () => { mgPage--; renderMine(); });
+  $('mgNext').addEventListener('click', () => { mgPage++; renderMine(); });
+
+  function waterGarden() {
+    if (mg.lastWater === today()) { toast('오늘은 이미 물을 줬어요. 내일 또 와요 💧'); return; }
+    if (!mg.plants.some((p) => p.g < 3)) { toast('물을 줄 씨앗이 없어요. 먼저 좋은 일을 한 줄 심어 봐요 🌰'); openForm(); return; }
+    mg.streak = mg.lastWater === mgYesterday() ? (mg.streak | 0) + 1 : 1;
+    mg.lastWater = today();
+    const grew = [];
+    let bloomed = 0;
+    mg.plants.forEach((p) => { if (p.g < 3 && p.lg !== today()) { p.g++; p.lg = today(); grew.push(p.id); if (p.g === 3) bloomed++; } });
+    saveMg(); earn('water');
+    const rain = $('mgRain'); rain.textContent = '';
+    for (let i = 0; i < 26; i++) { const d = el('span', 'mg-drop'); d.style.left = rand(2, 98) + '%'; d.style.animationDelay = rand(0, 0.7).toFixed(2) + 's'; rain.appendChild(d); }
+    Sound.chime(true);
+    setTimeout(() => {
+      rain.textContent = '';
+      renderMine(grew); renderDockSubs();
+      toast(bloomed ? '🌸 ' + bloomed + '송이가 활짝 피었어요! 눌러서 그때를 떠올려 봐요.' : '💧 모두 한 뼘씩 자랐어요. 내일 또 만나요.', 3200);
+      if (bloomed) Sound.bell();
+    }, 1100);
+  }
+  $('mgWater').addEventListener('click', waterGarden);
+
+  function renderMgKinds() {
+    const box = $('mgKinds'); box.textContent = '';
+    MG_KINDS.forEach((k, i) => {
+      const b = el('button', 'mf-chip' + (i === mgKind ? ' on' : ''), k.ico + ' ' + k.name); b.type = 'button';
+      b.addEventListener('click', () => { mgKind = i; renderMgKinds(); });
+      box.appendChild(b);
+    });
+    $('mgNote').placeholder = MG_KINDS[mgKind].ph;
+  }
+  (function buildMgSeeds() {
+    const row = $('mgSeeds');
+    A.FLOWERS.forEach((f, i) => {
+      const b = el('button', 'seed' + (i === 0 ? ' on' : ''), A.flower(i) + f.name); b.type = 'button';
+      b.addEventListener('click', () => { mgSeed = i; row.querySelectorAll('.seed').forEach((x, j) => x.classList.toggle('on', j === i)); });
+      row.appendChild(b);
+    });
+  })();
+  function openForm(kind) {
+    if (mgTodayCount() >= MG_DAILY) { toast('오늘은 좋은 일 세 가지를 모두 심었어요. 내일 또 심어요 🌱'); return; }
+    if (gardenTab !== 'mine') setGardenTab('mine');
+    if (Number.isInteger(kind)) mgKind = kind;
+    $('mgView').hidden = true; stopSavor();
+    renderMgKinds();
+    $('mgNote').value = ''; $('mgHint').textContent = '';
+    $('mgPublic').checked = store.get('ms_mgpublic', true) !== false; renderPrivNote();
+    $('mgForm').hidden = false;
+    $('mgForm').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    if (!isTouch) setTimeout(() => $('mgNote').focus(), 50);
+  }
+  $('mgCancel').addEventListener('click', () => { $('mgForm').hidden = true; });
+  function renderPrivNote() {
+    const pub = $('mgPublic').checked;
+    $('mgPrivNote').innerHTML = pub
+      ? '🌼 <b>' + esc(nameOf(profile || { a: 0, b: 0 })) + '</b>(이)라는 별명으로 모두에게 보여요. 고운 말로 적어요.'
+      : '🔒 나만 볼 수 있어요. 이 기기에만 저장돼요.';
+  }
+  $('mgPublic').addEventListener('change', () => { store.set('ms_mgpublic', $('mgPublic').checked); renderPrivNote(); });
+  const myThanks = () => store.get('ms_mythanks', []) || [];
+  function rememberMyThanks(id) { const m = myThanks(); m.unshift(id); store.set('ms_mythanks', m.slice(0, 200)); }
+  // 좋은 일을 모두의 정원(시트)에 올려요. 성공하면 { ok, id }, 실패하면 { ok:false, reason, net }
+  async function publishThanks(p) {
+    const chk = window.Filter ? window.Filter.check(p.note) : { ok: true };
+    if (!chk.ok) return { ok: false, reason: chk.reason };
+    const pf = profile || { a: 0, b: 0 };
+    let r;
+    if (sheetMode) {
+      try { r = await sheetPost({ type: 'thanks', sessionId: sid, content: p.note, k: p.k, f: p.f, na: pf.a, nb: pf.b }); }
+      catch (e) { return { ok: false, net: true, reason: '연결이 원활하지 않아요.' }; }
+      if (!r || !r.ok) return { ok: false, reason: (r && r.reason) || '나누지 못했어요.' };
+    } else r = { ok: true, id: 'T' + Date.now().toString(36) };
+    p.sid = r.id; p.pend = !!r.pending;
+    rememberMyThanks(r.id);
+    if (!r.pending) {
+      const item = normThanks({ id: r.id, text: p.note, nick: nameOf(pf), k: p.k, f: p.f, emp: 0, at: Date.now() });
+      state.thanks.unshift(item); rememberPost('thanks', item);
+      if (!sheetMode) saveLocal();
+    }
+    return r;
+  }
+  $('mgPlant').addEventListener('click', async () => {
+    const note = $('mgNote').value.replace(/\s+/g, ' ').trim();
+    if (note.length < 2) { $('mgHint').textContent = '좋았던 일을 짧게 한 줄만 적어 주세요.'; return; }
+    if (mgTodayCount() >= MG_DAILY) { $('mgForm').hidden = true; renderMine(); return; }
+    const pub = $('mgPublic').checked;
+    const p = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), f: mgSeed, k: mgKind, note: note.slice(0, 60), day: today(), at: Date.now(), g: 0, lg: '', sh: false };
+    let shareMsg = '';
+    if (pub) {
+      const btn = $('mgPlant'); btn.disabled = true;
+      let r;
+      try { r = await publishThanks(p); } finally { btn.disabled = false; }
+      if (!r.ok && !r.net) { $('mgHint').textContent = r.reason; return; } // 말을 고쳐서 다시
+      shareMsg = r.ok ? (r.pending ? ' 선생님이 확인하면 모두의 정원에 보여요.' : ' 모두의 정원에도 피었어요 🌼') : ' (연결이 원활하지 않아 나만 보기로 심었어요)';
+    }
+    mg.plants.push(p);
+    while (mg.plants.length > MG_MAX) mg.plants.shift();
+    saveMg(); earn('thanks');
+    $('mgForm').hidden = true;
+    mgPage = mgPages() - 1;
+    renderMine([p.id]); renderDockSubs(); Sound.chime(true);
+    toast('🌰 씨앗을 심었어요.' + shareMsg, 3200);
+  });
+
+  function openView(id) {
+    const p = mg.plants.find((x) => x.id === id); if (!p) return;
+    mgSel = id; stopSavor();
+    $('mgForm').hidden = true;
+    $('mvArt').innerHTML = A.plant(p.f, p.g);
+    const k = MG_KINDS[clamp(p.k | 0, 0, 2)];
+    $('mvKind').textContent = k.ico + ' ' + k.name; $('mvDate').textContent = fmtDay(p.day);
+    $('mvNote').textContent = p.note;
+    $('mvStage').textContent = stageLine(p);
+    $('mvSavorBtn').hidden = p.g < 3;
+    $('mvShare').hidden = p.g < 3 || p.sh;
+    $('mvPublish').hidden = !!p.sid; $('mvUnpublish').hidden = !p.sid;
+    $('mvStage').textContent = stageLine(p) + (p.sid ? (p.pend ? ' · 🌼 선생님 확인 중' : ' · 🌼 모두의 정원에 나눴어요') : '');
+    const rm = $('mvRemove'); rm.textContent = '뽑기'; rm.classList.remove('sure');
+    $('mgView').hidden = false;
+    $('mgView').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+  function stopSavor() { clearTimeout(savorTimer); savorTimer = null; const s = $('mvSavor'); if (s) s.hidden = true; }
+  $('mvSavorBtn').addEventListener('click', () => {
+    stopSavor();
+    const box = $('mvSavor'), bar = $('mvSavorBar'), txt = $('mvSavorText');
+    txt.textContent = '그 순간을 10초만 다시 떠올려 봐요. 어디였는지, 누가 있었는지, 어떤 기분이었는지…';
+    box.hidden = false;
+    bar.style.transition = 'none'; bar.style.width = '100%'; void bar.offsetWidth;
+    bar.style.transition = 'width 10s linear'; bar.style.width = '0%';
+    savorTimer = setTimeout(() => { txt.textContent = '좋은 기억이 마음에 한 번 더 피었어요 🌸'; Sound.chime(true); }, 10000);
+  });
+  $('mvShare').addEventListener('click', async () => {
+    const p = mg.plants.find((x) => x.id === mgSel); if (!p || p.sh) return;
+    const f = p.f < 6 ? p.f : (p.f === 6 ? 4 : 0);
+    const x = randInt(101), y = randInt(101);
+    p.sh = true; saveMg(); $('mvShare').hidden = true;
+    const fl = { f, x, y };
+    state.flowers.push(fl); renderGardenBed();
+    if (!sheetMode) { saveLocal(); toast('함께 꽃밭에 한 송이를 나눴어요. 누군가에게 작은 힘이 될 거예요 🌷', 3000); return; }
+    try {
+      const r = await sheetPost({ type: 'flower', sessionId: sid, f, x, y });
+      if (!r || !r.ok) throw new Error((r && r.reason) || '');
+      toast('함께 꽃밭에 한 송이를 나눴어요. 누군가에게 작은 힘이 될 거예요 🌷', 3000);
+    } catch (e) {
+      state.flowers = state.flowers.filter((z) => z !== fl); renderGardenBed();
+      p.sh = false; saveMg(); $('mvShare').hidden = false;
+      toast((e && e.message) || '지금은 나누지 못했어요. 잠시 뒤에 다시 해 봐요.');
+    }
+  });
+  async function unpublish(p) {
+    const id = p.sid; if (!id) return true;
+    if (sheetMode) {
+      try { const r = await sheetPost({ type: 'thanksdel', id, sessionId: sid }); if (!r || !r.ok) { toast((r && r.reason) || '지금은 내리지 못했어요.'); return false; } }
+      catch (e) { toast('연결이 원활하지 않아요. 잠시 뒤에 다시 해 봐요.'); return false; }
+    }
+    state.thanks = state.thanks.filter((x) => x.id !== id); recentPost.thanks.delete(id);
+    if (!sheetMode) saveLocal();
+    p.sid = ''; p.pend = false; saveMg();
+    return true;
+  }
+  $('mvPublish').addEventListener('click', async () => {
+    const p = mg.plants.find((x) => x.id === mgSel); if (!p || p.sid) return;
+    const b = $('mvPublish'); b.disabled = true;
+    let r; try { r = await publishThanks(p); } finally { b.disabled = false; }
+    if (!r.ok) { toast(r.reason); return; }
+    saveMg(); openView(p.id);
+    toast(r.pending ? '나눴어요. 선생님이 확인하면 모두의 정원에 보여요.' : '🌼 모두의 정원에 나눴어요.');
+  });
+  $('mvUnpublish').addEventListener('click', async () => {
+    const p = mg.plants.find((x) => x.id === mgSel); if (!p) return;
+    if (await unpublish(p)) { openView(p.id); toast('모두의 정원에서 내렸어요. 내 정원에는 그대로 있어요.'); }
+  });
+  $('mvRemove').addEventListener('click', async () => {
+    const b = $('mvRemove');
+    if (!b.classList.contains('sure')) { b.classList.add('sure'); b.textContent = '정말 뽑을까요?'; return; }
+    const p = mg.plants.find((x) => x.id === mgSel);
+    if (p && p.sid && !(await unpublish(p))) return;
+    mg.plants = mg.plants.filter((x) => x.id !== mgSel); saveMg();
+    $('mgView').hidden = true; mgSel = null;
+    renderMine(); renderDockSubs();
+  });
+  $('mvClose').addEventListener('click', () => { $('mgView').hidden = true; stopSavor(); });
+
+  function renderDiary() {
+    const all = mg.plants.slice().sort((a, b) => (b.at || 0) - (a.at || 0));
+    const weekAgo = Date.now() - 7 * 864e5;
+    const stats = [['심은 좋은 일', all.length], ['피운 꽃', mgBloomed()], ['이번 주', all.filter((p) => (p.at || 0) >= weekAgo).length], ['돌본 날', mgStreak() ? mgStreak() + '일째' : '-']];
+    $('gdStats').innerHTML = stats.map(([k, v]) => `<div class="gd-stat"><b>${v}</b><span>${k}</span></div>`).join('');
+    const list = $('gdList'); list.textContent = '';
+    const filt = el('div', 'mf-chips gd-filter');
+    [[-1, '전체']].concat(MG_KINDS.map((k, i) => [i, k.ico + ' ' + k.name])).forEach(([i, name]) => {
+      const b = el('button', 'mf-chip' + (i === mgDiaryKind ? ' on' : ''), name); b.type = 'button';
+      b.addEventListener('click', () => { mgDiaryKind = i; renderDiary(); });
+      filt.appendChild(b);
+    });
+    list.appendChild(filt);
+    const shown = all.filter((p) => mgDiaryKind < 0 || (p.k | 0) === mgDiaryKind);
+    if (!shown.length) { list.appendChild(el('p', 'read-empty', all.length ? '이 갈래에는 아직 심은 일이 없어요.' : '아직 심은 좋은 일이 없어요.<br>나의 정원에서 오늘 좋았던 일 한 줄을 심어 볼까요?')); return; }
+    let lastDay = '';
+    shown.forEach((p) => {
+      if (p.day !== lastDay) { lastDay = p.day; list.appendChild(el('p', 'gd-day', fmtDay(p.day))); }
+      const k = MG_KINDS[clamp(p.k | 0, 0, 2)];
+      const it = el('button', 'gd-item');
+      it.type = 'button';
+      it.innerHTML = `<span class="gd-art">${A.plant(p.f, p.g)}</span><span class="gd-txt"><small>${k.ico} ${k.name} · ${STAGE_NAME[p.g]}${p.sid ? ' · 🌼 나눔' : ''}</small></span>`;
+      const t = el('span', 'gd-note'); t.textContent = p.note; it.querySelector('.gd-txt').appendChild(t);
+      it.addEventListener('click', () => { setGardenTab('mine'); const idx = mg.plants.indexOf(p); mgPage = Math.floor(idx / MG_PAGE); renderMine(); openView(p.id); });
+      list.appendChild(it);
+    });
+  }
+
+  /* ----- 모두의 정원 ----- */
+  let gaKind = -1;
+  const thxHearted = () => store.get('ms_thx_heart', {}) || {};
+  function thanksCard(x) {
+    const mine = myThanks().includes(x.id);
+    const k = MG_KINDS[x.k] || MG_KINDS[0];
+    const c = el('div', 'ga-card' + (mine ? ' mine' : ''));
+    c.innerHTML = `<div class="ga-art">${A.flower(x.f)}</div><div class="ga-body"><p class="ga-kind">${k.ico} ${k.name}</p><p class="ga-text"></p><p class="ga-meta"></p></div>`;
+    c.querySelector('.ga-text').textContent = x.text;
+    c.querySelector('.ga-meta').textContent = (mine ? '🌱 내가 심은 글 · ' : '') + (x.nick || '숲 친구') + ' · ' + timeAgo(x.at);
+    const act = el('div', 'ga-act');
+    const hearted = !!thxHearted()[x.id];
+    const h = el('button', 'ga-heart' + (hearted ? ' on' : '') + (mine ? ' self' : ''), (hearted ? '💗' : '🤍') + ' <b>' + x.emp + '</b>');
+    h.type = 'button'; h.setAttribute('aria-label', '마음 보내기');
+    if (mine || hearted) h.disabled = true;
+    h.addEventListener('click', () => heartThanks(x, h));
+    act.appendChild(h);
+    if (!mine) {
+      const f = el('button', 'flag', '🚩'); f.type = 'button'; f.title = '불편한 글 알리기';
+      f.addEventListener('click', () => askThanksReport(c, x));
+      act.appendChild(f);
+    }
+    c.appendChild(act);
+    return c;
+  }
+  function renderAll() {
+    const filt = $('gaFilter'); filt.textContent = '';
+    [[-1, '전체']].concat(MG_KINDS.map((k, i) => [i, k.ico + ' ' + k.name])).forEach(([i, name]) => {
+      const b = el('button', 'mf-chip' + (i === gaKind ? ' on' : ''), name); b.type = 'button';
+      b.addEventListener('click', () => { gaKind = i; renderAll(); });
+      filt.appendChild(b);
+    });
+    const list = $('gaList'); list.textContent = '';
+    const rep = reported();
+    const shown = state.thanks.filter((x) => !rep[x.id] && (gaKind < 0 || x.k === gaKind));
+    if (!shown.length) {
+      list.appendChild(el('p', 'read-empty', state.thanks.length ? '이 갈래에는 아직 글이 없어요.' : '아직 모두의 정원이 비어 있어요.<br>나의 정원에서 좋은 일을 심고 함께 나눠 볼까요?'));
+      return;
+    }
+    shown.forEach((x) => list.appendChild(thanksCard(x)));
+    if (gardenTab === 'all') $('gardenCount').textContent = '모두가 심은 좋은 일 ' + state.thanks.length + '개';
+  }
+  async function heartThanks(x, btn) {
+    const hs = thxHearted(); if (hs[x.id]) return;
+    hs[x.id] = Date.now(); store.set('ms_thx_heart', hs);
+    x.emp++; btn.classList.add('on', 'pop'); btn.disabled = true; btn.innerHTML = '💗 <b>' + x.emp + '</b>';
+    earn('emp'); Sound.tok();
+    if (!sheetMode) { saveLocal(); return; }
+    try {
+      const r = await sheetPost({ type: 'thanksemp', id: x.id, sessionId: sid });
+      if (r && r.ok) { x.emp = r.emp; btn.querySelector('b').textContent = x.emp; }
+      else if (!(r && r.already)) { toast((r && r.reason) || '마음을 보내지 못했어요.'); }
+    } catch (e) { /* 다음에 */ }
+  }
+  function askThanksReport(card, x) {
+    if (card.querySelector('.rep-ask')) return;
+    const bar = el('div', 'ga-rep rep-ask');
+    bar.innerHTML = '<span>이 글이 마음을 불편하게 하나요?</span>';
+    const no = el('button', 'chip-btn', '취소'); no.type = 'button';
+    const yes = el('button', 'chip-btn danger sure', '알리기'); yes.type = 'button';
+    const box = el('span', 'ga-rep-btns'); box.append(no, yes); bar.appendChild(box); card.appendChild(bar);
+    no.addEventListener('click', () => bar.remove());
+    yes.addEventListener('click', async () => {
+      const rep = reported(); rep[x.id] = Date.now(); store.set('ms_reported', rep);
+      state.thanks = state.thanks.filter((y) => y.id !== x.id);
+      renderAll();
+      toast('알려 줘서 고마워요. 세 명이 알리면 그 글은 잠시 숨겨져요.', 3600);
+      if (sheetMode) { try { await sheetPost({ type: 'thanksreport', id: x.id, sessionId: sid }); } catch (e) { /* 다음에 */ } }
+    });
+  }
+
+  function setGardenTab(t) {
+    gardenTab = t;
+    document.querySelectorAll('#gardenTabs button').forEach((b) => b.classList.toggle('on', b.dataset.g === t));
+    $('gpMine').hidden = t !== 'mine'; $('gpAll').hidden = t !== 'all'; $('gpShared').hidden = t !== 'shared'; $('gpDiary').hidden = t !== 'diary';
+    if (t !== 'mine') stopSavor();
+    if (t === 'mine') renderMine();
+    if (t === 'shared') renderGarden();
+    if (t === 'all') { renderAll(); $('gardenCount').textContent = '모두가 심은 좋은 일 ' + state.thanks.length + '개'; if (sheetMode) refreshState(false); }
+    if (t === 'diary') { renderDiary(); $('gardenCount').textContent = '좋은 일 ' + mg.plants.length + '개를 모았어요'; }
+  }
+  document.querySelectorAll('#gardenTabs button').forEach((b) => b.addEventListener('click', () => setGardenTab(b.dataset.g)));
+  function openGarden(tab, opts) {
+    renderCoins();
+    $('mgForm').hidden = true; $('mgView').hidden = true;
+    mgPage = mgPages() - 1;
+    openModal('gardenModal');
+    setGardenTab(tab || gardenTab || 'mine');
+    if (opts && opts.plant) openForm(opts.kind);
+  }
 
   /* ===================== 배경음악 고르기 ===================== */
   function openMusic() {
@@ -2134,7 +2599,7 @@
 
   /* ===================== 마음 날씨 연못 ===================== */
   const MOODS = [
-    { ico: '☀️', name: '맑음', msg: '햇살 같은 마음이네요. 그 기분을 친구에게 나눠 볼까요? 가까이 가서 하이파이브 한 번!', go: null },
+    { ico: '☀️', name: '맑음', msg: '햇살 같은 마음이네요. 무엇 덕분인지 꽃밭에 씨앗으로 심어 두면, 나중에 다시 꺼내 볼 수 있어요.', go: ['plant', '좋은 순간 꽃으로 심기'] },
     { ico: '⛅', name: '구름 조금', msg: '괜찮은데 조금 마음 쓰이는 일이 있나 봐요. 숨 쉬는 나무에서 숨을 세 번 골라 봐요.', go: ['tree', '숨 고르러 가기'] },
     { ico: '🌧️', name: '비', msg: '마음에 비가 오는 날도 있어요. 걱정을 나뭇잎에 실어 흘려보내 볼까요?', go: ['letgo', '걱정 흘려보내기'] },
     { ico: '⛈️', name: '천둥', msg: '많이 속상하거나 화가 난 것 같아요. 빗소리 정자에서 잠시 쉬어 가요. 마음이 계속 무거우면 믿을 수 있는 어른이나 선생님께 꼭 이야기해요.', go: ['rain', '빗소리 들으러 가기'] },
@@ -2151,24 +2616,89 @@
       g.appendChild(b);
     });
   })();
+  // 마음에 이름을 붙이면(정서 명명) 마음이 조금 가라앉아요. 고른 낱말은 이 기기에만 남아요.
+  const FEELS = [
+    ['기뻐요', '신나요', '뿌듯해요', '고마워요', '편안해요'],
+    ['신경 쓰여요', '조금 걱정돼요', '긴장돼요', '심심해요', '피곤해요'],
+    ['슬퍼요', '서운해요', '외로워요', '실망했어요', '그리워요'],
+    ['화나요', '억울해요', '짜증나요', '답답해요', '무서워요'],
+    ['안심돼요', '다행이에요', '용기 나요', '희망차요', '설레요'],
+    ['헷갈려요', '멍해요', '지쳤어요', '걱정돼요', '잘 모르겠어요'],
+  ];
+  const FEEL_REPLY = [
+    '그 마음을 오래 간직해 봐요. 무엇 덕분인지 떠올려 보면 기쁨이 더 커져요.',
+    '그럴 수 있어요. 작은 걱정도 이름을 붙이면 조금 가벼워져요.',
+    '그렇게 느끼는 건 자연스러운 일이에요. 지금 마음 그대로 괜찮아요.',
+    '그렇게 느낄 만한 일이 있었나 봐요. 마음이 큰 소리를 낼 때는 먼저 숨을 천천히 골라요.',
+    '힘든 시간을 잘 지나왔네요. 그 마음을 스스로에게 칭찬해 줘요.',
+    '마음이 잘 안 보이는 날도 있어요. 이름을 붙이려고 한 것만으로도 잘했어요.',
+  ];
+  const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+  function moodLog() { const l = store.get('ms_moodlog', {}); return l && typeof l === 'object' ? l : {}; }
+  function saveMoodLog(patch) {
+    const l = moodLog(), d = today();
+    l[d] = Object.assign({}, l[d] || {}, patch);
+    const keys = Object.keys(l).sort();
+    while (keys.length > 30) delete l[keys.shift()];
+    store.set('ms_moodlog', l);
+  }
+  function dayKey(offset) { const t = new Date(); t.setDate(t.getDate() - offset); return { key: ymd(t), dow: t.getDay() }; }
+  function renderMoodWeek() {
+    const box = $('moodWeek'), l = moodLog(); box.textContent = '';
+    for (let i = 6; i >= 0; i--) {
+      const { key, dow } = dayKey(i), e = l[key];
+      const cell = el('div', 'mw-day' + (i === 0 ? ' today' : ''));
+      const m = e && Number.isInteger(e.m) ? MOODS[clamp(e.m, 0, MOODS.length - 1)] : null;
+      cell.innerHTML = `<span class="mw-ico">${m ? m.ico : '·'}</span><span class="mw-dow">${i === 0 ? '오늘' : DAY_NAMES[dow]}</span>`;
+      if (m) cell.title = m.name + (e.f && e.f.length ? ' — ' + e.f.join(', ') : '');
+      box.appendChild(cell);
+    }
+  }
+  function renderFeelChips(i) {
+    const box = $('moodChips'); box.textContent = '';
+    const picked = (moodLog()[today()] || {}).f || [];
+    FEELS[i].forEach((f) => {
+      const b = el('button', 'mf-chip' + (picked.includes(f) ? ' on' : ''), f); b.type = 'button';
+      b.addEventListener('click', () => pickFeel(f));
+      box.appendChild(b);
+    });
+    $('moodFeel').hidden = false;
+  }
+  function pickFeel(f) {
+    const e = moodLog()[today()] || {};
+    if (!Number.isInteger(e.m)) return;
+    let picked = Array.isArray(e.f) ? e.f.slice() : [];
+    if (picked.includes(f)) picked = picked.filter((x) => x !== f);
+    else { picked.push(f); if (picked.length > 3) picked.shift(); }
+    saveMoodLog({ f: picked });
+    Sound.tok();
+    renderFeelChips(e.m); showMoodAnswer(e.m); renderMoodWeek();
+  }
   function openPond() {
     const p = moodPicked();
     $('moodGrid').querySelectorAll('.mood').forEach((b, i) => b.classList.toggle('on', i === p));
-    if (p !== null) showMoodAnswer(p); else $('moodAnswer').hidden = true;
-    renderMoodToday();
+    if (p !== null) { renderFeelChips(p); showMoodAnswer(p); } else { $('moodAnswer').hidden = true; $('moodFeel').hidden = true; }
+    renderMoodWeek(); renderMoodToday();
     openModal('pondModal');
   }
   function showMoodAnswer(i) {
     const m = MOODS[i], box = $('moodAnswer');
+    const feels = ((moodLog()[today()] || {}).f || []);
     box.innerHTML = '';
+    if (feels.length) {
+      const v = el('p', 'mood-valid');
+      v.textContent = '‘' + feels.join('’, ‘') + '’ — 그런 마음이 드는구나. ' + FEEL_REPLY[i];
+      box.appendChild(v);
+    }
     const p = el('p'); p.textContent = m.ico + ' ' + m.msg; box.appendChild(p);
     if (m.go) {
       const b = el('button', 'btn-primary go', m.go[1]); b.type = 'button';
       b.addEventListener('click', () => {
         closeModal('pondModal');
         const g = m.go[0];
+        if (g === 'plant') { openGarden('mine', { plant: true, kind: 1 }); return; }
         if (g === 'letgo' || g === 'hope') { renderBoard(); openModal('boardModal'); openWrite(g === 'letgo' ? KIND_LETGO : KIND_HOPE); }
-        else goTo(g, true);
+        else warpTo(g);
       });
       box.appendChild(b);
     }
@@ -2177,9 +2707,11 @@
   async function pickMood(i) {
     const prev = moodPicked();
     $('moodGrid').querySelectorAll('.mood').forEach((b, j) => b.classList.toggle('on', j === i));
-    showMoodAnswer(i);
+    const old = moodLog()[today()] || {};
+    saveMoodLog({ m: i, f: old.m === i ? (old.f || []) : [] });
+    renderFeelChips(i); showMoodAnswer(i); renderMoodWeek();
     Sound.tok();
-    if (prev !== null) return; // 집계는 하루 한 번만
+    if (prev !== null) { store.set('ms_mood', { day: today(), m: i }); renderDockSubs(); return; } // 집계는 하루 한 번만
     store.set('ms_mood', { day: today(), m: i });
     state.mood[i] = (state.mood[i] || 0) + 1;
     earn('mood'); renderMoodToday(); renderDockSubs();
@@ -2191,6 +2723,142 @@
     const box = $('moodToday');
     if (!total) { box.textContent = '오늘 처음으로 마음 날씨를 남겨 볼까요?'; return; }
     box.innerHTML = '오늘 숲에 모인 마음 날씨 (' + total + '명)<br>' + MOODS.map((m, i) => `<span class="mt">${m.ico} ${state.mood[i] || 0}</span>`).join('');
+  }
+
+  /* ===================== 고요한 산사 ===================== */
+  const tp = { tab: 'tap', ang: Math.PI / 2, roundStart: Math.PI / 2, holding: false, raf: 0, last: 0, held: 0, lastStep: 0,
+    gongBusy: false, gongTimers: [], idx: -1 };
+  const TAP_ROUND_MS = 15000;
+  function tapToday() { const t = store.get('ms_tap', null); return t && t.day === today() ? t.n | 0 : 0; }
+  function gongToday() { const t = store.get('ms_gong', null); return t && t.day === today() ? t.n | 0 : 0; }
+  function renderTapCount() { $('tapCount').textContent = '오늘 ' + tapToday() + '바퀴 · 한 바퀴마다 🪙1'; }
+  function renderGongCount() { const n = gongToday(); $('gongCount').textContent = (n ? '오늘 ' + n + '번 들었어요 · ' : '') + '끝까지 들으면 🪙1'; }
+  function placeWalker() {
+    const st = $('tapStage'), w = $('tapWalker');
+    const W2 = st.clientWidth, H2 = st.clientHeight;
+    const s = Math.sin(tp.ang), c = Math.cos(tp.ang);
+    const x = W2 / 2 + W2 * 0.36 * c, y = H2 * 0.80 + H2 * 0.09 * s;
+    const sc = 0.82 + 0.22 * (s + 1) / 2;
+    const dir = -Math.sin(tp.ang) < 0 ? -1 : 1; // 움직이는 쪽을 바라봐요
+    w.style.left = x.toFixed(1) + 'px'; w.style.top = y.toFixed(1) + 'px';
+    w.style.zIndex = s > 0 ? '4' : '1';
+    w.style.transform = `translate(-50%,-100%) scale(${(sc * dir).toFixed(3)},${sc.toFixed(3)})`;
+    return { x, y };
+  }
+  function dropStep(x, y) {
+    const f = el('span', 'tap-step'); f.style.left = x.toFixed(0) + 'px'; f.style.top = y.toFixed(0) + 'px';
+    $('tapTrail').appendChild(f); setTimeout(() => f.remove(), 3200);
+  }
+  function tapLoop(now) {
+    tp.raf = 0;
+    if ($('templeModal').hidden || tp.tab !== 'tap') return;
+    const dt = Math.min(64, now - (tp.last || now)); tp.last = now;
+    if (tp.holding) {
+      tp.held += dt;
+      tp.ang += dt / TAP_ROUND_MS * Math.PI * 2;
+      const done = (tp.ang - tp.roundStart) / (Math.PI * 2);
+      $('tapFill').style.width = (Math.min(1, done) * 100).toFixed(1) + '%';
+      const phase = Math.floor(tp.held / 3500) % 2;
+      $('tapBreath').textContent = phase ? '내쉬며… 한 걸음' : '들이쉬며… 한 걸음';
+      const pos = placeWalker();
+      if (tp.ang - tp.lastStep > 0.32) { tp.lastStep = tp.ang; dropStep(pos.x, pos.y); }
+      $('tapWalker').classList.add('walking');
+      if (done >= 1) finishRound();
+    } else {
+      $('tapWalker').classList.remove('walking');
+      placeWalker();
+    }
+    tp.raf = requestAnimationFrame(tapLoop);
+  }
+  function finishRound() {
+    tp.roundStart = tp.ang; $('tapFill').style.width = '0%';
+    const n = tapToday() + 1; store.set('ms_tap', { day: today(), n });
+    const words = (window.CALM && CALM.TAP_WORDS) || ['한 걸음, 한 숨.'];
+    const w = $('tapWord'); w.classList.remove('show'); void w.offsetWidth;
+    w.textContent = '🗼 ' + n + '바퀴 — ' + words[(n - 1) % words.length]; w.classList.add('show');
+    Sound.chime(true); earn('tap'); renderTapCount(); renderDockSubs();
+  }
+  function setHold(on) {
+    if (tp.holding === on) return;
+    tp.holding = on;
+    $('tapHold').classList.toggle('on', on);
+    if (!on) $('tapBreath').textContent = '잠시 멈췄어요. 다시 꾹 누르면 이어서 걸어요';
+    else { tp.last = performance.now(); if (!tp.raf) tp.raf = requestAnimationFrame(tapLoop); }
+  }
+  (function bindTap() {
+    const b = $('tapHold');
+    b.addEventListener('pointerdown', (e) => { e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch (x) { /* */ } setHold(true); });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((ev) => b.addEventListener(ev, () => setHold(false)));
+    b.addEventListener('contextmenu', (e) => e.preventDefault());
+    b.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setHold(true); } });
+    b.addEventListener('keyup', (e) => { if (e.key === ' ' || e.key === 'Enter') setHold(false); });
+  })();
+
+  function gongReset() {
+    tp.gongTimers.forEach(clearTimeout); tp.gongTimers = []; tp.gongBusy = false;
+    $('gongBtn').disabled = false; $('gongArt').classList.remove('strike');
+    const bar = $('gongBar'); bar.style.transition = 'none'; bar.style.width = '0%';
+    $('gongRipples').textContent = '';
+  }
+  function strikeGong() {
+    if (tp.gongBusy) return;
+    gongReset(); tp.gongBusy = true; $('gongBtn').disabled = true;
+    Sound.gong();
+    const art = $('gongArt'); void art.offsetWidth; art.classList.add('strike');
+    const rp = $('gongRipples');
+    for (let i = 0; i < 4; i++) { const r = el('span', 'g-ring'); r.style.animationDelay = (i * 1.4) + 's'; rp.appendChild(r); }
+    const bar = $('gongBar'); bar.style.transition = 'none'; bar.style.width = '100%'; void bar.offsetWidth;
+    bar.style.transition = 'width 9.4s linear'; bar.style.width = '0%';
+    const w = $('gongWord');
+    const seq = [[0, '데에엥—'], [1800, '소리가 숲 너머로 퍼져 나가요…'], [4600, '점점 작아져요. 끝까지 귀 기울여 봐요.'], [7600, '아주 작은 소리까지…']];
+    seq.forEach(([ms, txt]) => tp.gongTimers.push(setTimeout(() => { w.textContent = txt; }, ms)));
+    tp.gongTimers.push(setTimeout(() => {
+      w.textContent = '소리가 다 사라졌어요. 마음도 조금 고요해졌나요?';
+      store.set('ms_gong', { day: today(), n: gongToday() + 1 });
+      earn('gong'); renderGongCount();
+      tp.gongBusy = false; $('gongBtn').disabled = false; art.classList.remove('strike'); rp.textContent = '';
+    }, 9600));
+  }
+  $('gongBtn').addEventListener('click', strikeGong);
+
+  function templeList() { return (window.CALM && CALM.TEMPLES) || []; }
+  function renderTempleCard() {
+    const list = templeList(); if (!list.length) return;
+    if (tp.idx < 0) { const d = new Date(), start = new Date(d.getFullYear(), 0, 0); tp.idx = Math.floor((d - start) / 864e5) % list.length; }
+    const t = list[(tp.idx % list.length + list.length) % list.length];
+    $('tcScene').innerHTML = A.templeScene(t.scene);
+    $('tcName').textContent = t.name; $('tcRegion').textContent = t.region;
+    const tag = $('tcTag'); tag.textContent = t.tag; tag.hidden = !t.tag;
+    $('tcText').textContent = t.text; $('tcBreath').textContent = '🍃 ' + t.breath;
+    $('tcMap').href = 'https://map.naver.com/p/search/' + encodeURIComponent(t.region.split(' ')[0] + ' ' + t.name);
+    $('tcCount').textContent = ((tp.idx % list.length + list.length) % list.length + 1) + ' / ' + list.length + ' · 날마다 다른 산사가 찾아와요';
+  }
+  $('tcPrev').addEventListener('click', () => { tp.idx--; renderTempleCard(); Sound.tok(); });
+  $('tcNext').addEventListener('click', () => { tp.idx++; renderTempleCard(); Sound.tok(); });
+
+  function setTempleTab(t) {
+    tp.tab = t;
+    document.querySelectorAll('#templeTabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
+    $('tpTap').hidden = t !== 'tap'; $('tpGong').hidden = t !== 'gong'; $('tpToday').hidden = t !== 'today';
+    if (t !== 'tap') setHold(false);
+    if (t === 'tap') { tp.last = 0; if (!tp.raf) tp.raf = requestAnimationFrame(tapLoop); }
+    if (t === 'today') renderTempleCard();
+    if (t === 'gong') renderGongCount();
+  }
+  document.querySelectorAll('#templeTabs button').forEach((b) => b.addEventListener('click', () => setTempleTab(b.dataset.t)));
+  function openTemple() {
+    if (!$('tapPagoda').innerHTML) $('tapPagoda').innerHTML = A.PAGODA;
+    if (!$('gongArt').innerHTML) $('gongArt').innerHTML = A.GONG;
+    $('tapWalker').innerHTML = A.person(look());
+    renderTapCount(); renderGongCount();
+    openModal('templeModal');
+    setTempleTab(tp.tab);
+  }
+  function stopTemple() {
+    setHold(false);
+    if (tp.raf) cancelAnimationFrame(tp.raf); tp.raf = 0;
+    gongReset();
+    $('gongWord').textContent = '종을 한 번 울리고, 소리가 다 사라질 때까지 귀 기울여 보세요.';
   }
 
   /* ===================== 빗소리 정자 ===================== */
@@ -2339,7 +3007,7 @@
     const dropped = sg.cur - target;
     meEl.classList.add('falling');
     Sound.tok();
-    $('sgTip').textContent = dropped > 1 ? '앗, 미끄러졌어요! 다시 천천히 올라가요' : '앗, 반대쪽이에요. 천천히 다시!';
+    $('sgTip').textContent = dropped > 1 ? '앗, 미끄러졌어요. 괜찮아요, 다시 천천히 올라가요' : '앗, 반대쪽이에요. 괜찮아요, 천천히 다시!';
     setTimeout(() => {
       meEl.classList.remove('falling');
       sg.cur = target;
@@ -2402,7 +3070,7 @@
   }
 
   /* ===================== 숲 지도 ===================== */
-  const MAP_PTS = { plaza: [46, 306], reading: [92, 250], shop: [56, 196], links: [128, 210], tree: [104, 120], spring: [182, 96], lantern: [256, 116], garden: [300, 176], pond: [232, 240], rain: [332, 262], stair: [378, 180], hill: [406, 92] };
+  const MAP_PTS = { plaza: [46, 306], reading: [92, 250], shop: [56, 196], links: [128, 210], tree: [104, 120], spring: [182, 96], lantern: [256, 116], garden: [300, 176], pond: [232, 240], rain: [332, 262], stair: [370, 186], temple: [414, 132], hill: [372, 62] };
   function mapXY(x) {
     if (x <= ZONES[0].x) return MAP_PTS[ZONES[0].id];
     for (let i = 0; i < ZONES.length - 1; i++) {
@@ -2564,7 +3232,7 @@
     setInterval(() => { if (!document.hidden) refreshState(false); }, 20000);
 
     // 시험용 창(개발자가 확인할 때만 사용)
-    window.__ms = { me, others, state, wallet, critters, sg, goTo, warpTo, enterZone, openReading, keys, earn, climb, sendEmote, applyTime, applySeason, openLinks, openMusic, openSeason, chooseMusic, flySanta, submitLink, linkForm, refreshState, renderBoard, get season() { return season; }, get musicChoice() { return musicChoice; }, get cam() { return cam; }, get myKey() { return myKey; }, get nearPerson() { return nearPerson; } };
+    window.__ms = { me, others, state, wallet, critters, sg, goTo, warpTo, enterZone, openReading, openTemple, openGarden, mg, waterGarden, renderAll, temple: () => tp, startBreath, pickMood, pickFeel, moodLog: () => moodLog(), tapToday, keys, earn, climb, sendEmote, applyTime, applySeason, openLinks, openMusic, openSeason, chooseMusic, flySanta, submitLink, linkForm, refreshState, renderBoard, get season() { return season; }, get musicChoice() { return musicChoice; }, get cam() { return cam; }, get myKey() { return myKey; }, get nearPerson() { return nearPerson; } };
   }
   start();
 })();

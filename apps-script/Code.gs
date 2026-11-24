@@ -1,6 +1,6 @@
 /**
  * ============================================================
- *  온라인 마음쉼터 — Google Apps Script 백엔드 v7 (소원 분류·다중 장식)
+ *  온라인 마음쉼터 — Google Apps Script 백엔드 v9 (모두의 정원)
  *  (구글 시트가 '염원 저장소'이자 '교사 관리 화면'이 됩니다)
  *
  *  v3에서 달라진 점
@@ -28,6 +28,8 @@
  *   [마음날씨] 시각 | 누가 | 날씨
  *   [링크] 시각 | 주소 | 목적 | 학교급 | 과목 | 주제 | 상태 | 세션ID | ID | 신고 | 신고자 | 별명
  *   [생각] 시각 | 내용 | 링크 | 상태 | 세션ID | 별명 | ID | 신고 | 신고자
+ *   [정원] 시각 | 내용 | 상태 | 세션ID | 별명 | ID | 갈래 | 꽃 | 공감 | 신고 | 신고자 | 메모
+ *          (마음 꽃밭에 심은 좋은 일 — 갈래: 고마운 일 / 좋았던 순간 / 내가 잘한 일)
  *   상태: 공개 / 검토중 / 숨김 / 차단  — 화면에는 '공개'만 보입니다.
  *   선생님이 글을 내리고 싶으면 상태를 '숨김'으로 바꾸면 됩니다.
  *
@@ -44,6 +46,7 @@ const FLOWER_SHEET = '꽃밭';
 const MOOD_SHEET = '마음날씨';
 const LINK_SHEET = '링크';
 const THINK_SHEET = '생각';
+const GARDEN_SHEET = '정원';
 const WISH_HEADERS = ['작성시각', '내용', '상태', '세션ID', '메모', 'ID', '종류', '공감', '해소', '신고', '신고자', '분류'];
 const VISIT_HEADERS = ['방문시각', '세션ID'];
 const FLOWER_HEADERS = ['심은시각', '누가', '꽃', 'x', 'y'];
@@ -52,6 +55,12 @@ const LINK_HEADERS = ['시각', '주소', '목적', '학교급', '과목', '주�
 const LCOL = { AT: 1, URL: 2, PURP: 3, LEVEL: 4, SUBJ: 5, TOPIC: 6, STATUS: 7, SID: 8, ID: 9, REP: 10, REPBY: 11, NICK: 12 };
 const THINK_HEADERS = ['시각', '내용', '링크', '상태', '세션ID', '별명', 'ID', '신고', '신고자'];
 const TCOL = { AT: 1, TEXT: 2, URL: 3, STATUS: 4, SID: 5, NICK: 6, ID: 7, REP: 8, REPBY: 9 };
+const GARDEN_HEADERS = ['시각', '내용', '상태', '세션ID', '별명', 'ID', '갈래', '꽃', '공감', '신고', '신고자', '메모'];
+const GCOL = { AT: 1, TEXT: 2, STATUS: 3, SID: 4, NICK: 5, ID: 6, KIND: 7, FLOWER: 8, EMP: 9, REP: 10, REPBY: 11, MEMO: 12 };
+const GARDEN_KINDS = ['고마운 일', '좋았던 순간', '내가 잘한 일'];
+const GARDEN_MAX = 60;         // 정원 글 최대 글자
+const GARDEN_PER_DAY = 3;      // 하루에 심는 좋은 일 (화면과 같아요)
+const GARDEN_SHOW = 80;        // 화면에 보내는 정원 글 수
 const THINK_MAX = 160;         // 생각 최대 글자
 const THINK_PER_DAY = 15;
 // 별명 낱말(화면 app.js 의 ADJ·NOUN 과 같은 순서예요)
@@ -81,10 +90,10 @@ const FLOWER_SHOW = 160;       // 화면에 보내는 꽃 수
 const FLOWER_PER_DAY = 30;     // 한 사람이 하루에 심을 수 있는 꽃
 const PRESENCE_TTL_MS = 25000; // 이 시간 동안 소식이 없으면 접속 종료로 봄
 const PRESENCE_MAX = 80;
-const WORLD_W = 5900;
-const ZONES = ['', 'plaza', 'reading', 'shop', 'links', 'tree', 'spring', 'lantern', 'garden', 'pond', 'rain', 'stair', 'hill'];
+const WORLD_W = 6380;
+const ZONES = ['', 'plaza', 'reading', 'shop', 'links', 'tree', 'spring', 'lantern', 'garden', 'pond', 'rain', 'stair', 'temple', 'hill'];
 // 화면(app.js)의 목록 길이와 같아야 합니다
-const N = { ADJ: 16, NOUN: 16, SKIN: 5, HAIR: 8, STYLE: 6, OUTFIT: 8, TYPE: 4, ACC: 14, PET: 7, EMO: 6, FLOWER: 6, MOOD: 6, CAT: 8 };
+const N = { ADJ: 16, NOUN: 16, SKIN: 5, HAIR: 8, STYLE: 6, OUTFIT: 8, TYPE: 4, ACC: 14, PET: 7, EMO: 6, FLOWER: 6, MOOD: 6, CAT: 8, GFLOWER: 8 };
 const TZ = 'Asia/Seoul';
 
 // 화면의 금칙어 목록(badwords.js)과 같게 맞춰 두었습니다. 필요하면 둘 다 늘리세요.
@@ -125,6 +134,12 @@ function setup() {
   tsh.getRange('D2:D5000').setDataValidation(SpreadsheetApp.newDataValidation()
     .requireValueInList([STATUS.PUBLIC, STATUS.HIDDEN, STATUS.BLOCKED], true).setAllowInvalid(false).build());
   tsh.setColumnWidth(2, 360);
+  const gsh = sheet_(GARDEN_SHEET, GARDEN_HEADERS);
+  gsh.getRange(1, 1, 1, GARDEN_HEADERS.length).setValues([GARDEN_HEADERS]).setFontWeight('bold');
+  gsh.setFrozenRows(1);
+  gsh.getRange('C2:C5000').setDataValidation(SpreadsheetApp.newDataValidation()
+    .requireValueInList([STATUS.PUBLIC, STATUS.PENDING, STATUS.HIDDEN, STATUS.BLOCKED], true).setAllowInvalid(false).build());
+  gsh.setColumnWidth(2, 360);
 
   // 예전 행에 ID · 종류 · 공감 · 신고 채우기
   const last = sh.getLastRow();
@@ -150,11 +165,12 @@ function doGet() {
   if (!body) {
     const st = publicState_();
     body = JSON.stringify({
-      ok: true, v: 3,
+      ok: true, v: 4,
       wishes: st.wishes, stars: st.stars,
       flowers: flowers_(), mood: moodToday_(),
       links: links_(),
       thoughts: thoughts_(),
+      thanks: thanks_(),
       visitsToday: visitsToday_()
     });
     cache.put('pub', body, 10); // 접속이 몰려도 시트를 덜 읽도록 10초 캐시
@@ -182,6 +198,10 @@ function doPost(e) {
       case 'linkedit': return out_(editLink_(body));
       case 'thoughtedit': return out_(editThought_(body));
       case 'presence': return out_(presence_(body));
+      case 'thanks': return out_(addThanks_(body));
+      case 'thanksemp': return out_(thanksEmp_(body));
+      case 'thanksreport': return out_(thanksReport_(body));
+      case 'thanksdel': return out_(thanksDel_(body));
       default: return out_({ ok: false, reason: '알 수 없는 요청이에요.' });
     }
   } catch (err) {
@@ -514,6 +534,153 @@ function reportLink_(body) {
     }
     CacheService.getScriptCache().remove('pub');
     return { ok: true, hidden: hidden };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/* ---------- 모두의 정원 (마음 꽃밭에 심은 좋은 일) ---------- */
+function addThanks_(body) {
+  const sid = sid_(body);
+  if (!sid) return { ok: false, reason: '잘못된 요청이에요.' };
+  const text = String(body.content || '').replace(/\s+/g, ' ').trim();
+  if (text.length < 2) return { ok: false, reason: '좋았던 일을 짧게 한 줄만 적어 주세요.' };
+  if (text.length > GARDEN_MAX) return { ok: false, reason: GARDEN_MAX + '자 이내로 적어 주세요.' };
+  const basic = basicCheck_(text);
+  if (!basic.ok) return { ok: false, reason: basic.reason };
+  const nk = resolveNick_(body);
+  if (!nk.ok) return { ok: false, reason: nk.reason };
+
+  const cache = CacheService.getScriptCache();
+  const who = hash_(sid);
+  if (cache.get('tc_' + who)) return { ok: false, reason: '잠시 뒤에 다시 심어 주세요.' };
+  const dayKey = 'td_' + who + '_' + Utilities.formatDate(new Date(), TZ, 'yyyyMMdd');
+  const cnt = Number(cache.get(dayKey) || 0);
+  if (cnt >= GARDEN_PER_DAY) return { ok: false, reason: '오늘은 좋은 일 세 가지를 모두 나눴어요. 내일 또 나눠요.' };
+  if (globalLimited_('gt', 60)) return { ok: false, reason: '지금 사람이 많아요. 잠시 뒤에 다시 심어 주세요.' };
+  cache.put('tc_' + who, '1', 8);
+  cache.put(dayKey, String(cnt + 1), 90000);
+
+  const kind = GARDEN_KINDS[clampInt_(body.k, 0, GARDEN_KINDS.length - 1)];
+  const fl = String(clampInt_(body.f, 0, N.GFLOWER - 1));
+  const id = newId_();
+  const sh = sheet_(GARDEN_SHEET, GARDEN_HEADERS);
+  const verdict = moderate_(text);
+  if (verdict.result === 'deny') {
+    append_(sh, [nowStr_(), text, STATUS.BLOCKED, sid, nk.nick, id, kind, fl, '0', '0', '', 'AI 판정: 부적절']);
+    return { ok: false, reason: '조금 더 따뜻한 말로 적어 주세요.' };
+  }
+  const isPublic = verdict.result === 'allow' || !REQUIRE_APPROVAL;
+  append_(sh, [nowStr_(), text, isPublic ? STATUS.PUBLIC : STATUS.PENDING, sid, nk.nick, id, kind, fl, '0', '0', '', isPublic ? '' : verdict.memo]);
+  cache.remove('pub');
+  return isPublic ? { ok: true, id: id } : { ok: true, pending: true, id: id, reason: '심었어요. 선생님이 확인하면 모두의 정원에 보여요.' };
+}
+
+function thanks_() {
+  const sh = sheet_(GARDEN_SHEET, GARDEN_HEADERS);
+  const last = sh.getLastRow();
+  if (last < 2) return [];
+  const start = Math.max(2, last - GARDEN_SHOW * 2);
+  const rows = sh.getRange(start, 1, last - start + 1, GARDEN_HEADERS.length).getValues();
+  const out = [];
+  for (let i = rows.length - 1; i >= 0 && out.length < GARDEN_SHOW; i--) {
+    const r = rows[i];
+    if (String(r[GCOL.STATUS - 1]) !== STATUS.PUBLIC) continue;
+    if ((Number(r[GCOL.REP - 1]) || 0) >= HIDE_AT) continue;
+    out.push({
+      id: String(r[GCOL.ID - 1]), text: String(r[GCOL.TEXT - 1]), nick: String(r[GCOL.NICK - 1] || ''),
+      k: Math.max(0, GARDEN_KINDS.indexOf(String(r[GCOL.KIND - 1]))), f: clampInt_(r[GCOL.FLOWER - 1], 0, N.GFLOWER - 1),
+      emp: Number(r[GCOL.EMP - 1]) || 0, at: parseAt_(r[GCOL.AT - 1])
+    });
+  }
+  return out;
+}
+
+function gardenRow_(sh, id) {
+  const last = sh.getLastRow();
+  if (last < 2 || !id) return 0;
+  const start = Math.max(2, last - SCAN_ROWS + 1);
+  const ids = sh.getRange(start, GCOL.ID, last - start + 1, 1).getValues();
+  for (let i = ids.length - 1; i >= 0; i--) if (String(ids[i][0]) === id) return start + i;
+  return 0;
+}
+
+function thanksEmp_(body) {
+  const id = String(body.id || '').slice(0, 20);
+  const sid = sid_(body);
+  if (!id || !sid) return { ok: false, reason: '잘못된 요청이에요.' };
+  const cache = CacheService.getScriptCache();
+  const key = 'te_' + id + '_' + hash_(sid);
+  if (cache.get(key)) return { ok: false, already: true, reason: '이미 마음을 보냈어요.' };
+  if (globalLimited_('gte', 150)) return { ok: false, reason: '지금 사람이 많아요. 잠시 뒤에 다시 눌러 주세요.' };
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { ok: false, reason: '잠시 뒤에 다시 눌러 주세요.' };
+  try {
+    const sh = sheet_(GARDEN_SHEET, GARDEN_HEADERS);
+    const row = gardenRow_(sh, id);
+    if (!row) return { ok: false, reason: '찾을 수 없는 글이에요.' };
+    const v = sh.getRange(row, 1, 1, GARDEN_HEADERS.length).getValues()[0];
+    if (String(v[GCOL.STATUS - 1]) !== STATUS.PUBLIC) return { ok: false, reason: '지금은 마음을 보낼 수 없는 글이에요.' };
+    if (String(v[GCOL.SID - 1]) === sid) return { ok: false, reason: '내 글에는 마음을 보낼 수 없어요.' };
+    const n = (Number(v[GCOL.EMP - 1]) || 0) + 1;
+    sh.getRange(row, GCOL.EMP).setNumberFormat('@').setValue(String(n));
+    cache.put(key, '1', 21600);
+    cache.remove('pub');
+    return { ok: true, emp: n };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function thanksReport_(body) {
+  const id = String(body.id || '').slice(0, 20);
+  const sid = sid_(body);
+  if (!id || !sid) return { ok: false, reason: '잘못된 요청이에요.' };
+  if (globalLimited_('gtr', 60)) return { ok: false, reason: '잠시 뒤에 다시 눌러 주세요.' };
+  const who = hash_(sid);
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { ok: false, reason: '잠시 뒤에 다시 눌러 주세요.' };
+  try {
+    const sh = sheet_(GARDEN_SHEET, GARDEN_HEADERS);
+    const row = gardenRow_(sh, id);
+    if (!row) return { ok: false, reason: '찾을 수 없는 글이에요.' };
+    const v = sh.getRange(row, 1, 1, GARDEN_HEADERS.length).getValues()[0];
+    if (String(v[GCOL.SID - 1]) === sid) return { ok: false, reason: '내 글은 신고할 수 없어요.' };
+    const by = String(v[GCOL.REPBY - 1] || '').split(',').filter(String);
+    if (by.indexOf(who) >= 0) return { ok: true, already: true };
+    by.push(who);
+    const n = (Number(v[GCOL.REP - 1]) || 0) + 1;
+    sh.getRange(row, GCOL.REP, 1, 2).setNumberFormat('@').setValues([[String(n), by.slice(-20).join(',')]]);
+    let hidden = false;
+    if (n >= HIDE_AT && String(v[GCOL.STATUS - 1]) === STATUS.PUBLIC) {
+      sh.getRange(row, GCOL.STATUS).setValue(STATUS.HIDDEN);
+      sh.getRange(row, GCOL.MEMO).setNumberFormat('@').setValue('신고 ' + n + '회로 자동 숨김 ' + nowStr_());
+      hidden = true;
+    }
+    CacheService.getScriptCache().remove('pub');
+    return { ok: true, hidden: hidden };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** 글쓴이가 스스로 내리기 (지우지 않고 '숨김'으로 남겨요) */
+function thanksDel_(body) {
+  const id = String(body.id || '').slice(0, 20);
+  const sid = sid_(body);
+  if (!id || !sid) return { ok: false, reason: '잘못된 요청이에요.' };
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { ok: false, reason: '잠시 뒤에 다시 눌러 주세요.' };
+  try {
+    const sh = sheet_(GARDEN_SHEET, GARDEN_HEADERS);
+    const row = gardenRow_(sh, id);
+    if (!row) return { ok: true, gone: true };
+    const v = sh.getRange(row, 1, 1, GARDEN_HEADERS.length).getValues()[0];
+    if (String(v[GCOL.SID - 1]) !== sid) return { ok: false, reason: '내가 심은 글만 내릴 수 있어요.' };
+    sh.getRange(row, GCOL.STATUS).setValue(STATUS.HIDDEN);
+    sh.getRange(row, GCOL.MEMO).setNumberFormat('@').setValue('글쓴이가 내림 ' + nowStr_());
+    CacheService.getScriptCache().remove('pub');
+    return { ok: true };
   } finally {
     lock.releaseLock();
   }
