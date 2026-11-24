@@ -26,23 +26,24 @@
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
 
   /* ===================== 상수 ===================== */
-  const W = 5700, SPEED = 250, DSPEED = 0.85, NEAR = 130, STAR_AT = 5;
+  const W = 5900, SPEED = 250, DSPEED = 0.85, NEAR = 130, STAR_AT = 5;
   const KIND_HOPE = '바람', KIND_LETGO = '내려놓기';
   const ADJ = ['느린', '따뜻한', '조용한', '포근한', '맑은', '다정한', '싱그러운', '잔잔한', '반짝이는', '수줍은', '너그러운', '차분한', '말랑한', '산뜻한', '고요한', '부드러운'];
   const NOUN = ['걸음', '바람', '새벽', '구름', '오솔길', '햇살', '이슬', '나뭇잎', '달빛', '시냇물', '솔방울', '민들레', '별빛', '도토리', '꽃잎', '숲길'];
   const EMO = ['', '👋', '💚', '😊', '🙏', '🙌'];
   const ZONES = [
-    { id: 'plaza', x: 360, name: '쉼터 광장', short: '광장', icon: '🪧', tint: '#f4e7cf' },
-    { id: 'shop', x: 820, name: '숲속 가게', short: '가게', icon: '🏪', tint: '#d6efe4' },
-    { id: 'links', x: 1340, name: '링크 나눔터', short: '링크', icon: '🎁', tint: '#fbdcd9', big: true },
-    { id: 'tree', x: 1880, name: '숨 쉬는 나무', short: '숨 고르기', icon: '🌳', tint: '#ddeed0' },
-    { id: 'spring', x: 2340, name: '마음 구슬 샘', short: '마음 구슬', icon: '🫧', tint: '#dbecf5' },
-    { id: 'lantern', x: 2820, name: '염원 등불터', short: '염원', icon: '🏮', tint: '#fbe6c4', big: true },
-    { id: 'garden', x: 3360, name: '함께 꽃밭', short: '꽃밭', icon: '🌷', tint: '#fadde4' },
-    { id: 'pond', x: 3860, name: '마음 날씨 연못', short: '마음 날씨', icon: '🪷', tint: '#d6edf2' },
-    { id: 'rain', x: 4340, name: '빗소리 정자', short: '빗소리', icon: '☔', tint: '#dfe7ec' },
-    { id: 'stair', x: 4820, name: '명언 계단', short: '명언 계단', icon: '🪜', tint: '#f1e4cc' },
-    { id: 'hill', x: 5320, name: '별빛 언덕', short: '별빛 언덕', icon: '⭐', tint: '#e6def5' },
+    { id: 'plaza', x: 340, name: '쉼터 광장', short: '광장', icon: '🪧', tint: '#f4e7cf' },
+    { id: 'reading', x: 800, name: '마음 글밭', short: '글밭', icon: '📖', tint: '#eaf3da', big: true },
+    { id: 'shop', x: 1280, name: '숲속 가게', short: '가게', icon: '🏪', tint: '#d6efe4' },
+    { id: 'links', x: 1780, name: '링크 나눔터', short: '링크', icon: '🎁', tint: '#fbdcd9' },
+    { id: 'tree', x: 2280, name: '숨 쉬는 나무', short: '숨 고르기', icon: '🌳', tint: '#ddeed0' },
+    { id: 'spring', x: 2740, name: '마음 구슬 샘', short: '마음 구슬', icon: '🫧', tint: '#dbecf5' },
+    { id: 'lantern', x: 3220, name: '염원 등불터', short: '염원', icon: '🏮', tint: '#fbe6c4', big: true },
+    { id: 'garden', x: 3720, name: '함께 꽃밭', short: '꽃밭', icon: '🌷', tint: '#fadde4' },
+    { id: 'pond', x: 4200, name: '마음 날씨 연못', short: '마음 날씨', icon: '🪷', tint: '#d6edf2' },
+    { id: 'rain', x: 4680, name: '빗소리 정자', short: '빗소리', icon: '☔', tint: '#dfe7ec' },
+    { id: 'stair', x: 5160, name: '명언 계단', short: '명언 계단', icon: '🪜', tint: '#f1e4cc' },
+    { id: 'hill', x: 5600, name: '별빛 언덕', short: '별빛 언덕', icon: '⭐', tint: '#e6def5' },
   ];
   const zoneById = (id) => ZONES.find((z) => z.id === id);
   const PURPOSES = ['수업용', '일상 상식', '음악', '기타'];
@@ -268,9 +269,29 @@
       const b = el('button', 'dock-btn' + (z.big ? ' big' : ''));
       b.type = 'button'; b.dataset.go = z.id;
       b.innerHTML = `<span class="dock-ico" style="--tint:${z.tint}">${z.icon}</span><span class="dock-name">${z.short}</span><span class="dock-sub" id="sub-${z.id}"></span>` + (z.big ? '<span class="dock-flag">NEW</span>' : '');
-      b.addEventListener('click', () => { b.blur(); goTo(z.id, true); });
+      b.addEventListener('click', () => { b.blur(); warpTo(z.id); });
       track.appendChild(b);
     });
+  }
+  // 빠른 이동 — 걷지 않고 바로 그곳으로 가서 입장해요 (부드러운 전환)
+  let warpBusy = false;
+  function warpTo(id) {
+    const z = zoneById(id); if (!z || warpBusy) return;
+    setStroll(false); me.target = null; for (const k in keys) keys[k] = false;
+    if (Math.abs(me.x - z.x) < NEAR * 0.9) { enterZone(id); return; } // 이미 가까우면 바로
+    warpBusy = true;
+    let fade = $('warpFade');
+    if (!fade) { fade = el('div', 'warp-fade'); fade.id = 'warpFade'; document.body.appendChild(fade); }
+    fade.classList.remove('show'); void fade.offsetWidth; fade.classList.add('show');
+    setTimeout(() => {
+      me.facing = z.x > me.x ? 1 : -1;
+      me.x = clamp(z.x - me.facing * 56, 40, W - 40); me.d = 0.5;
+      cam = clamp(me.x - vw / 2, 0, Math.max(0, W - vw));
+      worldEl.style.transform = `translate3d(${(-cam).toFixed(1)}px,0,0)`;
+      placeAt(me.el, me.x, me.d);
+      enterZone(id);
+      setTimeout(() => { fade.classList.remove('show'); warpBusy = false; }, 120);
+    }, 230);
   }
   function layout() {
     ZONES.forEach((z) => {
@@ -897,8 +918,8 @@
   }
 
   /* ===================== 모달 ===================== */
-  const MODALS = ['introModal', 'guideModal', 'breathModal', 'beadsModal', 'boardModal', 'wishModal', 'starsModal', 'shopModal', 'gardenModal', 'pondModal', 'rainModal', 'walletModal', 'bookModal', 'mapModal', 'linksModal', 'linkFormModal', 'musicModal', 'seasonModal'];
-  const ZONE_OF_MODAL = { guideModal: 'plaza', breathModal: 'tree', beadsModal: 'spring', boardModal: 'lantern', starsModal: 'hill', shopModal: 'shop', gardenModal: 'garden', pondModal: 'pond', rainModal: 'rain', linksModal: 'links' };
+  const MODALS = ['introModal', 'guideModal', 'breathModal', 'beadsModal', 'boardModal', 'wishModal', 'starsModal', 'shopModal', 'gardenModal', 'pondModal', 'rainModal', 'walletModal', 'bookModal', 'mapModal', 'linksModal', 'linkFormModal', 'musicModal', 'seasonModal', 'readingModal'];
+  const ZONE_OF_MODAL = { guideModal: 'plaza', breathModal: 'tree', beadsModal: 'spring', boardModal: 'lantern', starsModal: 'hill', shopModal: 'shop', gardenModal: 'garden', pondModal: 'pond', rainModal: 'rain', linksModal: 'links', readingModal: 'reading' };
   const modalOpen = () => MODALS.some((id) => !$(id).hidden) || !$('ritual').hidden || !$('loading').hidden || !$('stairGame').hidden;
   const isTyping = () => { const a = document.activeElement; return !!a && (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT'); };
   function openModal(id) { $(id).hidden = false; }
@@ -945,6 +966,7 @@
     else if (id === 'rain') openModal('rainModal');
     else if (id === 'stair') openStair();
     else if (id === 'links') openLinks();
+    else if (id === 'reading') openReading();
   }
   function goTo(id, enter) {
     const z = zoneById(id); if (!z) return;
@@ -1984,6 +2006,70 @@
     } finally { $('thoughtSubmit').disabled = false; }
   }
 
+  /* ===================== 마음 글밭 ===================== */
+  const CALM = window.CALM || { POEMS: [], COMFORTS: [], GOODWORDS: [] };
+  let readTab = 'poem', readIdx = 0;
+  const readFavs = () => store.get('ms_readfav', []) || []; // ['poem:3', ...]
+  function readItems(tab) {
+    if (tab === 'poem') return CALM.POEMS.map((p, i) => ({ key: 'poem:' + i, title: p.t, body: p.b, by: '마음쉼터 동시' }));
+    if (tab === 'comfort') return CALM.COMFORTS.map((t, i) => ({ key: 'comfort:' + i, title: '', body: t, by: '다독이는 말' }));
+    if (tab === 'good') return CALM.GOODWORDS.map((g, i) => ({ key: 'good:' + i, title: '', body: g[0], by: g[1] }));
+    // 담은 글
+    const favs = readFavs(), out = [];
+    favs.forEach((k) => {
+      const [t, i] = k.split(':'); const n = +i;
+      if (t === 'poem' && CALM.POEMS[n]) out.push({ key: k, title: CALM.POEMS[n].t, body: CALM.POEMS[n].b, by: '마음쉼터 동시' });
+      else if (t === 'comfort' && CALM.COMFORTS[n]) out.push({ key: k, title: '', body: CALM.COMFORTS[n], by: '다독이는 말' });
+      else if (t === 'good' && CALM.GOODWORDS[n]) out.push({ key: k, title: '', body: CALM.GOODWORDS[n][0], by: CALM.GOODWORDS[n][1] });
+    });
+    return out;
+  }
+  function openReading() {
+    readTab = 'poem'; readIdx = randInt(Math.max(1, CALM.POEMS.length));
+    document.querySelectorAll('.rtab').forEach((b) => b.classList.toggle('on', b.dataset.read === 'poem'));
+    renderReading();
+    openModal('readingModal');
+  }
+  function renderReading() {
+    const items = readItems(readTab);
+    const card = $('readCard');
+    if (!items.length) {
+      card.innerHTML = '<p class="read-empty">아직 담은 글이 없어요.<br>마음에 드는 글에서 🔖 를 눌러 담아 보세요.</p>';
+      $('readFoot').textContent = ''; $('readFav').style.visibility = 'hidden';
+      $('readPrev').disabled = $('readNext').disabled = true; $('readShuffle').style.visibility = 'hidden';
+      return;
+    }
+    $('readFav').style.visibility = ''; $('readShuffle').style.visibility = '';
+    readIdx = ((readIdx % items.length) + items.length) % items.length;
+    const it = items[readIdx];
+    const favd = readFavs().indexOf(it.key) >= 0;
+    card.className = 'read-card ' + readTab;
+    card.innerHTML = (it.title ? `<div class="read-title">${it.title}</div>` : '') +
+      `<div class="read-body">${it.body.replace(/\n/g, '<br>')}</div>` +
+      (it.by ? `<div class="read-by">— ${it.by}</div>` : '');
+    $('readFoot').textContent = (readIdx + 1) + ' / ' + items.length;
+    $('readFav').textContent = favd ? '🔖 담았어요' : '🔖 마음에 담기';
+    $('readFav').classList.toggle('on', favd);
+    $('readShuffle').style.visibility = items.length > 1 ? '' : 'hidden';
+    $('readPrev').disabled = $('readNext').disabled = items.length <= 1;
+  }
+  document.querySelectorAll('.rtab').forEach((b) => b.addEventListener('click', () => {
+    readTab = b.dataset.read; readIdx = 0;
+    document.querySelectorAll('.rtab').forEach((x) => x.classList.toggle('on', x === b));
+    renderReading();
+  }));
+  $('readPrev').addEventListener('click', () => { readIdx--; renderReading(); });
+  $('readNext').addEventListener('click', () => { readIdx++; renderReading(); });
+  $('readShuffle').addEventListener('click', () => { const n = readItems(readTab).length; if (n > 1) { let r; do { r = randInt(n); } while (r === readIdx); readIdx = r; } renderReading(); Sound.tok(); });
+  $('readFav').addEventListener('click', () => {
+    const items = readItems(readTab); if (!items.length) return;
+    const key = items[readIdx].key; let favs = readFavs();
+    if (favs.indexOf(key) >= 0) favs = favs.filter((k) => k !== key);
+    else { favs.push(key); Sound.chime(true); }
+    store.set('ms_readfav', favs.slice(-60));
+    renderReading();
+  });
+
   /* ===================== 계절 ===================== */
   const SEASONS = [
     { id: 'winter', name: '겨울', ico: '❄️', flake: ['❄', '❅', '•'] },
@@ -2316,7 +2402,7 @@
   }
 
   /* ===================== 숲 지도 ===================== */
-  const MAP_PTS = { plaza: [48, 304], shop: [56, 244], links: [110, 206], thoughts: [150, 150], tree: [104, 118], spring: [182, 96], lantern: [256, 116], garden: [300, 176], pond: [232, 238], rain: [332, 262], stair: [378, 180], hill: [406, 92] };
+  const MAP_PTS = { plaza: [46, 306], reading: [92, 250], shop: [56, 196], links: [128, 210], tree: [104, 120], spring: [182, 96], lantern: [256, 116], garden: [300, 176], pond: [232, 240], rain: [332, 262], stair: [378, 180], hill: [406, 92] };
   function mapXY(x) {
     if (x <= ZONES[0].x) return MAP_PTS[ZONES[0].id];
     for (let i = 0; i < ZONES.length - 1; i++) {
@@ -2358,7 +2444,7 @@
       </svg>`;
     $('mapFrame').addEventListener('click', (e) => {
       const s = e.target.closest('.map-spot'); if (!s) return;
-      closeModal('mapModal'); goTo(s.dataset.zone, true);
+      closeModal('mapModal'); warpTo(s.dataset.zone);
     });
   })();
   let mapTimer = null;
@@ -2478,7 +2564,7 @@
     setInterval(() => { if (!document.hidden) refreshState(false); }, 20000);
 
     // 시험용 창(개발자가 확인할 때만 사용)
-    window.__ms = { me, others, state, wallet, critters, sg, goTo, enterZone, keys, earn, climb, sendEmote, applyTime, applySeason, openLinks, openMusic, openSeason, chooseMusic, flySanta, submitLink, linkForm, refreshState, renderBoard, get season() { return season; }, get musicChoice() { return musicChoice; }, get cam() { return cam; }, get myKey() { return myKey; }, get nearPerson() { return nearPerson; } };
+    window.__ms = { me, others, state, wallet, critters, sg, goTo, warpTo, enterZone, openReading, keys, earn, climb, sendEmote, applyTime, applySeason, openLinks, openMusic, openSeason, chooseMusic, flySanta, submitLink, linkForm, refreshState, renderBoard, get season() { return season; }, get musicChoice() { return musicChoice; }, get cam() { return cam; }, get myKey() { return myKey; }, get nearPerson() { return nearPerson; } };
   }
   start();
 })();

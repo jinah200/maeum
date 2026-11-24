@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" />
-  <link rel="stylesheet" href="css/style.css?v=10" />
+  <link rel="stylesheet" href="css/style.css?v=11" />
   <style>[hidden]{display:none !important;}</style>
 </head>
 <body class="t-day">
@@ -97,8 +97,8 @@
       <div class="m-head"><span class="m-ico">🪧</span><h2>쉼터 광장</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
       <p class="modal-desc">마음쉼터에 온 걸 환영해요. 천천히 둘러보세요.</p>
       <ul class="guide-list">
-        <li><b>걷기</b> 방향키(W·A·S·D)를 누르거나 가고 싶은 곳을 눌러요.</li>
-        <li><b>들어가기</b> 쉼터 앞에서 Enter, 또는 쉼터를 눌러요.</li>
+        <li><b>빠른 이동</b> 아래 메뉴나 🗺️ 지도에서 쉼터를 누르면 걷지 않고 바로 들어가요.</li>
+        <li><b>걷기</b> 방향키(W·A·S·D)를 누르거나 가고 싶은 곳을 눌러 천천히 걸어도 좋아요.</li>
         <li><b>친구와 인사</b> 다른 사람 가까이 가면 하이파이브와 인사 버튼이 나와요.</li>
         <li><b>마음 동전</b> 염원·공감·숨 고르기·계단 오르기로 모아서 가게와 꽃밭에서 써요.</li>
         <li><b>별이 되는 길</b> 공감 5개, '가벼워졌어요', 또는 7일이 지나면 염원은 별이 돼요.</li>
@@ -309,6 +309,27 @@
     </div>
   </div>
 
+  <!-- ===== 마음 글밭 ===== -->
+  <div class="modal-backdrop" id="readingModal" hidden>
+    <div class="modal modal-reading" data-theme="leaf">
+      <div class="m-head"><span class="m-ico">📖</span><h2>마음 글밭</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
+      <div class="read-tabs" id="readTabs">
+        <button class="rtab on" data-read="poem" type="button">🍃 동시</button>
+        <button class="rtab" data-read="comfort" type="button">🤍 다독임</button>
+        <button class="rtab" data-read="good" type="button">🌿 좋은 말</button>
+        <button class="rtab" data-read="fav" type="button">🔖 담은 글</button>
+      </div>
+      <div class="read-card" id="readCard"></div>
+      <div class="read-nav">
+        <button class="pager-btn" id="readPrev" type="button" aria-label="이전 글">◀</button>
+        <button class="chip-btn" id="readFav" type="button">🔖 마음에 담기</button>
+        <button class="chip-btn" id="readShuffle" type="button">🔀 다른 글</button>
+        <button class="pager-btn" id="readNext" type="button" aria-label="다음 글">▶</button>
+      </div>
+      <p class="read-foot" id="readFoot"></p>
+    </div>
+  </div>
+
   <!-- ===== 배경음악 ===== -->
   <div class="modal-backdrop" id="musicModal" hidden>
     <div class="modal" data-theme="mint">
@@ -380,10 +401,11 @@
     <p>마음을 올리는 중…</p>
   </div>
 
-  <script src="js/config.js?v=10"></script>
-  <script src="js/badwords.js?v=10"></script>
-  <script src="js/art.js?v=10"></script>
-  <script src="js/quotes.js?v=10"></script>
-  <script src="js/app.js?v=10"></script>
+  <script src="js/config.js?v=11"></script>
+  <script src="js/badwords.js?v=11"></script>
+  <script src="js/art.js?v=11"></script>
+  <script src="js/quotes.js?v=11"></script>
+  <script src="js/calm.js?v=11"></script>
+  <script src="js/app.js?v=11"></script>
 </body>
 </html>

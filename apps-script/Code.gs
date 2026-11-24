@@ -81,8 +81,8 @@ const FLOWER_SHOW = 160;       // 화면에 보내는 꽃 수
 const FLOWER_PER_DAY = 30;     // 한 사람이 하루에 심을 수 있는 꽃
 const PRESENCE_TTL_MS = 25000; // 이 시간 동안 소식이 없으면 접속 종료로 봄
 const PRESENCE_MAX = 80;
-const WORLD_W = 5700;
-const ZONES = ['', 'plaza', 'shop', 'links', 'tree', 'spring', 'lantern', 'garden', 'pond', 'rain', 'stair', 'hill'];
+const WORLD_W = 5900;
+const ZONES = ['', 'plaza', 'reading', 'shop', 'links', 'tree', 'spring', 'lantern', 'garden', 'pond', 'rain', 'stair', 'hill'];
 // 화면(app.js)의 목록 길이와 같아야 합니다
 const N = { ADJ: 16, NOUN: 16, SKIN: 5, HAIR: 8, STYLE: 6, OUTFIT: 8, TYPE: 4, ACC: 14, PET: 7, EMO: 6, FLOWER: 6, MOOD: 6, CAT: 8 };
 const TZ = 'Asia/Seoul';

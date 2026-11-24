@@ -356,6 +356,28 @@
       <rect x="66" y="40" width="78" height="22" rx="8" fill="#5aa585"/>
       <text x="105" y="56" text-anchor="middle" font-size="13" font-family="Jua, sans-serif" fill="#fff">생각 나눔터</text>
       <g fill="#f3fbf5"><circle cx="26" cy="54" r="5"/><circle cx="184" cy="54" r="5"/></g>` },
+    reading: { w: 220, vb: [220, 200], svg: `
+      <ellipse cx="110" cy="190" rx="96" ry="8" fill="rgba(60,90,60,.18)"/>
+      <g fill="#6aa35a"><circle cx="60" cy="60" r="40"/><circle cx="150" cy="54" r="44"/><circle cx="110" cy="40" r="40"/></g>
+      <g fill="#82bb6d"><circle cx="78" cy="44" r="24"/><circle cx="140" cy="40" r="22"/></g>
+      <g fill="#a7d68d" opacity=".7"><circle cx="70" cy="34" r="11"/><circle cx="136" cy="30" r="9"/></g>
+      <g fill="#ffd3e0"><circle cx="48" cy="66" r="3.5"/><circle cx="168" cy="60" r="3.5"/><circle cx="120" cy="22" r="3"/></g>
+      <rect x="150" y="96" width="9" height="80" rx="3" fill="#9a6e4a"/>
+      <g class="lglow"><ellipse cx="154" cy="104" rx="10" ry="12" fill="#ffd99a"/></g>
+      <ellipse cx="154" cy="104" rx="4" ry="6" fill="#fff3d0"/>
+      <path d="M44 150 L96 150 L110 176 L58 176 Z" fill="#c69b6a"/>
+      <rect x="40" y="144" width="60" height="9" rx="3" fill="#b3875d"/>
+      <rect x="44" y="176" width="7" height="14" fill="#9a6e4a"/><rect x="92" y="176" width="7" height="14" fill="#9a6e4a"/>
+      <g transform="translate(110 120)">
+        <path d="M-42 20 Q-40 6 -2 10 L-2 44 Q-40 40 -42 50 Z" fill="#fff7ea" stroke="#d9b98a" stroke-width="2"/>
+        <path d="M42 20 Q40 6 2 10 L2 44 Q40 40 42 50 Z" fill="#fff7ea" stroke="#d9b98a" stroke-width="2"/>
+        <path d="M-2 10 L2 10 L2 44 L-2 44 Z" fill="#c69b6a"/>
+        <g stroke="#cdbfa6" stroke-width="1.6"><line x1="-34" y1="20" x2="-8" y2="22"/><line x1="-34" y1="27" x2="-8" y2="29"/><line x1="-34" y1="34" x2="-8" y2="36"/>
+          <line x1="8" y1="22" x2="34" y2="20"/><line x1="8" y1="29" x2="34" y2="27"/><line x1="8" y1="36" x2="34" y2="34"/></g>
+        <path d="M-2 8 Q0 2 2 8" fill="none" stroke="#e0a85a" stroke-width="2"/>
+      </g>
+      <rect x="66" y="34" width="88" height="22" rx="8" fill="#fff6e9" stroke="#8fae6a" stroke-width="2" opacity=".96"/>
+      <text x="110" y="50" text-anchor="middle" font-size="13" font-family="Jua, sans-serif" fill="#5a7a3c">마음 글밭</text>` },
     tree: { w: 250, vb: [240, 260], svg: `
       <ellipse cx="120" cy="252" rx="96" ry="9" fill="rgba(60,90,60,.2)"/>
       <path d="M104 252 Q112 192 100 148 L140 148 Q128 192 138 252 Z" fill="#8c6548"/>
