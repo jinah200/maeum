@@ -1144,3 +1144,36 @@ body.t-night .dock-sub { color: #b9c2dc; }
 
 /* 산타가 밤에 더 반짝 */
 body.t-night .santa-layer { filter: drop-shadow(0 0 8px rgba(255,220,140,.5)); }
+
+/* ===================================================================
+   v16 — 메뉴 가독성 · 슬로건 · 제작자 표기
+   =================================================================== */
+
+/* 밤: 선택된 곳(크림)·NEW(연분홍) 버튼은 배경이 밝으니 어두운 글자로 */
+body.t-night .dock-btn.here .dock-name,
+body.t-night .dock-btn.big .dock-name { color: #27324e; }
+body.t-night .dock-btn.here .dock-sub,
+body.t-night .dock-btn.big .dock-sub { color: #566182; }
+/* 선택된 곳은 색이 아니라 '테두리 강조 + 윗줄 점'으로 진행을 알려요 */
+.dock-btn.here { position: relative; }
+.dock-btn.here::after { content: ""; position: absolute; top: 5px; left: 50%; transform: translateX(-50%);
+  width: 16px; height: 3px; border-radius: 3px; background: #f0b44e; }
+body.t-night .dock-btn.here::after { background: #ffd26b; }
+
+/* 상단 슬로건 — 하늘 위에 은은하게 */
+.slogan { position: relative; z-index: 4; text-align: center; margin: 6px auto 0; pointer-events: none;
+  font-family: "Jua", "Gowun Dodum", sans-serif; font-size: 1.08rem; letter-spacing: .02em;
+  color: #6f6049; opacity: .92; text-shadow: 0 1px 2px rgba(255,255,255,.55); transition: color 1s, opacity 1s; }
+.slogan::before, .slogan::after { content: "·"; margin: 0 .5em; opacity: .5; }
+body.t-night .slogan { color: #e3e9fc; text-shadow: 0 1px 8px rgba(18,26,60,.7); }
+body.t-dusk .slogan { color: #f3ead9; text-shadow: 0 1px 6px rgba(80,60,40,.5); }
+@media (max-width: 560px) { .slogan { font-size: .9rem; margin-top: 4px; } .slogan::before, .slogan::after { margin: 0 .35em; } }
+
+/* 하단 제작자 표기 — 메뉴 바로 위 가운데 */
+.dock-credit { text-align: center; font-size: .66rem; letter-spacing: .03em; color: var(--ink-soft);
+  opacity: .72; margin: 0 0 3px; pointer-events: none; transition: color 1s; }
+body.t-night .dock-credit { color: #b2bcd8; }
+
+/* 인트로(환영) 화면 */
+.intro-slogan { text-align: center; font-family: "Jua", "Gowun Dodum", sans-serif; color: #5c8a5f; font-size: .98rem; margin: 2px 0 6px; }
+.intro-credit { text-align: center; font-size: .72rem; color: var(--ink-soft); opacity: .8; margin: 10px 0 0; }
