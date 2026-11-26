@@ -93,6 +93,8 @@
     stairDone: { name: '108계단 완주', ico: '🎉', each: 10, max: 10 },
     pet: { name: '동물 쓰다듬기', ico: '🐑', each: 1, max: 5 },
     bell: { name: '소원 종 울리기', ico: '🔔', each: 1, max: 3 },
+    present: { name: '숲 선물 열기', ico: '🎁', each: 1, max: 3 },
+    ground: { name: '지금 여기 그라운딩', ico: '🖐️', each: 1, max: 2 },
     tap: { name: '탑돌이 한 바퀴', ico: '🗼', each: 1, max: 3 },
     gong: { name: '범종 소리 끝까지 듣기', ico: '🔔', each: 1, max: 3 },
     thanks: { name: '좋은 일 씨앗 심기', ico: '🌰', each: 2, max: 6 },
@@ -199,6 +201,8 @@
   const worldEl = $('world'), peopleEl = $('people'), lmLayer = $('landmarks'), decorEl = $('decor'), starfieldEl = $('starfield');
   const lmEls = {};
   const decor = [];
+  const gifts = [];
+  const GIFT_SPOTS = [570, 1530, 2510, 3470, 4440, 5390, 5880];
   function startShooting() {
     const host = $('shooting');
     const fire = () => {
@@ -297,6 +301,15 @@
       const e = el('div', 'xsnow', A.SNOWMAN);
       decorEl.appendChild(e); decor.push({ el: e, x: rand(100, W - 100), d: rand(0.1, 0.8) });
     }
+    // 숲 선물 상자 — 주우면 좋은 말이 나와요 (날마다 새로 놓여요)
+    const gd0 = giftDay();
+    GIFT_SPOTS.forEach((gx, i) => {
+      const e = el('div', 'giftbox', A.GIFT + '<span class="gb-spark">✨</span>');
+      e.style.setProperty('--box', '#f2a9c0'); e.style.setProperty('--rib', '#ffd94e');
+      decorEl.appendChild(e);
+      const item = { el: e, x: gx, d: 0.22 + (i % 3) * 0.13, kind: 'gift', id: i, got: gd0.got.indexOf(i) >= 0 };
+      decor.push(item); gifts.push(item);
+    });
     ZONES.forEach((z) => {
       const art = A.LM[z.id];
       const e = el('div', 'landmark' + (z.big ? ' big' : ''));
@@ -349,6 +362,7 @@
     });
     decor.forEach((it) => {
       if (it.kind === 'path') { it.el.style.top = (bandTop + bandH * 0.42 - 14) + 'px'; it.el.style.zIndex = '1'; return; }
+      if (it.kind === 'gift') { it.el.style.display = it.got ? 'none' : ''; if (it.got) return; }
       it.el.style.left = it.x.toFixed(0) + 'px';
       it.el.style.top = yOf(it.d).toFixed(0) + 'px';
       it.el.style.zIndex = String(2 + Math.round(it.d * 9));
@@ -1031,7 +1045,7 @@
     me.zone = id; setZoneIcon(me.el, id);
     if (Math.abs(z.x - me.x) > 4) me.facing = z.x > me.x ? 1 : -1;
     if (id === 'plaza') openModal('guideModal');
-    else if (id === 'tree') { updateBreathUI(); openModal('breathModal'); startBreath(); }
+    else if (id === 'tree') { updateBreathUI(); openModal('breathModal'); setBreathMode('breath'); }
     else if (id === 'spring') openModal('beadsModal');
     else if (id === 'lantern') { renderBoard(); openModal('boardModal'); refreshState(false); }
     else if (id === 'hill') { renderStars(); openModal('starsModal'); }
@@ -1128,7 +1142,7 @@
   }
 
   /* ===================== 매 프레임 ===================== */
-  let nearZone = null, nearPerson = null, lastT = performance.now();
+  let nearZone = null, nearPerson = null, nearGift = null, lastT = performance.now();
   function frame(now) {
     const dt = Math.min(0.08, (now - lastT) / 1000); lastT = now;
     updateMe(dt, now);
@@ -1182,6 +1196,10 @@
       const eb = $('enterBtn');
       if (nz) { eb.innerHTML = `<span class="eb-ico">${nz.icon}</span>${nz.name} <b>들어가기</b>`; eb.dataset.zone = nz.id; }
     }
+    // 가까운 선물 상자
+    let ng = null;
+    if (!open && !nz) { let gb = 1e9; gifts.forEach((g) => { if (g.got) return; const dx = Math.abs(g.x - me.x); if (dx < NEAR * 0.75 && dx < gb) { gb = dx; ng = g; } }); }
+    nearGift = ng;
     // 가까운 사람(또는 숲지기)
     let best = null, bd = 1e9;
     if (!open) {
@@ -1202,6 +1220,7 @@
     }
     // 들어가기 버튼: 쉼터 근처 + 모달 없음 + 인사 바가 안 떠 있을 때만 (버튼 겹침 방지)
     $('enterBtn').hidden = !(nearZone && !open && $('interact').hidden);
+    $('giftBtn').hidden = !(nearGift && !nearZone && !open && $('interact').hidden);
   }
 
   /* ===================== 인사 · 하이파이브 ===================== */
@@ -1414,6 +1433,68 @@
     const a = $('breathAnswer'); a.textContent = BREATH_REPLY[Number(b.dataset.f)]; a.hidden = false;
   }));
   $('breathAgain').addEventListener('click', startBreath);
+
+  /* ----- 지금 여기: 5·4·3·2·1 감각 그라운딩 ----- */
+  // 감각에 하나씩 주의를 옮기면 불안·긴장이 가라앉아요(그라운딩).
+  const GROUND = [
+    { ico: '👀', n: 5, p: '지금 <b>보이는 것 5가지</b>를 천천히 둘러보며 찾아봐요.' },
+    { ico: '✋', n: 4, p: '몸에 <b>닿는 느낌 4가지</b>를 느껴봐요. (의자, 바닥, 옷, 바람…)' },
+    { ico: '👂', n: 3, p: '들리는 <b>소리 3가지</b>에 가만히 귀 기울여요.' },
+    { ico: '👃', n: 2, p: '맡을 수 있는 <b>냄새 2가지</b>를 떠올려 봐요.' },
+    { ico: '👅', n: 1, p: '입안의 맛, 또는 좋아하는 <b>맛 1가지</b>를 떠올려요.' },
+  ];
+  let grStep = 0, grLeft = 0;
+  function renderGroundSteps() {
+    const box = $('grSteps'); box.textContent = '';
+    GROUND.forEach((g, i) => {
+      const d = el('span', 'gr-step' + (i < grStep ? ' done' : i === grStep ? ' now' : ''), g.ico);
+      box.appendChild(d);
+    });
+  }
+  function showGroundStep() {
+    const g = GROUND[grStep]; grLeft = g.n;
+    $('grIco').textContent = g.ico;
+    $('grPrompt').innerHTML = g.p;
+    $('grDone').hidden = true; $('grFound').hidden = false; $('grPrompt').hidden = false; $('grIco').hidden = false; $('grDots').hidden = false;
+    renderGroundDots(); renderGroundSteps();
+    $('grFound').textContent = '하나 찾았어요  (남은 ' + grLeft + '개)';
+  }
+  function renderGroundDots() {
+    const box = $('grDots'); box.textContent = '';
+    const g = GROUND[grStep];
+    for (let i = 0; i < g.n; i++) box.appendChild(el('span', 'gr-dot' + (i < g.n - grLeft ? ' on' : '')));
+  }
+  function startGround() { grStep = 0; showGroundStep(); }
+  $('grFound').addEventListener('click', () => {
+    if (grLeft > 0) grLeft--;
+    renderGroundDots();
+    Sound.tok();
+    if (grLeft <= 0) {
+      $('grFound').textContent = '좋아요 🌿';
+      setTimeout(() => {
+        grStep++;
+        if (grStep >= GROUND.length) finishGround();
+        else showGroundStep();
+      }, 650);
+    } else {
+      $('grFound').textContent = '하나 찾았어요  (남은 ' + grLeft + '개)';
+    }
+  });
+  function finishGround() {
+    $('grIco').hidden = true; $('grPrompt').hidden = true; $('grDots').hidden = true; $('grFound').hidden = true;
+    renderGroundSteps();
+    $('grDone').hidden = false;
+    Sound.bell(); earn('ground');
+  }
+  $('grAgain').addEventListener('click', startGround);
+  function setBreathMode(m) {
+    document.querySelectorAll('#breathMode button').forEach((b) => b.classList.toggle('on', b.dataset.m === m));
+    $('breathMain').hidden = m !== 'breath';
+    $('groundMain').hidden = m !== 'ground';
+    if (m === 'breath') startBreath(); else { stopBreath(); startGround(); }
+  }
+  document.querySelectorAll('#breathMode button').forEach((b) => b.addEventListener('click', () => setBreathMode(b.dataset.m)));
+
 
   /* ===================== 마음 구슬 ===================== */
   let beadTotal = Number(store.get('ms_beads', 0)) || 0;
@@ -2236,6 +2317,47 @@
     setGardenTab(tab || gardenTab || 'mine');
     if (opts && opts.plant) openForm(opts.kind);
   }
+
+  /* ===================== 숲 선물 (좋은 말) ===================== */
+  function giftDay() {
+    const g = store.get('ms_gifts', null);
+    if (g && g.day === today() && Array.isArray(g.got)) return g;
+    const n = { day: today(), got: [] }; store.set('ms_gifts', n); return n;
+  }
+  let giftQueue = [], giftPick = 0;
+  function nextGood() {
+    const words = (window.CALM && CALM.GOODWORDS) || [['오늘도 참 잘했어요.', '']];
+    if (!giftQueue.length) {
+      giftQueue = words.map((_, i) => i);
+      for (let i = giftQueue.length - 1; i > 0; i--) { const j = randInt(i + 1); const t = giftQueue[i]; giftQueue[i] = giftQueue[j]; giftQueue[j] = t; }
+    }
+    return giftQueue.pop();
+  }
+  function openGift(g) {
+    if (!g || g.got) return;
+    const words = (window.CALM && CALM.GOODWORDS) || [['오늘도 참 잘했어요.', '']];
+    giftPick = nextGood();
+    const w = words[giftPick] || words[0];
+    $('giftWord').innerHTML = '“' + esc(w[0]) + '”' + (w[1] ? '<cite>— ' + esc(w[1]) + '</cite>' : '');
+    const add = earn('present');
+    $('giftReward').textContent = add ? '🪙 마음 동전 +' + add : '';
+    $('giftSave').textContent = '🔖 마음 글밭에 담기'; $('giftSave').disabled = false;
+    const op = $('giftOpen'); op.classList.remove('pop'); void op.offsetWidth; op.classList.add('pop');
+    openModal('giftModal'); Sound.chime(true);
+    // 선물 수거 (오늘은 이 자리 선물 끝, 내일 또 놓여요)
+    g.got = true; g.el.style.display = 'none';
+    const gd = giftDay(); if (gd.got.indexOf(g.id) < 0) { gd.got.push(g.id); store.set('ms_gifts', gd); }
+    nearGift = null; $('giftBtn').hidden = true;
+  }
+  $('giftBtn').addEventListener('click', () => openGift(nearGift));
+  $('giftSave').addEventListener('click', () => {
+    let favs = store.get('ms_readfav', []) || []; const key = 'good:' + giftPick;
+    if (favs.indexOf(key) < 0) favs.push(key);
+    store.set('ms_readfav', favs.slice(-60));
+    $('giftSave').textContent = '✓ 담았어요'; $('giftSave').disabled = true;
+    toast('마음 글밭 ‘담은 글’에 담았어요 🔖');
+  });
+  $('giftClose').addEventListener('click', () => closeModal('giftModal'));
 
   /* ===================== 배경음악 고르기 ===================== */
   function openMusic() {
@@ -3268,7 +3390,7 @@
     setInterval(() => { if (!document.hidden) refreshState(false); }, 20000);
 
     // 시험용 창(개발자가 확인할 때만 사용)
-    window.__ms = { me, others, state, wallet, critters, sg, goTo, warpTo, enterZone, openReading, openTemple, openGarden, mg, waterGarden, renderAll, temple: () => tp, startBreath, pickMood, pickFeel, moodLog: () => moodLog(), tapToday, keys, earn, climb, sendEmote, applyTime, applySeason, openLinks, openMusic, openSeason, chooseMusic, flySanta, submitLink, linkForm, refreshState, renderBoard, get season() { return season; }, get musicChoice() { return musicChoice; }, get cam() { return cam; }, get myKey() { return myKey; }, get nearPerson() { return nearPerson; } };
+    window.__ms = { me, others, state, wallet, critters, sg, goTo, warpTo, enterZone, openReading, openTemple, openGarden, mg, waterGarden, renderAll, openGift, gifts: () => gifts, nearGift: () => nearGift, setBreathMode, temple: () => tp, startBreath, pickMood, pickFeel, moodLog: () => moodLog(), tapToday, keys, earn, climb, sendEmote, applyTime, applySeason, openLinks, openMusic, openSeason, chooseMusic, flySanta, submitLink, linkForm, refreshState, renderBoard, get season() { return season; }, get musicChoice() { return musicChoice; }, get cam() { return cam; }, get myKey() { return myKey; }, get nearPerson() { return nearPerson; } };
   }
   start();
 })();

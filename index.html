@@ -6,10 +6,12 @@
   <meta name="description" content="잠시 들어와 쉬어가는 숲속 마음쉼터" />
   <meta name="theme-color" content="#cfe6c4" />
   <title>온라인 마음쉼터</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=1" />
+  <link rel="apple-touch-icon" href="favicon.svg?v=1" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" />
-  <link rel="stylesheet" href="css/style.css?v=16" />
+  <link rel="stylesheet" href="css/style.css?v=17" />
   <style>[hidden]{display:none !important;}</style>
 </head>
 <body class="t-day">
@@ -68,6 +70,7 @@
 
   <!-- ===== 쉼터 들어가기 버튼 ===== -->
   <button class="enter-btn" id="enterBtn" type="button" hidden></button>
+  <button class="gift-btn" id="giftBtn" type="button" hidden><span class="eb-ico">🎁</span>선물 <b>열어보기</b></button>
 
   <!-- ===== 가까이 있는 친구와 인사 ===== -->
   <div class="interact" id="interact" hidden>
@@ -86,6 +89,21 @@
   </nav>
 
   <div class="toast" id="toast" hidden></div>
+
+  <!-- ===== 숲 선물 (좋은 말) ===== -->
+  <div class="modal-backdrop" id="giftModal" hidden>
+    <div class="modal modal-center modal-gift" data-theme="rose">
+      <button class="m-x corner" data-close aria-label="닫기">✕</button>
+      <div class="gift-open" id="giftOpen">🎁</div>
+      <p class="gift-cap">숲이 건넨 작은 선물이에요</p>
+      <blockquote class="gift-word" id="giftWord"></blockquote>
+      <p class="gift-reward" id="giftReward"></p>
+      <div class="gift-acts">
+        <button class="chip-btn" id="giftSave" type="button">🔖 마음 글밭에 담기</button>
+        <button class="btn-primary" id="giftClose" type="button">고마워요</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ===== 내 모습 ===== -->
   <div class="modal-backdrop" id="introModal" hidden>
@@ -126,6 +144,27 @@
   <div class="modal-backdrop" id="breathModal" hidden>
     <div class="modal modal-center" data-theme="leaf">
       <div class="m-head"><span class="m-ico">🌳</span><h2>숨 쉬는 나무</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
+      <div class="read-tabs" id="breathMode">
+        <button class="rtab on" data-m="breath" type="button">🍃 숨 고르기</button>
+        <button class="rtab" data-m="ground" type="button">🖐️ 지금 여기</button>
+      </div>
+
+      <section id="groundMain" hidden>
+        <p class="modal-desc">마음이 복잡하고 불안할 때, 지금 이 순간으로 돌아오는 연습이에요. 천천히 하나씩 찾아봐요.</p>
+        <div class="ground-stage">
+          <div class="gr-ico" id="grIco">👀</div>
+          <p class="gr-prompt" id="grPrompt"></p>
+          <div class="gr-dots" id="grDots"></div>
+          <button class="btn-primary wide" id="grFound" type="button">하나 찾았어요</button>
+        </div>
+        <div class="gr-steps" id="grSteps"></div>
+        <div class="gr-done" id="grDone" hidden>
+          <p class="gr-done-msg">🌿 지금 여기, 이 순간으로 잘 돌아왔어요. 조금 차분해졌나요?</p>
+          <button class="btn-ghost" id="grAgain" type="button">다시 해보기</button>
+        </div>
+      </section>
+
+      <section id="breathMain">
       <p class="modal-desc" id="breathDesc">원이 커질 때 들이쉬고, 작아질 때 천천히 내쉬어요.</p>
       <div class="seg seg-sm" id="breathPat">
         <button class="on" data-p="calm" type="button">🍃 편안한 숨</button>
@@ -149,6 +188,7 @@
         <button class="btn-ghost" id="breathAgain" type="button">한 번 더 하기</button>
       </div>
       <div class="seg seg-sm" id="breathLen"><button data-n="3" type="button" class="on">3번</button><button data-n="5" type="button">5번</button><button data-n="0" type="button">계속</button></div>
+      </section>
       <div class="modal-foot"><span class="counter" id="breathTotal">0번째 숨</span><span class="counter">세 번 쉴 때마다 🪙1</span></div>
     </div>
   </div>
@@ -583,11 +623,11 @@
     <p>마음을 올리는 중…</p>
   </div>
 
-  <script src="js/config.js?v=16"></script>
-  <script src="js/badwords.js?v=16"></script>
-  <script src="js/art.js?v=16"></script>
-  <script src="js/quotes.js?v=16"></script>
-  <script src="js/calm.js?v=16"></script>
-  <script src="js/app.js?v=16"></script>
+  <script src="js/config.js?v=17"></script>
+  <script src="js/badwords.js?v=17"></script>
+  <script src="js/art.js?v=17"></script>
+  <script src="js/quotes.js?v=17"></script>
+  <script src="js/calm.js?v=17"></script>
+  <script src="js/app.js?v=17"></script>
 </body>
 </html>

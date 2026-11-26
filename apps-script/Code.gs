@@ -86,6 +86,105 @@ const HIDE_AT = 3;             // 신고 몇 번이면 저절로 숨기는지
 const SCAN_ROWS = 800;         // 최근 몇 행까지 읽는지
 const SHOW_LIMIT = 40;         // 화면에 보내는 염원 수
 const STAR_SHOW = 30;          // 화면에 보내는 별(해소된 염원) 수
+
+/* ---------- 날마다 저절로 떠오르는 따뜻한 염원 ----------
+ * 보는 사람이 공감할 수 있도록 구체적이고 다정하게 썼어요. (c: 분류 0~7)
+ * 0 건강 · 1 가족 · 2 친구 · 3 공부 · 4 꿈 · 5 감사 · 6 마음 · 7 그 밖에 */
+var SEED_WISHES = [
+  { t: '우리 할머니 무릎이 덜 아파서 올봄엔 같이 동네 벚꽃길을 천천히 걸을 수 있기를.', c: 1 },
+  { t: '내일 전학 가는 친구가 새 교실에서 점심 같이 먹자고 말 걸어 주는 짝을 금방 만나기를.', c: 2 },
+  { t: '시험을 못 봐도 나를 너무 미워하지 않고 "다음에 또 하면 돼" 하고 토닥일 수 있기를.', c: 6 },
+  { t: '야근하고 늦게 오는 엄마가 오늘은 따뜻한 밥 한 끼 편히 드시고 푹 주무시기를.', c: 1 },
+  { t: '발표할 때 목소리가 떨려도 끝까지 다 말할 수 있는 용기가 내 안에 있기를.', c: 3 },
+  { t: '요즘 혼자 밥 먹는 친구가 있다면, 내가 먼저 옆자리에 앉을 용기를 내기를.', c: 2 },
+  { t: '아픈 동생이 빨리 나아서 다시 시끄럽게 장난치며 같이 웃을 수 있기를.', c: 0 },
+  { t: '엄마 아빠가 돈 걱정으로 밤에 한숨 쉬지 않는, 마음 편한 하루를 보내기를.', c: 1 },
+  { t: '줄넘기 이단뛰기가 자꾸 걸려도 포기하지 않고 딱 한 개만 더 넘어 보기를.', c: 7 },
+  { t: '싸운 친구에게 "미안해" 먼저 말하고 다시 예전처럼 웃으며 놀 수 있기를.', c: 2 },
+  { t: '밤에 무서운 생각이 들 때, 괜찮다고 등을 쓸어 줄 사람이 곁에 있기를.', c: 6 },
+  { t: '우리 반 모두가 오늘 하루 아무도 울지 않고 집에 돌아가기를.', c: 2 },
+  { t: '할아버지가 병원 검사 결과를 걱정 없이 웃으며 들고 나오시기를.', c: 0 },
+  { t: '나를 키우느라 애쓰는 부모님께 오늘은 "사랑해요" 한마디 꼭 전하기를.', c: 5 },
+  { t: '받아쓰기 100점이 아니어도, 어제보다 한 글자 더 맞은 나를 칭찬하기를.', c: 3 },
+  { t: '이사 가서 멀어진 친구와 다시 만나는 날, 어제 본 것처럼 반갑게 웃기를.', c: 2 },
+  { t: '매일 아침 일찍 일 나가시는 아빠의 어깨가 오늘은 덜 무겁기를.', c: 1 },
+  { t: '처음 키우는 강아지가 아프지 않고 건강하게 내 곁에서 오래 함께하기를.', c: 0 },
+  { t: '화가 날 때 소리치지 않고, 숨 한 번 고르고 말할 수 있는 내가 되기를.', c: 6 },
+  { t: '급식에 안 먹어 본 반찬도 한 입 용기 내서 먹어 보는 하루가 되기를.', c: 7 },
+  { t: '수술받으시는 외할머니가 아프지 않게, 수술이 잘 끝나 환하게 웃으시기를.', c: 0 },
+  { t: '혼자 공부하느라 힘든 형이 원하는 학교에 꼭 붙어서 활짝 웃기를.', c: 3 },
+  { t: '오늘 처음 피아노 발표회, 틀려도 끝까지 치고 내려와 스스로 안아 주기를.', c: 4 },
+  { t: '멀리 일하러 가신 아빠가 보고 싶을 때, 영상통화로라도 얼굴 보며 웃기를.', c: 1 },
+  { t: '나를 놀리던 아이와도 언젠가 웃으며 인사할 수 있는 날이 오기를.', c: 2 },
+  { t: '엄마가 편찮으신 날엔 내가 설거지랑 방 정리를 말없이 도와드릴 수 있기를.', c: 1 },
+  { t: '커서 수의사가 되어, 아프고 버려진 동물들을 따뜻하게 돌봐 주기를.', c: 4 },
+  { t: '달리기가 꼴찌여도 끝까지 웃으며 들어오는 내가 멋지다고 느끼기를.', c: 7 },
+  { t: '오래 다투던 엄마 아빠가 오늘 저녁엔 같이 웃으며 밥을 드시기를.', c: 1 },
+  { t: '전학 와서 아직 친구가 없는 아이에게 "같이 놀래?" 하고 손 내밀기를.', c: 2 },
+  { t: '감기로 며칠 못 나온 짝꿍이 얼른 나아서 내일은 옆자리에 앉아 있기를.', c: 0 },
+  { t: '어려운 수학 문제를 풀다 울고 싶어도, 한 번만 더 들여다볼 끈기를 갖기를.', c: 3 },
+  { t: '늘 반찬 챙겨 주시는 할머니가 오래오래 건강하게 내 곁에 계시기를.', c: 1 },
+  { t: '꿈이 자꾸 바뀌어도 괜찮아, 좋아하는 걸 찾아가는 나를 믿어 주기를.', c: 4 },
+  { t: '오늘 받은 작은 친절 하나를, 나도 다른 누군가에게 그대로 전하기를.', c: 5 },
+  { t: '무대 위에서 긴장돼도 연습한 만큼은 꼭 보여 주고 내려오기를.', c: 7 },
+  { t: '바쁜 부모님 대신 동생을 챙기는 언니·형의 마음도 가끔은 쉬어 가기를.', c: 6 },
+  { t: '내 비밀을 지켜 주고 편들어 주는 그 친구가, 오래오래 내 곁에 있기를.', c: 2 },
+  { t: '아픈 곳 많으신 할아버지가 오늘 하루만큼은 통증 없이 편히 쉬시기를.', c: 0 },
+  { t: '실수해도 "괜찮아, 누구나 그래" 하고 스스로에게 다정히 말해 주기를.', c: 6 },
+  { t: '멀리 이사 간 단짝에게 오늘 용기 내어 먼저 안부 문자를 보내기를.', c: 2 },
+  { t: '처음 도전하는 태권도 승급 심사, 떨려도 배운 대로 힘차게 해내기를.', c: 7 },
+  { t: '일하느라 지친 엄마가 주말엔 늦잠도 자고 좋아하는 드라마도 보기를.', c: 1 },
+  { t: '받아 본 적 없는 칭찬을 오늘은 누군가에게 먼저 건네는 하루가 되기를.', c: 5 },
+  { t: '커서 선생님이 되어, 외로운 아이 옆에 먼저 앉아 주는 어른이 되기를.', c: 4 },
+  { t: '글씨가 삐뚤어도 정성껏 쓴 내 편지가 할머니를 환하게 웃게 하기를.', c: 5 },
+  { t: '겁이 많은 나도 오늘은 손 들고 "저요!" 한 번 외쳐 보기를.', c: 3 },
+  { t: '싸우고 멀어진 형제가 다시 같은 이불 덮고 장난치며 잠들기를.', c: 1 },
+  { t: '몸이 불편한 친구와도 같이 할 수 있는 놀이를 내가 먼저 생각해 내기를.', c: 2 },
+  { t: '힘든 일이 있어도 "오늘도 잘 버텼다"고 나를 안아 주는 밤이 되기를.', c: 6 }
+];
+
+function hashDay_(str) { var h = 0; for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 100000; return h; }
+
+/** 하루에 1~2개, 따뜻한 염원을 저절로 띄워요. 이미 올린 날이면 아무 것도 하지 않아요(중복 방지). */
+function maybeSeed_(force) {
+  try {
+    var today = Utilities.formatDate(new Date(), TZ, 'yyyyMMdd');
+    var cache = CacheService.getScriptCache();
+    if (!force && cache.get('seed_' + today)) return;
+    var props = PropertiesService.getScriptProperties();
+    if (!force && props.getProperty('seedDay') === today) { cache.put('seed_' + today, '1', 21600); return; }
+    var lock = LockService.getScriptLock();
+    if (!lock.tryLock(1500)) return;               // 다른 요청이 처리 중이면 다음 기회에
+    try {
+      if (!force && props.getProperty('seedDay') === today) return;   // 락 안에서 한 번 더 확인
+      var n = 1 + (hashDay_(today) % 2);            // 날짜에 따라 1개 또는 2개
+      var idx = parseInt(props.getProperty('seedIdx') || '0', 10);
+      if (isNaN(idx) || idx < 0) idx = 0;
+      var sh = sheet_(WISH_SHEET, WISH_HEADERS);
+      for (var i = 0; i < n; i++) {
+        var w = SEED_WISHES[idx % SEED_WISHES.length];
+        idx++;
+        append_(sh, [nowStr_(), w.t, STATUS.PUBLIC, 'SEED', '자동 염원', newId_(), KIND.HOPE, '0', '', '0', '', String(w.c)]);
+      }
+      props.setProperty('seedIdx', String(idx));
+      props.setProperty('seedDay', today);
+      cache.put('seed_' + today, '1', 21600);
+      cache.remove('pub');
+    } finally {
+      lock.releaseLock();
+    }
+  } catch (err) {
+    // 자동 염원이 실패해도 다른 기능엔 영향을 주지 않아요.
+    try { console.error(err); } catch (e) {}
+  }
+}
+
+/** 날마다 자동으로 실행되는 트리거의 진입점 */
+function dailySeed() { maybeSeed_(false); }
+
+/** 선생님이 수동으로 한 번 더 띄우고 싶을 때 실행 */
+function seedNow() { maybeSeed_(true); return '염원을 띄웠어요.'; }
+
 const FLOWER_SHOW = 160;       // 화면에 보내는 꽃 수
 const FLOWER_PER_DAY = 30;     // 한 사람이 하루에 심을 수 있는 꽃
 const PRESENCE_TTL_MS = 25000; // 이 시간 동안 소식이 없으면 접속 종료로 봄
@@ -109,6 +208,19 @@ const LINK_RE = /(https?:\/\/|www\.|\.com\b|\.co\.kr|\.kr\/|\.net\b|\.io\b)/i;
 const MAIL_RE = /[a-z0-9._-]+@[a-z0-9.-]+/i;
 
 /* ---------- 최초 1회 실행 (업데이트할 때도 한 번 더) ---------- */
+function installDailyTrigger_() {
+  try {
+    var triggers = ScriptApp.getProjectTriggers();
+    for (var i = 0; i < triggers.length; i++) {
+      if (triggers[i].getHandlerFunction() === 'dailySeed') ScriptApp.deleteTrigger(triggers[i]);
+    }
+    ScriptApp.newTrigger('dailySeed').timeBased().atHour(7).everyDays(1).inTimezone(TZ).create();
+  } catch (err) {
+    // 트리거 설치에 실패해도, 하루 첫 접속 때 자동으로 염원이 올라가니 괜찮아요.
+    try { console.error(err); } catch (e) {}
+  }
+}
+
 function setup() {
   const sh = sheet_(WISH_SHEET, WISH_HEADERS);
   sh.getRange(1, 1, 1, WISH_HEADERS.length).setValues([WISH_HEADERS]).setFontWeight('bold');
@@ -122,6 +234,7 @@ function setup() {
   sheet_(VISIT_SHEET, VISIT_HEADERS);
   sheet_(FLOWER_SHEET, FLOWER_HEADERS);
   sheet_(MOOD_SHEET, MOOD_HEADERS);
+  installDailyTrigger_();
   const lsh = sheet_(LINK_SHEET, LINK_HEADERS);
   lsh.getRange(1, 1, 1, LINK_HEADERS.length).setValues([LINK_HEADERS]).setFontWeight('bold');
   lsh.setFrozenRows(1);
@@ -160,6 +273,7 @@ function setup() {
 
 /* ---------- 화면이 불러가는 데이터 (GET) ---------- */
 function doGet() {
+  maybeSeed_(false);                 // 하루 첫 접속 때 따뜻한 염원 1~2개 자동 등록
   const cache = CacheService.getScriptCache();
   let body = cache.get('pub');
   if (!body) {
