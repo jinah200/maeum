@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" />
-  <link rel="stylesheet" href="css/style.css?v=17" />
+  <link rel="stylesheet" href="css/style.css?v=19" />
   <style>[hidden]{display:none !important;}</style>
 </head>
 <body class="t-day">
@@ -50,7 +50,7 @@
 
   <!-- ===== 상단 바 ===== -->
   <header class="topbar">
-    <button class="me-chip" id="profileBtn" title="내 모습 바꾸기" aria-label="내 모습 바꾸기">
+    <button class="me-chip" id="profileBtn" title="내 이름·모습 바꾸기" aria-label="내 이름·모습 바꾸기">
       <span class="me-face" id="meFace"></span><span class="me-name" id="meName">나</span>
     </button>
     <div class="visitor-badge" id="visitorBadge">숲을 여는 중…</div>
@@ -71,6 +71,7 @@
   <!-- ===== 쉼터 들어가기 버튼 ===== -->
   <button class="enter-btn" id="enterBtn" type="button" hidden></button>
   <button class="gift-btn" id="giftBtn" type="button" hidden><span class="eb-ico">🎁</span>선물 <b>열어보기</b></button>
+  <button class="talk-btn" id="talkBtn" type="button" hidden><span class="eb-ico">💬</span><b id="talkBtnName">이야기 나누기</b></button>
 
   <!-- ===== 가까이 있는 친구와 인사 ===== -->
   <div class="interact" id="interact" hidden>
@@ -89,6 +90,15 @@
   </nav>
 
   <div class="toast" id="toast" hidden></div>
+
+  <!-- ===== 마을 친구 상담 ===== -->
+  <div class="modal-backdrop" id="talkModal" hidden>
+    <div class="modal modal-talk" data-theme="sand">
+      <div class="m-head"><span class="m-ico" id="csIco">🦉</span><h2 id="csName">마을 친구</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
+      <p class="cs-sub" id="csSub"></p>
+      <div class="cs-body" id="csBody"></div>
+    </div>
+  </div>
 
   <!-- ===== 숲 선물 (좋은 말) ===== -->
   <div class="modal-backdrop" id="giftModal" hidden>
@@ -110,9 +120,10 @@
     <div class="modal modal-intro" data-theme="leaf">
       <div class="m-head"><span class="m-ico">🌿</span><h2>숲에서 쓸 내 모습</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
       <p class="intro-slogan">🌿 마음쉼터 — 당신의 마음이 편안해지는 곳</p>
-      <p class="modal-desc">이름 대신 별명과 모습을 골라요. 다른 사람에게는 별명만 보여요.</p>
+      <p class="modal-desc">별명과 모습을 정해요. 들어온 뒤에도 왼쪽 위 내 모습을 눌러 언제든 바꿀 수 있어요.</p>
       <div class="intro-stage"><div class="intro-preview" id="introPreview"></div></div>
-      <div class="nick-row"><span class="nick" id="introNick">느린 걸음</span><button class="chip-btn" id="nickReroll">🔄 다른 별명</button></div>
+      <div class="nick-row"><input class="nick-input" id="introNickInput" maxlength="12" placeholder="별명 짓기" autocomplete="off" spellcheck="false" /><button class="chip-btn" id="nickReroll" type="button">🎲 랜덤</button></div>
+      <p class="nick-hint" id="nickHint">원하는 별명을 직접 지어도 돼요. 비우면 숲 별명이 붙어요 · 최대 12자</p>
       <div class="look-tabs" id="lookTabs">
         <button class="lt on" data-k="s">피부</button><button class="lt" data-k="hs">머리 모양</button><button class="lt" data-k="h">머리 색</button><button class="lt" data-k="ot">옷 모양</button><button class="lt" data-k="o">옷 색</button>
       </div>
@@ -135,8 +146,10 @@
         <li><b>친구와 인사</b> 다른 사람 가까이 가면 하이파이브와 인사 버튼이 나와요.</li>
         <li><b>마음 동전</b> 염원·공감·숨 고르기·계단 오르기로 모아서 가게와 꽃밭에서 써요.</li>
         <li><b>별이 되는 길</b> 공감 5개, '가벼워졌어요', 또는 7일이 지나면 염원은 별이 돼요.</li>
+        <li><b>마을 친구들</b> 광장과 쉼터 곳곳에 사는 친구들에게 다가가면 마음을 이야기하고 상담할 수 있어요.</li>
         <li><b>함께 지키기</b> 마음이 불편한 글은 🚩를 눌러 주세요. 세 명이 누르면 잠시 숨겨져요.</li>
       </ul>
+      <p class="made-by">🌿 Made by. 똑지나쌤</p>
     </div>
   </div>
 
@@ -452,12 +465,12 @@
   <div class="modal-backdrop" id="rainModal" hidden>
     <div class="modal modal-center modal-rain" data-theme="rain">
       <div class="m-head"><span class="m-ico">☔</span><h2>빗소리 정자</h2><button class="m-x" data-close aria-label="닫기">✕</button></div>
-      <p class="modal-desc">소리를 고르고 가만히 들어요. 눈을 감아도 좋아요.</p>
-      <div class="rain-window" id="rainWindow"><div class="rain-lines"></div><div class="rain-time" id="rainTime">1:00</div></div>
+      <p class="modal-desc">소리를 고르고 가만히 들어요. 창을 톡톡 두드려도 좋아요.</p>
+      <div class="rain-window" id="rainWindow"><div class="rain-lines"></div><div class="rain-ripples" id="rainRipples"></div><div class="rain-anchor" id="rainAnchor"><span></span></div><div class="rain-prompt" id="rainPrompt"></div><div class="rain-time" id="rainTime">1:00</div></div>
       <div class="seg" id="rainSound"><button class="on" data-s="rain">🌧️ 빗소리</button><button data-s="stream">🏞️ 시냇물</button><button data-s="fire">🔥 모닥불</button></div>
-      <div class="seg" id="rainLen"><button class="on" data-m="1">1분</button><button data-m="3">3분</button><button data-m="5">5분</button></div>
+      <div class="seg seg-sm" id="rainLen"><button class="on" data-m="1">1분</button><button data-m="3">3분</button><button data-m="5">5분</button><button data-m="10">🎯 10분</button></div>
       <button class="btn-primary wide" id="rainStart">쉬기 시작</button>
-      <p class="counter center">끝까지 쉬면 🪙2</p>
+      <p class="counter center" id="rainRest">끝까지 쉬면 🪙2</p>
     </div>
   </div>
 
@@ -582,7 +595,7 @@
     <div class="sg-world" id="sgWorld"><div class="sg-steps" id="sgSteps"></div><div class="sg-me" id="sgMe"></div></div>
     <div class="sg-hud">
       <button class="sg-btn" id="sgExit">↩ 내려가기</button>
-      <div class="sg-count"><b id="sgStep">0</b><small>/ 108 계단</small></div>
+      <div class="sg-count"><b id="sgStep">0</b><small>/ 108</small><em id="sgFloor">새벽에서 아침</em></div>
       <button class="sg-btn" id="sgBook">📜 <span id="sgBookN">0</span></button>
     </div>
     <div class="sg-progress"><i id="sgBar"></i></div>
@@ -606,7 +619,8 @@
         <p class="sgq-text">끝까지 올랐어요!</p>
         <p class="sgq-by">한 걸음씩 모여서 여기까지 왔어요. 오늘 만난 말 가운데 하나를 마음에 담아 가요.</p>
         <p class="sgq-coin" id="sgDoneCoin"></p>
-        <div class="modal-actions center"><button class="btn-ghost" id="sgAgain">다시 오르기</button><button class="btn-primary" id="sgHome">숲으로</button></div>
+        <button class="btn-primary wide" id="sgNext">⬆ 다음 108계단</button>
+        <div class="modal-actions center"><button class="btn-ghost" id="sgAgain">처음부터</button><button class="btn-ghost" id="sgHome">숲으로</button></div>
       </div>
     </div>
   </div>
@@ -623,11 +637,11 @@
     <p>마음을 올리는 중…</p>
   </div>
 
-  <script src="js/config.js?v=17"></script>
-  <script src="js/badwords.js?v=17"></script>
-  <script src="js/art.js?v=17"></script>
-  <script src="js/quotes.js?v=17"></script>
-  <script src="js/calm.js?v=17"></script>
-  <script src="js/app.js?v=17"></script>
+  <script src="js/config.js?v=19"></script>
+  <script src="js/badwords.js?v=19"></script>
+  <script src="js/art.js?v=19"></script>
+  <script src="js/quotes.js?v=19"></script>
+  <script src="js/calm.js?v=19"></script>
+  <script src="js/app.js?v=19"></script>
 </body>
 </html>

@@ -65,7 +65,7 @@
   }
   const LOOK_N = { a: ADJ.length, b: NOUN.length, s: A.SKIN.length, h: A.HAIR.length, hs: A.STYLE_NAMES.length, o: A.OUTFIT.length, ot: A.TYPE_NAMES.length };
   const randomProfile = () => ({ a: randInt(ADJ.length), b: randInt(NOUN.length), s: randInt(3), h: randInt(A.HAIR.length), hs: randInt(6), o: randInt(A.OUTFIT.length), ot: randInt(4) });
-  const nameOf = (p) => ADJ[p.a] + ' ' + NOUN[p.b];
+  const nameOf = (p) => (p && typeof p.nm === 'string' && p.nm.trim()) ? p.nm.trim() : (ADJ[p.a] + ' ' + NOUN[p.b]);
   function validProfile(p) {
     if (!p || typeof p !== 'object') return null;
     const out = {};
@@ -74,6 +74,7 @@
       if (!Number.isInteger(v) || v < 0 || v >= LOOK_N[k]) return null;
       out[k] = v;
     }
+    if (typeof p.nm === 'string' && p.nm.trim()) out.nm = p.nm.trim().slice(0, 12);
     return out;
   }
   let profile = validProfile(store.get('ms_profile', null));
@@ -94,6 +95,7 @@
     pet: { name: '동물 쓰다듬기', ico: '🐑', each: 1, max: 5 },
     bell: { name: '소원 종 울리기', ico: '🔔', each: 1, max: 3 },
     present: { name: '숲 선물 열기', ico: '🎁', each: 1, max: 3 },
+    talk: { name: '마을 친구와 이야기', ico: '💬', each: 1, max: 2 },
     ground: { name: '지금 여기 그라운딩', ico: '🖐️', each: 1, max: 2 },
     tap: { name: '탑돌이 한 바퀴', ico: '🗼', each: 1, max: 3 },
     gong: { name: '범종 소리 끝까지 듣기', ico: '🔔', each: 1, max: 3 },
@@ -150,7 +152,7 @@
     wallet.coins -= n; saveWallet(); renderCoins(true);
     return true;
   }
-  const look = () => Object.assign({}, profile || { a: 0, b: 0, s: 0, h: 0, hs: 0, o: 0, ot: 0 }, { worn: wornArr(), p: wallet.p });
+  const look = () => Object.assign({}, profile || { a: 0, b: 0, s: 0, h: 0, hs: 0, o: 0, ot: 0 }, { worn: wornArr(), p: wallet.p, nm: (profile && profile.nm) || '' });
 
   /* ===================== 화면 크기 ===================== */
   let vw = 0, vh = 0, bandTop = 0, bandBot = 0, bandH = 1, lmScale = 1, cam = 0;
@@ -609,6 +611,7 @@
     return {
       toggle, clap, ambient, stopAmbient,
       tok() { tone([430], 0, 0.2, 0.18); },
+      drip() { tone([720, 1040], 0, 0.22, 0.12); },
       step(i) { tone([392 + (i % 8) * 33], 0, 0.12, 0.16, 'triangle'); },
       coin() { tone([988, 1318.5], 0.07, 0.08, 0.3, 'triangle'); },
       chime(soft, force) { tone(soft ? [523.25, 659.25] : [523.25, 659.25, 783.99, 1046.5], 0.12, soft ? 0.07 : 0.11, 1.2, 'sine', force); },
@@ -1005,7 +1008,7 @@
   }
 
   /* ===================== 모달 ===================== */
-  const MODALS = ['introModal', 'guideModal', 'breathModal', 'beadsModal', 'boardModal', 'wishModal', 'starsModal', 'shopModal', 'gardenModal', 'pondModal', 'rainModal', 'walletModal', 'bookModal', 'mapModal', 'linksModal', 'linkFormModal', 'musicModal', 'seasonModal', 'readingModal', 'templeModal'];
+  const MODALS = ['introModal', 'guideModal', 'breathModal', 'beadsModal', 'boardModal', 'wishModal', 'starsModal', 'shopModal', 'gardenModal', 'pondModal', 'rainModal', 'walletModal', 'bookModal', 'mapModal', 'linksModal', 'linkFormModal', 'musicModal', 'seasonModal', 'readingModal', 'templeModal', 'giftModal', 'talkModal'];
   const ZONE_OF_MODAL = { guideModal: 'plaza', breathModal: 'tree', beadsModal: 'spring', boardModal: 'lantern', starsModal: 'hill', shopModal: 'shop', gardenModal: 'garden', pondModal: 'pond', rainModal: 'rain', linksModal: 'links', readingModal: 'reading', templeModal: 'temple' };
   const modalOpen = () => MODALS.some((id) => !$(id).hidden) || !$('ritual').hidden || !$('loading').hidden || !$('stairGame').hidden;
   const isTyping = () => { const a = document.activeElement; return !!a && (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT'); };
@@ -1052,7 +1055,7 @@
     else if (id === 'shop') openShop();
     else if (id === 'garden') openGarden();
     else if (id === 'pond') openPond();
-    else if (id === 'rain') openModal('rainModal');
+    else if (id === 'rain') { showRainRest(); openModal('rainModal'); }
     else if (id === 'stair') openStair();
     else if (id === 'links') openLinks();
     else if (id === 'reading') openReading();
@@ -1106,6 +1109,8 @@
     if (modalOpen()) return;
     if (e.target.closest('.lm-prompt')) return;
     if (e.target.closest('.npc')) { npcTalk(); return; }
+    const resEl = e.target.closest('.resident');
+    if (resEl) { const r = RESIDENTS.find((x) => x.el === resEl); if (r) openCounsel(r); return; }
     const lm = e.target.closest('.landmark');
     if (lm) { goTo(lm.dataset.zone, true); return; }
     if (e.clientY < bandTop - 70) return;
@@ -1142,7 +1147,7 @@
   }
 
   /* ===================== 매 프레임 ===================== */
-  let nearZone = null, nearPerson = null, nearGift = null, lastT = performance.now();
+  let nearZone = null, nearPerson = null, nearGift = null, nearRes = null, lastT = performance.now();
   function frame(now) {
     const dt = Math.min(0.08, (now - lastT) / 1000); lastT = now;
     updateMe(dt, now);
@@ -1171,6 +1176,7 @@
     placeAt(me.el, me.x, me.d);
     updatePet(me, me.facing, dt, now);
     if (npc.el) placeAt(npc.el, npc.x, npc.d, 0.95);
+    RESIDENTS.forEach((r) => { if (r.el) placeAt(r.el, r.x, r.d, 0.98); });
     if (me.e && Date.now() > me.emoUntil) { me.e = 0; me.hf = ''; }
   }
   function updateCamera(dt) {
@@ -1200,6 +1206,10 @@
     let ng = null;
     if (!open && !nz) { let gb = 1e9; gifts.forEach((g) => { if (g.got) return; const dx = Math.abs(g.x - me.x); if (dx < NEAR * 0.75 && dx < gb) { gb = dx; ng = g; } }); }
     nearGift = ng;
+    // 가까운 마을 친구(상담)
+    let nr = null;
+    if (!open && !nz) { let rb = 1e9; RESIDENTS.forEach((r) => { const dx = Math.abs(r.x - me.x); if (dx < NEAR * 0.8 && dx < rb) { rb = dx; nr = r; } }); }
+    nearRes = nr;
     // 가까운 사람(또는 숲지기)
     let best = null, bd = 1e9;
     if (!open) {
@@ -1220,7 +1230,9 @@
     }
     // 들어가기 버튼: 쉼터 근처 + 모달 없음 + 인사 바가 안 떠 있을 때만 (버튼 겹침 방지)
     $('enterBtn').hidden = !(nearZone && !open && $('interact').hidden);
-    $('giftBtn').hidden = !(nearGift && !nearZone && !open && $('interact').hidden);
+    $('talkBtn').hidden = !(nearRes && !nearZone && !open && $('interact').hidden);
+    if (nearRes && !$('talkBtn').hidden) $('talkBtnName').textContent = nearRes.name + '와 이야기';
+    $('giftBtn').hidden = !(nearGift && !nearZone && !nearRes && !open && $('interact').hidden);
   }
 
   /* ===================== 인사 · 하이파이브 ===================== */
@@ -1253,6 +1265,101 @@
   }
   document.querySelectorAll('.ia-btn').forEach((b) => b.addEventListener('click', () => { b.blur(); sendEmote(Number(b.dataset.emo)); }));
 
+  /* ===================== 마을 친구들 (상담) ===================== */
+  // 마을에 원래 사는 친구들. 다가가면 마음을 이야기하고 위로받을 수 있어요.
+  const RESIDENTS = [
+    { id: 'owl', x: 980, d: 0.08, emoji: '🦉', name: '부엉이 다독', color: '#c7b089',
+      hi: '후—. 어서 와요. 여기 앉아 잠깐 쉬었다 가요. 지금 마음이 어떤가요?',
+      more: ['괜찮아요, 천천히 말해도 돼요. 내가 여기 있을게요.', '마음은 날씨 같아서, 흐린 날도 지나가요.', '오늘 하루, 애쓴 나를 먼저 칭찬해 줘요.'] },
+    { id: 'bear', x: 3900, d: 0.12, emoji: '🐻', name: '곰 포근', color: '#d6a877',
+      hi: '왔구나. 오늘 하루 어땠어요? 무슨 마음이든 포근하게 들어줄게요.',
+      more: ['그랬구나… 많이 애썼겠다.', '힘들 땐 기대도 돼요. 그러라고 내가 있는걸요.', '깊게 숨 한 번 쉬고, 우리 천천히 가요.'] },
+    { id: 'rabbit', x: 5020, d: 0.1, emoji: '🐰', name: '토끼 깡총', color: '#eac2d2',
+      hi: '안녕! 무슨 일이 있었어요? 내가 귀 쫑긋 세우고 들어줄게요!',
+      more: ['음— 그런 마음이 들 수 있어요. 당연해요.', '작은 한 걸음도 멋진 용기예요!', '우리 같이 하면 조금 덜 무섭지 않을까요?'] },
+  ];
+  const CS_FEELINGS = [
+    { k: 'worry', ico: '😟', label: '걱정돼요', v: '걱정이 마음을 꽉 채우고 있군요. 그럴 땐 누구나 숨이 답답해져요.',
+      tip: '걱정을 "지금 내가 할 수 있는 것"과 "그렇지 않은 것"으로 나눠 봐요. 지금 할 수 있는 작은 것 하나만 떠올려도 마음이 가벼워져요.', go: ['tree', '숨 고르기'], heavy: true },
+    { k: 'sad', ico: '😢', label: '속상해요', v: '속상한 일이 있었군요. 그 마음, 충분히 그럴 수 있어요.',
+      tip: '슬픔은 억지로 밀어내지 않아도 돼요. "많이 속상했구나" 하고 스스로를 토닥여 주는 것부터 시작해요.', go: ['garden', '마음 꽃밭 가기'], heavy: true },
+    { k: 'angry', ico: '😠', label: '화가 나요', v: '화가 많이 났군요. 화는 "내게 중요한 게 있다"는 신호이기도 해요.',
+      tip: '화가 솟을 땐 먼저 숨을 길게 내쉬어요. 그리고 "나는 ~해서 화가 났어"라고 마음속으로 이름을 붙이면 불길이 가라앉아요.', go: ['rain', '빗소리 듣기'], heavy: true },
+    { k: 'nervous', ico: '😣', label: '긴장돼요', v: '곧 중요한 일이 있나 봐요. 긴장되는 건 잘 해내고 싶은 마음이에요.',
+      tip: '발끝부터 어깨까지 힘을 꾹 줬다가 "후—" 풀어 봐요. 지금 여기 5가지를 둘러보면 마음이 현재로 돌아와요.', go: ['tree', '지금 여기 해보기'], heavy: true },
+    { k: 'lonely', ico: '🥺', label: '외로워요', v: '혼자인 것 같은 날이군요. 그 마음을 이야기해 줘서 고마워요.',
+      tip: '외로울 땐 작은 연결 하나가 큰 힘이 돼요. 오늘 "고마워" 한마디를 건넬 사람을 한 명 떠올려 봐요.', go: ['garden', '좋은 일 심기'], heavy: true },
+    { k: 'ok', ico: '🙂', label: '괜찮아요', v: '마음이 평온하군요. 그 좋은 기분을 오래 간직하면 좋겠어요.',
+      tip: '좋은 순간은 음미할수록 길어져요. 지금 기분 좋은 이유를 하나 떠올려 마음 꽃밭에 씨앗으로 심어 둘까요?', go: ['garden', '좋은 일 심기'], heavy: false },
+  ];
+  let curRes = null, csMoreI = 0, csGotCoin = false;
+  function spawnResidents() {
+    RESIDENTS.forEach((r) => {
+      const e = el('div', 'resident r-' + r.id);
+      e.style.setProperty('--rc', r.color);
+      e.innerHTML = '<div class="p-label">' + r.emoji + ' ' + r.name + '</div><div class="res-body"><span class="res-face">' + r.emoji + '</span></div>';
+      peopleEl.appendChild(e); r.el = e;
+    });
+  }
+  function csBubble(who, html) {
+    const b = el('div', 'cs-row ' + who);
+    if (who === 'npc') b.innerHTML = '<span class="cs-av">' + curRes.emoji + '</span><div class="cs-bubble">' + html + '</div>';
+    else b.innerHTML = '<div class="cs-bubble">' + html + '</div>';
+    $('csBody').appendChild(b);
+    $('csBody').scrollTop = $('csBody').scrollHeight;
+    return b;
+  }
+  function csOptions(opts) {
+    const box = el('div', 'cs-opts');
+    opts.forEach((o) => { const b = el('button', 'cs-opt', o.label); b.type = 'button'; b.addEventListener('click', () => { if (o.keep) {} else box.remove(); o.fn(); }); box.appendChild(b); });
+    $('csBody').appendChild(box);
+    $('csBody').scrollTop = $('csBody').scrollHeight;
+    return box;
+  }
+  function openCounsel(res) {
+    curRes = res; csMoreI = 0; csGotCoin = false;
+    $('csIco').textContent = res.emoji; $('csName').textContent = res.name;
+    $('csSub').textContent = '마을에 사는 친구예요. 마음을 편히 이야기해도 돼요.';
+    $('csBody').textContent = '';
+    openModal('talkModal');
+    csBubble('npc', res.hi);
+    csAskFeeling();
+  }
+  function csAskFeeling() {
+    csOptions(CS_FEELINGS.map((f) => ({ label: f.ico + ' ' + f.label, fn: () => csRespond(f) })));
+  }
+  function csRespond(f) {
+    csBubble('me', f.ico + ' ' + f.label);
+    setTimeout(() => {
+      csBubble('npc', f.v + '<br><br>💡 ' + f.tip);
+      const opts = [
+        { label: '같이 ' + f.go[1], fn: () => { closeModal('talkModal'); warpTo(f.go[0]); } },
+        { label: '조금 더 이야기할래요', fn: () => csMore(f) },
+        { label: '고마워요, 이제 괜찮아요', fn: () => csEnd(f) },
+      ];
+      csOptions(opts);
+    }, 420);
+  }
+  function csMore(f) {
+    const line = curRes.more[csMoreI % curRes.more.length]; csMoreI++;
+    csBubble('npc', line);
+    setTimeout(() => {
+      const opts = [
+        { label: '같이 ' + f.go[1], fn: () => { closeModal('talkModal'); warpTo(f.go[0]); } },
+        { label: '조금 더 이야기할래요', fn: () => csMore(f) },
+        { label: '고마워요, 이제 괜찮아요', fn: () => csEnd(f) },
+      ];
+      csOptions(opts);
+    }, 360);
+  }
+  function csEnd(f) {
+    let msg = '언제든 또 놀러 와요. 여기서 기다릴게요. 🌿';
+    if (f && f.heavy) msg = '이야기해 줘서 고마워요. 혹시 마음이 계속 많이 무겁다면, 믿을 수 있는 어른이나 선생님께 꼭 이야기해요. 나도 여기서 늘 응원할게요. 🌿';
+    csBubble('npc', msg);
+    if (!csGotCoin) { csGotCoin = true; const add = earn('talk'); if (add) csBubble('npc', '🪙 마음 동전 +' + add + ' — 마음을 나눠 줘서 고마워요.'); }
+    csOptions([{ label: '숲으로 돌아가기', fn: () => closeModal('talkModal') }]);
+  }
+
   /* ===================== 함께 접속한 사람 ===================== */
   const others = new Map();
   let myKey = '';
@@ -1273,7 +1380,7 @@
       }
       const lk = [p.a, p.b, p.s, p.h, p.hs, p.o, p.ot, p.worn.join('-')].join(',');
       if (o.look && o.look !== lk) setLook(o.el, p, false);
-      o.look = lk; o.name = nameOf(p);
+      o.look = lk; o.name = u.nm ? String(u.nm).slice(0, 12) : nameOf(p);
       setPet(o, pet);
       o.tx = clamp(+u.x || 0, 0, W); o.td = clamp(+u.y || 0, 0, 1); o.f = u.f < 0 ? -1 : 1;
       if (o.z !== u.z) { o.z = u.z; setZoneIcon(o.el, u.z); }
@@ -1318,7 +1425,7 @@
   function presencePayload() {
     const L = look();
     return { type: 'presence', sessionId: sid, x: Math.round(me.x), y: Math.round(me.d * 100) / 100, z: me.zone || '', f: me.facing,
-      a: L.a, b: L.b, s: L.s, h: L.h, hs: L.hs, o: L.o, ot: L.ot, w: L.worn || [], p: L.p, e: me.e, hf: me.hf, ev: me.ev };
+      a: L.a, b: L.b, s: L.s, h: L.h, hs: L.hs, o: L.o, ot: L.ot, w: L.worn || [], p: L.p, e: me.e, hf: me.hf, ev: me.ev, nm: (profile && profile.nm) ? profile.nm : '' };
   }
   let pushAgain = false;
   async function presenceOnce() {
@@ -1847,6 +1954,12 @@
       else { b.textContent = '🪙 ' + it.price; b.className = 'buy'; b.disabled = wallet.coins < it.price; }
       b.addEventListener('click', () => shopAction(it, has, wearing));
       card.appendChild(b);
+      if (has && it.id !== 0) {
+        const rf = el('button', 'refund', '↩ 구매 취소'); rf.type = 'button';
+        rf.title = '되돌리고 ' + it.price + '동전을 돌려받아요';
+        rf.addEventListener('click', (ev) => { ev.stopPropagation(); refundItem(it); });
+        card.appendChild(rf);
+      }
       card.addEventListener('pointerenter', () => { if (!isTouch) $('shopPreview').innerHTML = previewHTML(shopTab === 'acc' ? previewWith(it.id) : Object.assign(look(), { p: it.id })); });
       card.addEventListener('pointerleave', () => { if (!isTouch) renderShopPreview(); });
       grid.appendChild(card);
@@ -1874,6 +1987,19 @@
     applyMyLook();
     renderShop();
     pushPresence();
+  }
+  function refundItem(it) {
+    const list = wallet.owned[shopTab];
+    const idx = list.indexOf(it.id);
+    if (idx < 0 || it.id === 0) return;
+    // 착용 중이면 먼저 벗어요
+    if (shopTab === 'pet') { if (wallet.p === it.id) wallet.p = 0; }
+    else { const slot = A.ACC_SLOT[it.id]; if (wallet.wornSlots[slot] === it.id) delete wallet.wornSlots[slot]; }
+    list.splice(idx, 1);
+    wallet.coins += it.price;
+    saveWallet(); renderCoins(true); coinFly(it.price); Sound.coin();
+    $('shopTalk').textContent = it.name + ' 구매를 취소하고 🪙' + it.price + '을 돌려드렸어요.';
+    applyMyLook(); renderShop(); pushPresence();
   }
   function applyMyLook() {
     const L = look();
@@ -2084,7 +2210,7 @@
     const pf = profile || { a: 0, b: 0 };
     let r;
     if (sheetMode) {
-      try { r = await sheetPost({ type: 'thanks', sessionId: sid, content: p.note, k: p.k, f: p.f, na: pf.a, nb: pf.b }); }
+      try { r = await sheetPost({ type: 'thanks', sessionId: sid, content: p.note, k: p.k, f: p.f, na: pf.a, nb: pf.b, nick: (pf.nm || '') }); }
       catch (e) { return { ok: false, net: true, reason: '연결이 원활하지 않아요.' }; }
       if (!r || !r.ok) return { ok: false, reason: (r && r.reason) || '나누지 못했어요.' };
     } else r = { ok: true, id: 'T' + Date.now().toString(36) };
@@ -2350,6 +2476,7 @@
     nearGift = null; $('giftBtn').hidden = true;
   }
   $('giftBtn').addEventListener('click', () => openGift(nearGift));
+  $('talkBtn').addEventListener('click', () => { if (nearRes) openCounsel(nearRes); });
   $('giftSave').addEventListener('click', () => {
     let favs = store.get('ms_readfav', []) || []; const key = 'good:' + giftPick;
     if (favs.indexOf(key) < 0) favs.push(key);
@@ -3034,11 +3161,35 @@
     $('rainTime').textContent = rainMin + ':00';
   }));
   const fmt = (s) => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  const RAIN_PROMPTS = ['빗소리에 가만히 귀 기울여요', '들숨 … 날숨 … 천천히', '어깨에 힘을 스르르 풀어요', '지금 이 소리에만 머물러 봐요', '떠오르는 생각은 구름처럼 흘려보내요', '창에 맺힌 물방울을 바라봐요'];
+  let rainPromptTimer = null, rainPi = 0;
+  function rainMinutes() { const m = store.get('ms_rainmin', null); return (m && m.day === today()) ? (m.n | 0) : 0; }
+  function addRainMinutes(n) { store.set('ms_rainmin', { day: today(), n: rainMinutes() + n }); }
+  function showRainRest() { const n = rainMinutes(); $('rainRest').textContent = n ? '오늘 ' + n + '분 쉬었어요 · 끝까지 쉬면 🪙2' : '끝까지 쉬면 🪙2'; }
+  // 창을 두드리면 물결이 퍼지고 맑은 소리가 나요
+  function rainRipple(x, y) {
+    const box = $('rainRipples'); if (!box) return;
+    const r = el('span', 'rip'); r.style.left = x + '%'; r.style.top = y + '%';
+    box.appendChild(r); setTimeout(() => r.remove(), 1100);
+    Sound.drip();
+  }
+  $('rainWindow').addEventListener('pointerdown', (e) => {
+    const b = $('rainWindow').getBoundingClientRect();
+    rainRipple(((e.clientX - b.left) / b.width * 100).toFixed(1), ((e.clientY - b.top) / b.height * 100).toFixed(1));
+  });
   $('rainStart').addEventListener('click', () => {
     if (rainTimer) { stopRain(false); return; }
     rainLeft = rainMin * 60;
     $('rainTime').textContent = fmt(rainLeft);
     $('rainStart').textContent = '그만 쉬기';
+    $('rainWindow').classList.add('resting');
+    rainPi = 0; $('rainPrompt').textContent = RAIN_PROMPTS[0]; $('rainPrompt').classList.add('show');
+    clearInterval(rainPromptTimer);
+    rainPromptTimer = setInterval(() => {
+      rainPi = (rainPi + 1) % RAIN_PROMPTS.length;
+      const el2 = $('rainPrompt'); el2.classList.remove('show'); void el2.offsetWidth;
+      el2.textContent = RAIN_PROMPTS[rainPi]; el2.classList.add('show');
+    }, 11000);
     Sound.ambient(rainKind);
     rainTimer = setInterval(() => {
       rainLeft--;
@@ -3049,10 +3200,13 @@
   function stopRain(done) {
     if (!rainTimer) return;
     clearInterval(rainTimer); rainTimer = null;
+    clearInterval(rainPromptTimer); rainPromptTimer = null;
     Sound.stopAmbient();
     $('rainStart').textContent = '쉬기 시작';
     $('rainTime').textContent = rainMin + ':00';
-    if (done) { Sound.chime(true, true); earn('rain'); toast('잘 쉬었어요. 마음이 조금 촉촉해졌나요? ☔', 3600); }
+    $('rainWindow').classList.remove('resting');
+    $('rainPrompt').classList.remove('show');
+    if (done) { addRainMinutes(rainMin); showRainRest(); Sound.chime(true, true); earn('rain'); toast('잘 쉬었어요. 마음이 조금 촉촉해졌나요? ☔', 3600); }
   }
 
   /* ===================== 마음 동전 보기 ===================== */
@@ -3069,7 +3223,20 @@
 
   /* ===================== 명언 계단 ===================== */
   const STEPS = 108, SDX = 50, SDY = 46;
-  const sg = { dirs: [], cols: [], cur: 0, busy: false, miss: 0 };
+  const sg = { dirs: [], cols: [], cur: 0, busy: false, miss: 0, level: 0 };
+  const STAIR_PALETTES = [
+    { name: '새벽에서 아침', P: [[[43, 59, 102], [106, 127, 168], [184, 198, 217]], [[247, 170, 160], [252, 206, 170], [255, 232, 200]], [[134, 196, 238], [190, 226, 247], [240, 248, 236]]] },
+    { name: '깊은 숲', P: [[[28, 50, 44], [52, 92, 74], [120, 160, 120]], [[70, 120, 90], [120, 170, 120], [190, 214, 170]], [[150, 196, 150], [200, 224, 180], [236, 245, 220]]] },
+    { name: '노을', P: [[[60, 40, 70], [150, 80, 100], [230, 150, 120]], [[200, 90, 90], [240, 150, 110], [255, 200, 150]], [[250, 180, 120], [255, 214, 170], [255, 240, 210]]] },
+    { name: '별이 뜨는 밤', P: [[[12, 16, 40], [28, 34, 70], [60, 70, 120]], [[20, 24, 56], [44, 52, 96], [90, 100, 150]], [[40, 48, 90], [80, 92, 140], [150, 160, 200]]] },
+    { name: '푸른 바다', P: [[[10, 40, 70], [20, 80, 120], [90, 160, 190]], [[30, 90, 130], [70, 140, 180], [150, 200, 220]], [[120, 180, 210], [180, 220, 235], [225, 245, 250]]] },
+    { name: '은하수', P: [[[20, 12, 46], [60, 36, 100], [120, 80, 170]], [[46, 30, 90], [100, 70, 150], [170, 130, 210]], [[120, 90, 180], [180, 150, 220], [225, 210, 245]]] },
+  ];
+  function applyStairSky() {
+    const t = STAIR_PALETTES[sg.level % STAIR_PALETTES.length];
+    const fl = $('sgFloor'); if (fl) fl.textContent = sg.level > 0 ? (sg.level + 1) + '층 · ' + t.name : t.name;
+    stairSky(sg.cur);
+  }
   const quoteBook = () => store.get('ms_quotes', []) || [];
   function buildStairs() {
     sg.dirs = [0]; sg.cols = [0];
@@ -3104,7 +3271,7 @@
   function stairSky(i) {
     const t = i / STEPS;
     const mix = (a, b, k) => a.map((v, j) => Math.round(v + (b[j] - v) * k));
-    const P = [[[43, 59, 102], [106, 127, 168], [184, 198, 217]], [[247, 170, 160], [252, 206, 170], [255, 232, 200]], [[134, 196, 238], [190, 226, 247], [240, 248, 236]]];
+    const P = STAIR_PALETTES[sg.level % STAIR_PALETTES.length].P;
     const seg = t < 0.5 ? 0 : 1, k = t < 0.5 ? t / 0.5 : (t - 0.5) / 0.5;
     const c = [0, 1, 2].map((j) => mix(P[seg][j], P[seg + 1][j], k));
     $('sgSky').style.background = `linear-gradient(180deg, rgb(${c[0]}) 0%, rgb(${c[1]}) 60%, rgb(${c[2]}) 100%)`;
@@ -3123,11 +3290,13 @@
     stairSky(i);
   }
   function openStair() {
+    sg.level = 0;
     buildStairs();
     sg.cur = 0; sg.busy = false; sg.miss = 0;
     $('sgMe').innerHTML = `<div class="flipper">${A.person(look())}</div>`;
     $('sgBookN').textContent = quoteBook().length;
     $('sgQuote').hidden = true; $('sgDone').hidden = true;
+    applyStairSky();
     $('sgTip').textContent = isTouch ? '다음 계단이 있는 쪽 버튼을 눌러요' : '← → 방향키로 다음 계단이 있는 쪽을 눌러요';
     $('stairGame').hidden = false;
     stairCamera();
@@ -3196,10 +3365,21 @@
   function stairDone() {
     sg.busy = true;
     const add = earn('stairDone');
-    $('sgDoneCoin').textContent = add ? '🪙 +' + add + ' 완주 선물' : '오늘 완주 선물은 이미 받았어요';
+    const next = STAIR_PALETTES[(sg.level + 1) % STAIR_PALETTES.length];
+    $('sgDoneCoin').textContent = (add ? '🪙 +' + add + ' 완주 선물 · ' : '') + (sg.level + 1) + '번째 108계단 완주! 🎉';
+    const nb = $('sgNext'); if (nb) nb.textContent = '⬆ 다음 108계단 (' + next.name + ')';
     $('sgDone').hidden = false;
     Sound.chime(); sparkle();
   }
+  function nextFloor() {
+    sg.level++;
+    buildStairs();
+    sg.cur = 0; sg.busy = false; sg.miss = 0;
+    $('sgQuote').hidden = true; $('sgDone').hidden = true;
+    $('sgTip').textContent = ['새로운 하늘이 열렸어요. 다시 천천히 올라가요', '한 층 더! 서두르지 않아도 돼요', '여기까지 온 나를 칭찬해요. 또 한 걸음'][randInt(3)];
+    applyStairSky(); stairCamera();
+  }
+  if ($('sgNext')) $('sgNext').addEventListener('click', nextFloor);
   $('sgAgain').addEventListener('click', openStair);
   $('sgHome').addEventListener('click', exitStair);
   $('sgExit').addEventListener('click', exitStair);
@@ -3295,14 +3475,19 @@
   function openIntro() {
     draft = Object.assign({}, profile || randomProfile());
     renderIntro();
-    $('introEnter').textContent = profile ? '이 모습으로 할게요' : '숲으로 들어가기';
+    $('introEnter').textContent = profile ? '이대로 저장할게요' : '숲으로 들어가기';
     $('introModal').querySelector('.m-x').hidden = !profile;
+    $('nickHint').textContent = profile ? '이름을 지우고 새로 적거나 🎲로 바꿀 수 있어요 · 최대 12자' : '원하는 별명을 직접 지어도 돼요. 비우면 숲 별명이 붙어요 · 최대 12자';
+    $('nickHint').classList.remove('err');
     openModal('introModal');
   }
   function renderIntro() {
     const L = Object.assign({}, draft, { worn: wornArr() });
     $('introPreview').innerHTML = A.person(L);
-    $('introNick').textContent = nameOf(draft);
+    const ni = $('introNickInput');
+    const autoName = ADJ[draft.a] + ' ' + NOUN[draft.b];
+    ni.placeholder = autoName;
+    if (document.activeElement !== ni) ni.value = (draft.nm && draft.nm.trim()) ? draft.nm : autoName;
     const box = $('lookOpts'); box.textContent = '';
     const choose = (k, i) => { draft[k] = i; renderIntro(); };
     if (lookTab === 's' || lookTab === 'h' || lookTab === 'o') {
@@ -3325,12 +3510,33 @@
       });
     }
   }
+  $('introNickInput').addEventListener('input', (e) => {
+    draft.nm = e.target.value.slice(0, 12);
+    const chk = draft.nm.trim() && window.Filter ? window.Filter.check(draft.nm.trim()) : { ok: true };
+    $('nickHint').textContent = !chk.ok ? '그 별명은 쓸 수 없어요. 다른 별명으로 지어 보세요.'
+      : (draft.nm.trim() ? '‘' + draft.nm.trim() + '’(으)로 할게요 · 최대 12자' : '원하는 별명을 직접 지어도 돼요. 비우면 숲 별명이 붙어요 · 최대 12자');
+    $('nickHint').classList.toggle('err', !chk.ok);
+  });
   $('nickReroll').addEventListener('click', () => {
     const before = draft.a + ',' + draft.b;
     do { draft.a = randInt(ADJ.length); draft.b = randInt(NOUN.length); } while (draft.a + ',' + draft.b === before);
+    draft.nm = '';
+    const auto = ADJ[draft.a] + ' ' + NOUN[draft.b];
+    $('introNickInput').value = auto;
+    $('nickHint').textContent = '숲 별명 ‘' + auto + '’ · 직접 지어도 돼요';
+    $('nickHint').classList.remove('err');
     renderIntro();
   });
   $('introEnter').addEventListener('click', () => {
+    const typed = $('introNickInput').value.trim();
+    const autoName = ADJ[draft.a] + ' ' + NOUN[draft.b];
+    // 입력칸을 자동 별명 그대로 두면 커스텀 이름으로 저장하지 않아요(모습을 바꾸면 함께 바뀌도록)
+    const nm = (typed && typed !== autoName) ? typed : '';
+    if (nm) {
+      const chk = window.Filter ? window.Filter.check(nm) : { ok: true };
+      if (!chk.ok) { $('nickHint').textContent = '그 별명은 쓸 수 없어요. 다른 별명으로 지어 보세요.'; $('nickHint').classList.add('err'); $('introNickInput').focus(); return; }
+    }
+    draft.nm = nm;
     const firstTime = !profile;
     profile = validProfile(draft) || randomProfile();
     store.set('ms_profile', profile);
@@ -3354,6 +3560,7 @@
     measure();
     buildScene();
     spawnNpc();
+    spawnResidents();
     spawnCritters();
     me.el = makePerson(look(), true);
     peopleEl.appendChild(me.el);
@@ -3390,7 +3597,7 @@
     setInterval(() => { if (!document.hidden) refreshState(false); }, 20000);
 
     // 시험용 창(개발자가 확인할 때만 사용)
-    window.__ms = { me, others, state, wallet, critters, sg, goTo, warpTo, enterZone, openReading, openTemple, openGarden, mg, waterGarden, renderAll, openGift, gifts: () => gifts, nearGift: () => nearGift, setBreathMode, temple: () => tp, startBreath, pickMood, pickFeel, moodLog: () => moodLog(), tapToday, keys, earn, climb, sendEmote, applyTime, applySeason, openLinks, openMusic, openSeason, chooseMusic, flySanta, submitLink, linkForm, refreshState, renderBoard, get season() { return season; }, get musicChoice() { return musicChoice; }, get cam() { return cam; }, get myKey() { return myKey; }, get nearPerson() { return nearPerson; } };
+    window.__ms = { me, others, state, wallet, critters, sg, goTo, warpTo, enterZone, openReading, openTemple, openGarden, mg, waterGarden, renderAll, openGift, gifts: () => gifts, nearGift: () => nearGift, setBreathMode, openCounsel, RESIDENTS, nearRes: () => nearRes, refundItem, nextFloor, temple: () => tp, startBreath, pickMood, pickFeel, moodLog: () => moodLog(), tapToday, keys, earn, climb, sendEmote, applyTime, applySeason, openLinks, openMusic, openSeason, chooseMusic, flySanta, submitLink, linkForm, refreshState, renderBoard, get season() { return season; }, get musicChoice() { return musicChoice; }, get cam() { return cam; }, get myKey() { return myKey; }, get nearPerson() { return nearPerson; } };
   }
   start();
 })();

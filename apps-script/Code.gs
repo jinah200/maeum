@@ -984,6 +984,7 @@ function presence_(body) {
     e: clampInt_(body.e, 0, N.EMO - 1),   // 인사 그림 번호
     hf: hf,                                // 하이파이브 상대
     ev: clampInt_(body.ev, 0, 99999),      // 인사가 바뀔 때마다 늘어나는 번호
+    nm: safeName_(body.nm),                // 직접 지은 별명(걸러서)
     t: Date.now()
   };
   const cache = CacheService.getScriptCache();
@@ -1179,6 +1180,20 @@ function nick_(body) {
   return ADJ_WORDS[a] + ' ' + NOUN_WORDS[b];
 }
 /** 작성자 이름: 직접 쓴 이름(걸러서) 우선, 없으면 숲 별명 */
+/** 사용자가 직접 지은 별명을 안전하게 걸러요. 부적절하면 '' 반환(자동 별명으로 대체) */
+function safeName_(raw) {
+  raw = String(raw || '').trim();
+  if (!raw) return '';
+  if (raw.length > 12) raw = raw.slice(0, 12);
+  if (PHONE_RE.test(raw) || /\d{8,}/.test(raw) || MAIL_RE.test(raw) || LINK_RE.test(raw)) return '';
+  var vs = variants_(raw);
+  for (var i = 0; i < BAD_WORDS.length; i++) {
+    var w = norm_(BAD_WORDS[i]), w2 = BAD_WORDS[i].toLowerCase();
+    for (var j = 0; j < vs.length; j++) if (vs[j].indexOf(w) >= 0 || vs[j].indexOf(w2) >= 0) return '';
+  }
+  return raw;
+}
+
 function resolveNick_(body) {
   var raw = String(body.nick || '').trim();
   if (!raw) return { ok: true, nick: nick_(body) };
