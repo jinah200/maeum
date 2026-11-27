@@ -1312,3 +1312,136 @@ body.t-night .resident .p-label { background: rgba(42,50,78,.82); color: #eef1fb
 .cs-opt:hover { background: #eef6e8; }
 .cs-opt:active { transform: scale(.96); }
 .rain-window .rain-lines, .rain-window .rain-time, .rain-window .rain-prompt, .rain-window .rain-anchor { pointer-events: none; }
+
+/* ===================================================================
+   v20 — 이름 바꾸기 · 염원 쓰기 도우미 · 링크 작성자 · 넓게 보기 · 하늘 등불
+   =================================================================== */
+
+/* ----- 이름 바꾸기 ----- */
+.me-group { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.rename-pill { border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 7px 12px; border-radius: 999px;
+  font-family: "Jua", "Gowun Dodum", sans-serif; font-size: .82rem; color: #fff; white-space: nowrap;
+  background: linear-gradient(180deg, #ffb46b, #f08a4b); box-shadow: 0 6px 14px rgba(240,138,75,.35), inset 0 1px 0 rgba(255,255,255,.45);
+  animation: renameNudge 6s ease-in-out 3s 3; transition: transform .12s; }
+.rename-pill:hover { transform: translateY(-1px); }
+.rename-pill:active { transform: scale(.94); }
+@keyframes renameNudge { 0%, 88%, 100% { transform: rotate(0); } 91% { transform: rotate(-6deg) scale(1.06); } 94% { transform: rotate(6deg) scale(1.06); } 97% { transform: rotate(-3deg); } }
+@media (max-width: 560px) { .rename-pill span { display: none; } .rename-pill { padding: 7px 9px; } }
+.nick-label { display: flex; align-items: baseline; justify-content: center; gap: 6px; margin: 10px 0 5px; font-family: "Jua", sans-serif; color: #c86a34; font-size: 1rem; }
+.nick-label small { font-family: "Gowun Dodum", sans-serif; color: var(--ink-soft); font-size: .72rem; }
+.nick-row.flash .nick-input { animation: nickFlash 1.3s ease; }
+@keyframes nickFlash { 0%, 100% { box-shadow: inset 0 0 0 2px #a9cf98; } 30% { box-shadow: inset 0 0 0 3px #f08a4b, 0 0 0 6px rgba(240,138,75,.22); } }
+
+/* ----- 염원 쓰기: 등불 약속 ----- */
+.pledge { position: relative; margin: 6px 0 12px; padding: 12px 14px 11px; border-radius: 18px; text-align: center; overflow: hidden;
+  background: linear-gradient(135deg, #fff4dc 0%, #ffe9d6 55%, #fde3ea 100%); box-shadow: inset 0 0 0 1.5px #f3d3a6, 0 6px 14px rgba(220,160,90,.14); }
+.pledge::before { content: ""; position: absolute; inset: -40% -10% auto; height: 120%; background: radial-gradient(circle at 50% 0%, rgba(255,255,255,.7), transparent 60%); pointer-events: none; }
+.pledge-title { position: relative; font-family: "Jua", sans-serif; font-size: 1.05rem; color: #a3572a; margin-bottom: 6px; }
+.pledge-row { position: relative; display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
+.pledge-row span { font-family: "Jua", sans-serif; font-size: .95rem; padding: 5px 12px; border-radius: 999px; background: #fff; color: #7a5a2c;
+  box-shadow: 0 2px 6px rgba(200,140,70,.18), inset 0 0 0 1.5px #f4d9ae; }
+.pledge-row span:nth-child(1) { color: #4c7a43; box-shadow: 0 2px 6px rgba(90,140,70,.18), inset 0 0 0 1.5px #cfe6c0; }
+.pledge-row span:nth-child(2) { color: #b0567a; box-shadow: 0 2px 6px rgba(190,90,130,.16), inset 0 0 0 1.5px #f3cfe0; }
+.pledge-row span:nth-child(3) { color: #c0662c; }
+.pledge-sub { position: relative; margin-top: 7px; font-size: .8rem; color: #8a6a48; word-break: keep-all; }
+
+/* 예시 염원 */
+.ex-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 12px 0 6px; font-size: .86rem; font-weight: 700; color: var(--ink); }
+.ex-head small { display: block; font-weight: 400; font-size: .72rem; color: var(--ink-soft); margin-top: 1px; }
+.ex-head .chip-btn { flex: none; }
+.ex-list { display: grid; gap: 6px; margin-bottom: 10px; }
+.ex-card { text-align: left; border: none; cursor: pointer; padding: 10px 12px 10px 34px; border-radius: 14px; font: inherit; font-size: .9rem; line-height: 1.45;
+  color: #5b4a33; background: #fffaf0 url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><circle cx='10' cy='10' r='7' fill='%23ffd98a'/><circle cx='10' cy='10' r='3.4' fill='%23fff4d6'/></svg>") 11px 50%/16px no-repeat;
+  box-shadow: inset 0 0 0 1.5px #f1e1c2; word-break: keep-all; transition: transform .1s, box-shadow .2s, background-color .2s; animation: pop .3s ease; }
+.ex-card:hover { background-color: #fff3dd; box-shadow: inset 0 0 0 1.5px #f0c98a; }
+.ex-card:active { transform: scale(.98); }
+.ex-card.on { background-color: #fff0d2; box-shadow: inset 0 0 0 2px #f0b44e; }
+
+/* 끝맺음 · 따뜻함 */
+.enders { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 4px; }
+.ender { border: none; cursor: pointer; padding: 6px 10px; border-radius: 999px; font: inherit; font-size: .78rem; color: #7a5a2c; background: #fff6e6; box-shadow: inset 0 0 0 1px #f1dcb6; }
+.ender:hover { background: #ffeccc; }
+.warm-meter { display: flex; align-items: center; gap: 8px; margin: 6px 0 4px; padding: 8px 12px; border-radius: 14px; background: #f7f5ef; font-size: .82rem; color: var(--ink-soft); transition: background .3s; }
+.wm-label { font-family: "Jua", sans-serif; color: #b07a3c; flex: none; }
+.wm-dots { display: flex; gap: 3px; flex: none; }
+.wm-dots i { width: 9px; height: 9px; border-radius: 50%; background: #e8e0cf; transition: background .3s, transform .3s; }
+.wm-dots i.on { background: linear-gradient(180deg, #ffd27a, #f29a4e); transform: scale(1.1); }
+.wm-msg { min-width: 0; word-break: keep-all; line-height: 1.4; }
+.warm-meter.warm { background: #fff3df; color: #a35b22; }
+.warm-meter.soft { background: #f1f6ea; color: #4f7340; }
+.warm-meter.bad { background: #fde9ec; color: #b4475d; }
+.warm-meter.bad .wm-dots i.on { background: #e9a3b1; }
+#wishSubmit.glow { box-shadow: 0 0 0 3px rgba(255,200,110,.45), 0 8px 22px rgba(240,160,70,.45); }
+
+/* ----- 링크: 올리는 사람 이름 ----- */
+.author-box { margin: 10px 0 6px; padding: 12px 14px; border-radius: 16px; background: linear-gradient(180deg, #fff6e9, #ffefe0); box-shadow: inset 0 0 0 1.5px #f2d2ae; }
+.author-label { display: block; font-family: "Jua", sans-serif; font-size: 1rem; color: #c0662c; margin-bottom: 6px; }
+.author-input { font-family: "Jua", "Gowun Dodum", sans-serif !important; font-size: 1.02rem !important; background: #fff !important; }
+.author-hint { margin-top: 5px; font-size: .74rem; color: #8a6a48; word-break: keep-all; }
+
+/* ----- 사람이 많을 때: 멀리 있는 이름표는 은은하게 ----- */
+.person .p-label { transition: opacity .35s, filter .35s; }
+.person.far .p-label { opacity: .38; filter: saturate(.6); }
+.person.far:hover .p-label, .person.near-me .p-label { opacity: 1; filter: none; }
+
+/* ----- 넓게 보기 ----- */
+#wideBtn.on { background: linear-gradient(180deg, #ffe6a8, #ffd06b); box-shadow: 0 6px 14px rgba(230,170,60,.35); }
+body.wide-view .person .p-label, body.wide-view .resident .p-label { transform: translateX(-50%) scale(1.22); transform-origin: 50% 100%; }
+body.wide-view .person .bubble { transform-origin: 50% 100%; scale: 1.2; }
+
+/* ----- 밤하늘의 염원 등불 ----- */
+.sky-wishes { position: absolute; inset: 0 0 50% 0; z-index: 4; pointer-events: none; }
+.sky-lan { position: absolute; width: 34px; height: 46px; margin: -23px 0 0 -17px; padding: 0; border: none; background: none; cursor: pointer; pointer-events: auto;
+  animation: slFloat var(--sd, 9s) ease-in-out var(--sdel, 0s) infinite alternate, slIn 1.6s ease-out; }
+.sky-lan .sl-halo { position: absolute; left: 50%; top: 50%; width: 92px; height: 92px; transform: translate(-50%,-50%); border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,205,120,.5), rgba(255,180,90,.14) 45%, transparent 70%); animation: slGlow 3.2s ease-in-out infinite; pointer-events: none; }
+.sky-lan .sl-body { position: absolute; inset: 6px 4px 4px; border-radius: 44% 44% 40% 40% / 50% 50% 38% 38%;
+  background: radial-gradient(circle at 50% 42%, #fff8de 0%, #ffd27a 38%, #f4934a 100%); box-shadow: 0 0 14px 4px rgba(255,190,100,.55), inset 0 -4px 6px rgba(200,90,40,.25); }
+.sky-lan .sl-body::before, .sky-lan .sl-body::after { content: ""; position: absolute; top: 12%; bottom: 12%; width: 1.5px; background: rgba(190,100,50,.25); }
+.sky-lan .sl-body::before { left: 32%; } .sky-lan .sl-body::after { right: 32%; }
+.sky-lan .sl-cap { position: absolute; left: 30%; right: 30%; top: -3px; height: 4px; border-radius: 2px; background: #9a5a2e; }
+.sky-lan .sl-cap.b { top: auto; bottom: -3px; }
+.sky-lan .sl-tip { position: absolute; left: 50%; top: 100%; margin-top: 8px; transform: translateX(-50%) translateY(4px); white-space: nowrap; padding: 4px 10px; border-radius: 10px;
+  font-size: .74rem; color: #5b4c38; background: rgba(255,250,240,.94); box-shadow: 0 4px 10px rgba(0,0,0,.15); opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; }
+.sky-lan:hover .sl-tip, .sky-lan:focus-visible .sl-tip { opacity: 1; transform: translateX(-50%) translateY(0); }
+.sky-lan:hover .sl-body { filter: brightness(1.08); }
+.sky-lan.pulse .sl-halo { animation: slPulse .9s ease-out; }
+.sky-lan.bye { animation: slBye .9s ease-in forwards; }
+body:not(.t-night) .sky-lan .sl-halo { opacity: .55; }
+@keyframes slFloat { 0% { transform: translate(0, 0) rotate(-3deg); } 100% { transform: translate(var(--sw, 14px), -10px) rotate(3deg); } }
+@keyframes slGlow { 0%, 100% { opacity: .75; transform: translate(-50%,-50%) scale(.92); } 50% { opacity: 1; transform: translate(-50%,-50%) scale(1.08); } }
+@keyframes slPulse { 0% { transform: translate(-50%,-50%) scale(1); opacity: 1; } 100% { transform: translate(-50%,-50%) scale(2.2); opacity: 0; } }
+@keyframes slIn { from { opacity: 0; translate: 0 40px; } to { opacity: 1; translate: 0 0; } }
+@keyframes slBye { to { opacity: 0; translate: 0 -60px; } }
+
+/* 염원 엿보기 카드 */
+.wish-peek { position: fixed; left: 50%; top: calc(96px + env(safe-area-inset-top)); transform: translateX(-50%); z-index: 9; width: min(360px, 92vw);
+  padding: 16px 18px 14px; border-radius: 22px; text-align: center; background: linear-gradient(180deg, #fffaf0, #fff3e2);
+  box-shadow: 0 18px 44px rgba(40,30,10,.3), inset 0 0 0 1.5px #f3dcb4; animation: peekIn .35s cubic-bezier(.3,1.4,.5,1); }
+.wish-peek .m-x { position: absolute; top: 10px; right: 10px; }
+.wp-head { font-family: "Jua", sans-serif; color: #b0662c; font-size: .95rem; margin-bottom: 8px; }
+.wp-cat { display: inline-block; margin-left: 4px; padding: 2px 8px; border-radius: 999px; background: #fff; color: #8a6a48; font-family: "Gowun Dodum", sans-serif; font-size: .74rem; box-shadow: inset 0 0 0 1px #f1dcb6; }
+.wp-text { font-family: "Jua", sans-serif; font-size: 1.12rem; line-height: 1.55; color: #5b4632; word-break: keep-all; margin: 4px 4px 12px; }
+.wp-acts { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+@keyframes peekIn { from { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(.94); } to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); } }
+/* 상단바의 빈 공간은 클릭이 통과돼요 (하늘 등불·숲을 누를 수 있게) */
+.topbar { pointer-events: none; }
+.topbar > * { pointer-events: auto; }
+.topbar .visitor-badge { pointer-events: none; }
+/* 제작자 표기: 가운데 '들어가기' 버튼과 겹치지 않게 오른쪽에 */
+.dock-credit { margin: 0 16px 4px auto; }
+@media (max-width: 560px) { .dock-credit { margin: 0 10px 3px auto; font-size: .62rem; padding: 2px 9px; } }
+/* 떠오르는 등불 글씨가 화면 끝에서 찌그러지지 않게 */
+.lantern .text { width: max-content; max-width: min(170px, 42vw); white-space: normal; word-break: keep-all; }
+
+/* 모바일 상단바: 버튼이 많아도 이름 바꾸기가 잘 보이게 */
+@media (max-width: 560px) {
+  .topbar { gap: 5px; padding-left: 8px; padding-right: 8px; }
+  .tb-group { gap: 4px; }
+  .tb-group .icon-btn { width: 34px; height: 34px; font-size: .92rem; }
+  .coin-chip { padding: 4px 9px 4px 4px; }
+  .me-chip { padding: 3px; }
+  .me-chip .me-name { display: none; }
+  .rename-pill { padding: 7px 9px; flex: none; }
+  .visitor-badge { display: none; }
+}

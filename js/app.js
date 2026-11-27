@@ -201,6 +201,28 @@
 
   /* ===================== 장면 만들기 ===================== */
   const worldEl = $('world'), peopleEl = $('people'), lmLayer = $('landmarks'), decorEl = $('decor'), starfieldEl = $('starfield');
+  // 🔭 넓게 보기: 숲을 한 걸음 물러서서 더 넓게 봐요 (큰 화면은 처음부터 넓게)
+  let zoom = 1;
+  const WIDE_Z = () => (window.innerWidth >= 900 ? 0.72 : 0.84);
+  function initZoom() {
+    const saved = store.get('ms_wide', null);
+    const wide = saved === null ? window.innerWidth >= 1400 : !!saved;
+    zoom = wide ? WIDE_Z() : 1;
+    document.body.classList.toggle('wide-view', zoom < 1);
+  }
+  const viewW = () => vw / zoom;
+  const camTarget = () => clamp(me.x - viewW() / 2, 0, Math.max(0, W - viewW()));
+  function applyWorldTransform() {
+    worldEl.style.transformOrigin = '0 ' + bandTop + 'px';
+    worldEl.style.transform = `translate3d(${(-cam * zoom).toFixed(1)}px,0,0) scale(${zoom})`;
+  }
+  function setWide(on) {
+    store.set('ms_wide', !!on);
+    zoom = on ? WIDE_Z() : 1;
+    document.body.classList.toggle('wide-view', zoom < 1);
+    cam = camTarget(); applyWorldTransform();
+    const b = $('wideBtn'); if (b) { b.classList.toggle('on', zoom < 1); b.title = zoom < 1 ? '가까이 보기' : '넓게 보기'; }
+  }
   const lmEls = {};
   const decor = [];
   const gifts = [];
@@ -346,8 +368,8 @@
     setTimeout(() => {
       me.facing = z.x > me.x ? 1 : -1;
       me.x = clamp(z.x - me.facing * 56, 40, W - 40); me.d = 0.5;
-      cam = clamp(me.x - vw / 2, 0, Math.max(0, W - vw));
-      worldEl.style.transform = `translate3d(${(-cam).toFixed(1)}px,0,0)`;
+      cam = camTarget();
+      applyWorldTransform();
       placeAt(me.el, me.x, me.d);
       enterZone(id);
       setTimeout(() => { fade.classList.remove('show'); warpBusy = false; }, 120);
@@ -881,7 +903,7 @@
     }
   }
   function afterState() {
-    renderBadge(); renderStarfield(); renderGardenBed(); renderDockSubs(); renderSkyStars();
+    renderBadge(); renderStarfield(); renderGardenBed(); renderDockSubs(); renderSkyStars(); renderSkyWishes();
     if (!$('boardModal').hidden) renderBoard();
     if (!$('starsModal').hidden) renderStars();
     if (!$('gardenModal').hidden) { renderGarden(); if (gardenTab === 'all') renderAll(); }
@@ -984,13 +1006,73 @@
     const layer = $('lanternLayer');
     if (layer.children.length >= (cfg.MAX_LANTERNS || 24)) layer.removeChild(layer.firstChild);
     const e = el('div', 'lantern' + (kind === KIND_LETGO ? ' letgo' : ''), '<div class="glow"></div><div class="text"></div>');
-    e.style.left = rand(8, 88) + '%';
+    e.style.left = rand(8, vw < 600 ? 58 : 84) + '%';
     e.style.setProperty('--dur', rand(22, 34) + 's');
     e.style.setProperty('--drift', rand(-30, 30) + 'px');
     e.querySelector('.text').textContent = text;
     layer.appendChild(e);
     e.addEventListener('animationend', (ev) => { if (ev.target === e) e.remove(); });
   }
+  /* ===== 밤하늘에 떠다니는 진짜 염원 등불 (누르면 읽고 마음을 보낼 수 있어요) ===== */
+  const skyLan = new Map(); // id -> element
+  let peekW = null;
+  function skyPick() {
+    const hopes = state.wishes.filter((w) => w.id && w.kind !== KIND_LETGO);
+    const n = vw < 600 ? 4 : 7;
+    return hopes.slice(0, n);
+  }
+  function hashPos(id, k) { let h = 7; const str = String(id) + k; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 9973; return h / 9973; }
+  function renderSkyWishes() {
+    const box = $('skyWishes'); if (!box) return;
+    const pick = skyPick(), keep = new Set(pick.map((w) => w.id));
+    for (const [id, e] of skyLan) { if (!keep.has(id)) { e.classList.add('bye'); setTimeout(() => e.remove(), 900); skyLan.delete(id); } }
+    pick.forEach((w, i) => {
+      if (skyLan.has(w.id)) return;
+      const e = el('button', 'sky-lan'); e.type = 'button';
+      const slot = (i + 0.5) / pick.length;
+      e.style.left = (6 + slot * 84 + (hashPos(w.id, 'x') - 0.5) * 8).toFixed(1) + '%';
+      { const lo = 108, hi = Math.max(lo + 40, bandTop - 210 * lmScale - 20); e.style.top = (lo + hashPos(w.id, 'y') * (hi - lo)).toFixed(0) + 'px'; }
+      e.style.setProperty('--sd', (7 + hashPos(w.id, 'd') * 6).toFixed(1) + 's');
+      e.style.setProperty('--sdel', (-hashPos(w.id, 'e') * 6).toFixed(1) + 's');
+      e.style.setProperty('--sw', (8 + hashPos(w.id, 'w') * 14).toFixed(0) + 'px');
+      e.setAttribute('aria-label', '염원 등불: ' + w.text.slice(0, 20));
+      e.innerHTML = '<span class="sl-halo"></span><span class="sl-body"><i class="sl-cap"></i><i class="sl-cap b"></i></span><span class="sl-tip"></span>';
+      e.querySelector('.sl-tip').textContent = w.text.length > 16 ? w.text.slice(0, 16) + '…' : w.text;
+      e.addEventListener('click', (ev) => { ev.stopPropagation(); openPeek(w.id); });
+      box.appendChild(e); skyLan.set(w.id, e);
+    });
+    if (pick.length && !store.get('ms_skyhint', false)) {
+      store.set('ms_skyhint', true);
+      setTimeout(() => toast('🏮 하늘에 떠 있는 등불을 눌러 보세요. 누군가의 염원이 담겨 있어요', 4600), 9000);
+    }
+  }
+  function openPeek(id) {
+    const w = state.wishes.find((x) => x.id === id); if (!w) return;
+    peekW = w;
+    const c = catOf(w.cat);
+    $('wpCat').textContent = c.ico + ' ' + c.name;
+    $('wpText').textContent = '“' + w.text + '”';
+    renderPeekHeart();
+    $('wishPeek').hidden = false;
+    Sound.chime(true);
+  }
+  function renderPeekHeart() {
+    if (!peekW) return;
+    const liked = !!getLikes()[peekW.id];
+    $('wpEmp').textContent = peekW.empathy || 0;
+    $('wpHeart').disabled = liked;
+    $('wpHeart').firstChild.textContent = liked ? '💗 마음을 보냈어요 ' : '🤍 마음 보내기 ';
+  }
+  $('wpClose').addEventListener('click', () => { $('wishPeek').hidden = true; peekW = null; });
+  $('wpHeart').addEventListener('click', async () => {
+    if (!peekW) return;
+    const w = peekW, e = skyLan.get(w.id);
+    if (e) { e.classList.remove('pulse'); void e.offsetWidth; e.classList.add('pulse'); }
+    await sendEmpathy(w);
+    renderPeekHeart();
+  });
+  $('wpGo').addEventListener('click', () => { $('wishPeek').hidden = true; peekW = null; warpTo('lantern'); });
+
   function sparkle() {
     for (let i = 0; i < 14; i++) {
       const s = el('div', 'spark');
@@ -1012,7 +1094,7 @@
   const ZONE_OF_MODAL = { guideModal: 'plaza', breathModal: 'tree', beadsModal: 'spring', boardModal: 'lantern', starsModal: 'hill', shopModal: 'shop', gardenModal: 'garden', pondModal: 'pond', rainModal: 'rain', linksModal: 'links', readingModal: 'reading', templeModal: 'temple' };
   const modalOpen = () => MODALS.some((id) => !$(id).hidden) || !$('ritual').hidden || !$('loading').hidden || !$('stairGame').hidden;
   const isTyping = () => { const a = document.activeElement; return !!a && (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT'); };
-  function openModal(id) { $(id).hidden = false; }
+  function openModal(id) { $(id).hidden = false; const pk = $('wishPeek'); if (pk) pk.hidden = true; }
   function closeModal(id) {
     if ($(id).hidden) return;
     if (id === 'introModal' && !profile) return;
@@ -1113,10 +1195,10 @@
     if (resEl) { const r = RESIDENTS.find((x) => x.el === resEl); if (r) openCounsel(r); return; }
     const lm = e.target.closest('.landmark');
     if (lm) { goTo(lm.dataset.zone, true); return; }
-    if (e.clientY < bandTop - 70) return;
+    if (e.clientY < bandTop - 70 * zoom) return;
     setStroll(false);
-    const wx = clamp(e.clientX + cam, 40, W - 40);
-    const d = clamp((e.clientY - bandTop) / bandH, 0, 1);
+    const wx = clamp(e.clientX / zoom + cam, 40, W - 40);
+    const d = clamp((e.clientY - bandTop) / zoom / bandH, 0, 1);
     me.target = { x: wx, d, zone: null, enter: false, visit: false };
     const m = el('div', 'tapmark');
     m.style.left = wx + 'px'; m.style.top = yOf(d) + 'px'; m.style.zIndex = '15';
@@ -1124,7 +1206,12 @@
   });
   $('strollBtn').addEventListener('click', (e) => { e.currentTarget.blur(); setStroll(!stroll); });
   $('mapBtn').addEventListener('click', (e) => { e.currentTarget.blur(); openMap(); });
+  $('wideBtn').addEventListener('click', (e) => { e.currentTarget.blur(); setWide(zoom >= 1); toast(zoom < 1 ? '🔭 숲을 넓게 보고 있어요' : '🌿 가까이서 보고 있어요', 1800); });
   $('profileBtn').addEventListener('click', (e) => { e.currentTarget.blur(); openIntro(); });
+  $('renameBtn').addEventListener('click', (e) => {
+    e.currentTarget.blur(); openIntro();
+    setTimeout(() => { const ni = $('introNickInput'); ni.focus(); ni.select(); $('introModal').querySelector('.nick-row').classList.add('flash'); setTimeout(() => $('introModal').querySelector('.nick-row').classList.remove('flash'), 1400); }, 120);
+  });
   $('coinBtn').addEventListener('click', (e) => { e.currentTarget.blur(); openWallet(); });
   $('soundBtn').addEventListener('click', (e) => {
     e.currentTarget.blur();
@@ -1180,9 +1267,9 @@
     if (me.e && Date.now() > me.emoUntil) { me.e = 0; me.hf = ''; }
   }
   function updateCamera(dt) {
-    const target = clamp(me.x - vw / 2, 0, Math.max(0, W - vw));
+    const target = camTarget();
     cam += (target - cam) * Math.min(1, dt * 5);
-    worldEl.style.transform = `translate3d(${(-cam).toFixed(1)}px,0,0)`;
+    applyWorldTransform();
     $('farMtn').style.transform = `translate3d(${(-cam * 0.12).toFixed(1)}px,0,0)`;
     $('hills').style.transform = `translate3d(${(-cam * 0.25).toFixed(1)}px,0,0)`;
     $('treeline').style.transform = `translate3d(${(-cam * 0.5).toFixed(1)}px,0,0)`;
@@ -1369,6 +1456,8 @@
       if (!u || !u.k) return;
       const p = validProfile({ a: u.a | 0, b: u.b | 0, s: u.s | 0, h: u.h | 0, hs: u.hs | 0, o: u.o | 0, ot: u.ot | 0 });
       if (!p) return;
+      // 직접 지은 별명(서버에서 이미 걸러 옴) — 이름표에 그대로 보여요
+      if (typeof u.nm === 'string' && u.nm.trim()) p.nm = u.nm.trim().slice(0, 12);
       p.worn = (Array.isArray(u.w) ? u.w : (u.c ? [u.c] : [])).map((x) => clamp(x | 0, 0, A.ACC.length - 1)).filter((x) => x >= 1);
       const pet = clamp(u.p | 0, 0, A.PET.length - 1);
       keep.add(u.k);
@@ -1378,9 +1467,9 @@
         peopleEl.appendChild(o.el);
         others.set(u.k, o);
       }
-      const lk = [p.a, p.b, p.s, p.h, p.hs, p.o, p.ot, p.worn.join('-')].join(',');
+      const lk = [p.a, p.b, p.s, p.h, p.hs, p.o, p.ot, p.worn.join('-'), p.nm || ''].join(',');
       if (o.look && o.look !== lk) setLook(o.el, p, false);
-      o.look = lk; o.name = u.nm ? String(u.nm).slice(0, 12) : nameOf(p);
+      o.look = lk; o.name = nameOf(p);
       setPet(o, pet);
       o.tx = clamp(+u.x || 0, 0, W); o.td = clamp(+u.y || 0, 0, 1); o.f = u.f < 0 ? -1 : 1;
       if (o.z !== u.z) { o.z = u.z; setZoneIcon(o.el, u.z); }
@@ -1418,6 +1507,8 @@
       o.el.classList.toggle('walking', dist > 2);
       o.el.classList.toggle('left', facing < 0);
       placeAt(o.el, o.x, o.d);
+      const farNow = Math.abs(o.x - me.x) > 230;
+      if (farNow !== o.far) { o.far = farNow; o.el.classList.toggle('far', farNow); }
       updatePet(o, facing, dt, now);
     }
   }
@@ -1830,6 +1921,7 @@
     $('kindDesc').textContent = KIND_TEXT[k].desc;
     $('wishInput').placeholder = KIND_TEXT[k].ph;
     $('wishSubmit').textContent = KIND_TEXT[k].btn;
+    exIdx = 0; renderExamples(); renderEnders(); updateWarmth();
   }
   document.querySelectorAll('.pill').forEach((p) => p.addEventListener('click', () => setKind(p.dataset.kind)));
   let wishCat = 0;
@@ -1837,21 +1929,79 @@
     const box = $('catPick'); box.textContent = '';
     WISH_CATS.forEach((c, i) => {
       const b = el('button', 'cat-opt' + (i === wishCat ? ' on' : ''), `<span>${c.ico}</span>${c.name}`); b.type = 'button';
-      b.addEventListener('click', () => { wishCat = i; renderCatPick(); });
+      b.addEventListener('click', () => { wishCat = i; renderCatPick(); exIdx = 0; renderExamples(); });
       box.appendChild(b);
     });
   }
+  /* ----- 염원 쓰기 도우미: 예시 · 끝맺음 · 따뜻함 ----- */
+  let exIdx = 0;
+  function exPool() {
+    const E = (window.CALM && CALM.WISH_EXAMPLES) || { hope: [], letgo: [] };
+    const list = (wishKind === KIND_LETGO ? E.letgo : E.hope)[wishCat] || [];
+    return list;
+  }
+  function renderExamples() {
+    const box = $('exList'); if (!box) return;
+    box.textContent = '';
+    const pool = exPool(); if (!pool.length) return;
+    for (let i = 0; i < Math.min(3, pool.length); i++) {
+      const text = pool[(exIdx + i) % pool.length];
+      const b = el('button', 'ex-card'); b.type = 'button'; b.textContent = text;
+      b.addEventListener('click', () => {
+        $('wishInput').value = text; onWishInput();
+        box.querySelectorAll('.ex-card').forEach((x) => x.classList.toggle('on', x === b));
+        const ta = $('wishInput'); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+      });
+      box.appendChild(b);
+    }
+  }
+  $('exMore').addEventListener('click', () => { exIdx += 3; renderExamples(); Sound.tok(); });
+  const ENDERS = { hope: ['진심으로 바라요 🌟', '응원할게요 💛', '고마워요 🙏'], letgo: ['이제 내려놓을게요 🍂', '여기 두고 갈게요', '내일은 더 가벼워지기를'] };
+  function renderEnders() {
+    const box = $('wishEnders'); if (!box) return;
+    box.textContent = '';
+    (wishKind === KIND_LETGO ? ENDERS.letgo : ENDERS.hope).forEach((t) => {
+      const b = el('button', 'ender', '+ ' + t); b.type = 'button';
+      b.addEventListener('click', () => {
+        const ta = $('wishInput'); let v = ta.value.replace(/\s+$/, '');
+        v = v ? v + ' ' + t : t;
+        ta.value = v.slice(0, 100); onWishInput(); ta.focus();
+      });
+      box.appendChild(b);
+    });
+  }
+  function updateWarmth() {
+    const text = ($('wishInput') ? $('wishInput').value : '').trim();
+    const C = window.CALM || {}, warm = C.WARM_WORDS || [], harsh = C.HARSH_WORDS || [];
+    let score = 2, msg = '고운 말로 마음을 담아 봐요', cls = '';
+    if (text) {
+      const chk = window.Filter ? window.Filter.check(text) : { ok: true };
+      const hits = warm.filter((w) => text.indexOf(w) >= 0).length;
+      const hh = harsh.find((h) => text.indexOf(h[0]) >= 0);
+      if (!chk.ok) { score = 0; msg = '그 말은 띄울 수 없어요. 고운 말로 바꿔 볼까요?'; cls = 'bad'; }
+      else if (hh) { score = Math.max(1, 1 + Math.min(hits, 1)); msg = '🌱 ' + hh[1]; cls = 'soft'; }
+      else if (hits) { score = Math.min(5, 3 + hits); msg = '✨ 따뜻한 말이 담겼어요'; cls = 'warm'; }
+      else { score = 3; msg = '좋아요, 마음이 잘 담기고 있어요'; }
+    }
+    const dots = $('wmDots'); if (!dots) return;
+    dots.innerHTML = [0, 1, 2, 3, 4].map((i) => '<i class="' + (i < score ? 'on' : '') + '"></i>').join('');
+    $('wmMsg').textContent = msg;
+    $('warmMeter').className = 'warm-meter ' + cls;
+    $('wishSubmit').classList.toggle('glow', cls === 'warm');
+  }
+  function onWishInput() { $('charCount').textContent = $('wishInput').value.length + ' / 100'; updateWarmth(); }
   function openWrite(kind) {
     $('wishMsg').textContent = ''; $('wishMsg').className = 'modal-msg';
     $('wishInput').value = ''; $('charCount').textContent = '0 / 100';
     wishCat = 0; renderCatPick();
     setKind(kind || KIND_HOPE);
+    exIdx = randInt(8);  renderExamples(); updateWarmth();
     openModal('wishModal');
     setTimeout(() => $('wishInput').focus(), 60);
   }
   $('openWrite').addEventListener('click', () => openWrite());
   $('wishCancel').addEventListener('click', () => closeModal('wishModal'));
-  $('wishInput').addEventListener('input', () => { $('charCount').textContent = $('wishInput').value.length + ' / 100'; });
+  $('wishInput').addEventListener('input', onWishInput);
   $('wishSubmit').addEventListener('click', submitWish);
   const showMsg = (t, k) => { $('wishMsg').textContent = t; $('wishMsg').className = 'modal-msg ' + (k || ''); };
   function cooldownLeft() {
@@ -2557,7 +2707,7 @@
       head.innerHTML = `<span class="lc-tag">${purposeTag(l)}</span>`;
       const topic = el('a', 'lc-topic'); topic.href = l.url; topic.target = '_blank'; topic.rel = 'noopener noreferrer';
       topic.textContent = l.topic || hostOf(l.url);
-      const host = el('div', 'lc-host'); host.textContent = '🔗 ' + hostOf(l.url) + (l.nick ? '  ·  🙂 ' + l.nick : '');
+      const host = el('div', 'lc-host'); host.textContent = '🔗 ' + hostOf(l.url) + (l.nick ? '  ·  ✏️ ' + l.nick + '님이 나눔' : '');
       const foot = el('div', 'lc-foot');
       const go = el('a', 'lc-go'); go.href = l.url; go.target = '_blank'; go.rel = 'noopener noreferrer'; go.textContent = '열어 보기 ↗';
       foot.appendChild(go);
@@ -3570,12 +3720,14 @@
     layout();
     updateBreathUI();
     renderDockSubs();
-    cam = clamp(me.x - vw / 2, 0, Math.max(0, W - vw));
+    initZoom();
+    cam = camTarget(); applyWorldTransform();
+    { const b = $('wideBtn'); if (b) { b.classList.toggle('on', zoom < 1); b.title = zoom < 1 ? '가까이 보기' : '넓게 보기'; } }
     requestAnimationFrame(frame);
     startSanta();
     renderSkyStars();
     if (musicChoice && musicChoice !== 'off') { $('musicBtn').classList.add('on'); }
-    window.addEventListener('resize', () => { measure(); layout(); if (!$('stairGame').hidden) stairCamera(); });
+    window.addEventListener('resize', () => { measure(); if (zoom < 1) zoom = WIDE_Z(); layout(); applyWorldTransform(); if (!$('stairGame').hidden) stairCamera(); });
     document.addEventListener('visibilitychange', () => { if (document.hidden) for (const k in keys) keys[k] = false; });
 
     if (!profile) openIntro();
@@ -3597,7 +3749,7 @@
     setInterval(() => { if (!document.hidden) refreshState(false); }, 20000);
 
     // 시험용 창(개발자가 확인할 때만 사용)
-    window.__ms = { me, others, state, wallet, critters, sg, goTo, warpTo, enterZone, openReading, openTemple, openGarden, mg, waterGarden, renderAll, openGift, gifts: () => gifts, nearGift: () => nearGift, setBreathMode, openCounsel, RESIDENTS, nearRes: () => nearRes, refundItem, nextFloor, temple: () => tp, startBreath, pickMood, pickFeel, moodLog: () => moodLog(), tapToday, keys, earn, climb, sendEmote, applyTime, applySeason, openLinks, openMusic, openSeason, chooseMusic, flySanta, submitLink, linkForm, refreshState, renderBoard, get season() { return season; }, get musicChoice() { return musicChoice; }, get cam() { return cam; }, get myKey() { return myKey; }, get nearPerson() { return nearPerson; } };
+    window.__ms = { me, others, state, wallet, critters, sg, goTo, warpTo, enterZone, openReading, openTemple, openGarden, mg, waterGarden, renderAll, openGift, renderSkyWishes, openPeek, setWide, get zoom() { return zoom; }, gifts: () => gifts, nearGift: () => nearGift, setBreathMode, openCounsel, RESIDENTS, nearRes: () => nearRes, refundItem, nextFloor, temple: () => tp, startBreath, pickMood, pickFeel, moodLog: () => moodLog(), tapToday, keys, earn, climb, sendEmote, applyTime, applySeason, openLinks, openMusic, openSeason, chooseMusic, flySanta, submitLink, linkForm, refreshState, renderBoard, get season() { return season; }, get musicChoice() { return musicChoice; }, get cam() { return cam; }, get myKey() { return myKey; }, get nearPerson() { return nearPerson; } };
   }
   start();
 })();
